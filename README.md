@@ -18,11 +18,23 @@ This is intentionally a **research-oriented prototype** (not a production fintec
 
 ## Architecture
 ```
-User Input (manual/simulated)
-  -> Financial State Engine
-  -> Intervention Decision Engine
-  -> Explainable Messaging
-  -> Alerts + Voice Responses
+User Device (Android/Web)
+        ↓
+Event Inputs Layer
+(SMS parser / manual entry / simulator)
+        ↓
+Financial State Engine
+(balance, burn rate, days-to-zero)
+        ↓
+Intervention Decision Engine
+(when to alert, what to say)
+        ↓
+Notification & Interaction Layer
+(push alerts + voice query)
+        ↓
+User Feedback Capture
+(action taken / ignored)
+
 ```
 
 ## Run locally
