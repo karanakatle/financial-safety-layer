@@ -46,6 +46,31 @@ uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 Then open http://localhost:8000.
 
+## How to test it
+### 1) Unit tests (fastest)
+```bash
+pytest -q
+```
+
+### 2) Manual UI test
+1. Start server with `uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000`.
+2. Open `http://localhost:8000`.
+3. Add an `expense` event and verify:
+   - balance updates
+   - a post-spend guidance alert appears
+4. Add a large expense and verify low-balance warning triggers.
+5. Ask: `Kitna paisa bacha hai?` and verify response text + TTS output.
+
+### 3) API smoke test (scripted)
+With server running:
+```bash
+./scripts/smoke_test.sh
+```
+Optional custom URL:
+```bash
+./scripts/smoke_test.sh http://localhost:8000
+```
+
 ## Example API
 - `GET /api/state`
 - `POST /api/transaction`
