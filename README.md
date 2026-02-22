@@ -1,20 +1,52 @@
-# Arthamantri Prototype (v1)
+# 🪙 Arthamantri — Financial Safety Agent Prototype
 
-A working **event-driven financial safety agent** prototype to demonstrate agentic intervention logic, explainable alerts, and voice-based interaction.
+**Arthamantri** is an event-driven, agentic financial assistant designed to improve financial resilience among underbanked and underserved individuals.
 
-## Why this exists
-This is intentionally a **research-oriented prototype** (not a production fintech app). It is designed to test:
-- Intervention timing
-- Alert messaging clarity and trust
-- User response to agent suggestions
+This prototype demonstrates how **proactive AI agents** can guide users toward safer financial behavior using explainable alerts, conversational interaction, and behavioral nudges.
 
-## Features
-- Event input (income/expense)
-- Financial state engine (`balance`, `avg_daily_spend`, `days_to_zero`, `safe_spend_today`)
-- Rule-based intervention engine
-- Explainable alerts with priorities
-- Voice query endpoint + browser speech interface
-- Alert history for behavior analysis
+## 🌍 Problem Statement
+Millions of individuals live paycheck-to-paycheck and lack:
+- real-time financial awareness
+- early risk warnings
+- safe spending guidance
+- behavioral support for saving
+Traditional banking apps show balances — they do not prevent financial stress.
+
+**Arthamantri acts before financial risk becomes crisis.**
+
+## 🎯 Project Goals
+This research prototype explores:
+- Agentic intervention timing
+- Trustworthy & explainable alerts
+- Behavioral nudging for savings
+- Conversational financial guidance
+- Human-centered financial literacy delivery
+
+## Key Capabilities
+### 🧠 Financial State Intelligence
+- balance tracking
+- burn rate estimation
+- days-to-zero prediction
+- safe spend guidance
+
+### 🤖 Agentic Intervention Engine
+- detects financial risk patterns
+- proactive alerts & guidance
+- explainable reasoning
+
+### 💬 Conversable Agent Interaction
+- voice & text queries
+- yes/no action confirmations
+- conversational decision loops
+
+### 💰 Behavioral Savings Nudges
+- micro-saving suggestions
+- user confirmation workflow
+- trust-building encouragement
+
+### 🌐 Multilingual & Inclusive Messaging
+- designed for low-literacy users
+- simple, supportive tone
 
 ## Architecture
 ```
@@ -32,10 +64,26 @@ Intervention Decision Engine
 Notification & Interaction Layer
 (push alerts + voice query)
         ↓
-User Feedback Capture
-(action taken / ignored)
-
+Behavior Tracking & Learning
+(user responses & patterns)
 ```
+
+## ⚙️ Tech Stack
+
+### Backend
+- FastAPI
+- Python
+- Rule-based decision engine
+- Conversable intent detection
+
+### Frontend
+- Vanilla JS interface
+- Voice input & speech output
+- Dynamic alert interaction
+
+### Data
+- SQLite (prototype)
+- SQLModel ORM
 
 ## Run locally
 ```bash
@@ -72,13 +120,44 @@ Optional custom URL:
 ```
 
 ## Example API
-- `GET /api/state`
-- `POST /api/transaction`
-- `GET /api/alerts`
-- `POST /api/voice-query`
+| Endpoint                | Purpose                    |
+| ----------------------- | -------------------------- |
+| `POST /api/transaction` | Add income/expense         |
+| `GET /api/state`        | Financial state            |
+| `GET /api/alerts`       | Agent alerts               |
+| `POST /api/voice-query` | Conversational interaction |
 
-## Research docs
+
+## 🔬 Research & Experimentation
+
+This prototype enables research into:
+- behavioral response to financial nudges
+- trust in AI-generated guidance
+- intervention timing effectiveness
+- conversational agent adoption
+
+## See
 - `research/hypotheses.md`
 - `research/metrics.md`
 - `docs/architecture.md`
 - `docs/agent_logic.md`
+
+## ⚠️ Disclaimer
+This is a **research & experimental prototype.**
+It does **not provide financial advice** and is not a production banking system.
+
+## 🌱 Future Directions
+### Agent Intelligence
+- anomaly detection & fraud alerts
+- spending pattern learning
+- personalized guidance
+
+### Financial Inclusion
+- community savings groups (SHG / bachat gat)
+- alternative credit scoring signals
+- offline-first accessibility
+
+### AI Research
+- agentic decision frameworks
+- low-resource language interaction
+- behavioral habit reinforcement loops
