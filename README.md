@@ -1,20 +1,20 @@
-# 🪙 Arthamantri — Financial Safety Agent Prototype
+# Arthamantri — Financial Safety Agent Prototype
 
 **Arthamantri** is an event-driven, agentic financial assistant designed to improve financial resilience among underbanked and underserved individuals.
 
 This prototype demonstrates how **proactive AI agents** can guide users toward safer financial behavior using explainable alerts, conversational interaction, and behavioral nudges.
 
-## 🌍 Problem Statement
+## Problem Statement
 Millions of individuals live paycheck-to-paycheck and lack:
 - real-time financial awareness
 - early risk warnings
 - safe spending guidance
 - behavioral support for saving
-Traditional banking apps show balances — they do not prevent financial stress.
 
+Traditional banking apps show balances — they do not prevent financial stress.
 **Arthamantri acts before financial risk becomes crisis.**
 
-## 🎯 Project Goals
+## Project Goals
 This research prototype explores:
 - Agentic intervention timing
 - Trustworthy & explainable alerts
@@ -23,28 +23,28 @@ This research prototype explores:
 - Human-centered financial literacy delivery
 
 ## Key Capabilities
-### 🧠 Financial State Intelligence
+### Financial State Intelligence
 - balance tracking
 - burn rate estimation
 - days-to-zero prediction
 - safe spend guidance
 
-### 🤖 Agentic Intervention Engine
+### Agentic Intervention Engine
 - detects financial risk patterns
 - proactive alerts & guidance
 - explainable reasoning
 
-### 💬 Conversable Agent Interaction
+### Conversable Agent Interaction
 - voice & text queries
 - yes/no action confirmations
 - conversational decision loops
 
-### 💰 Behavioral Savings Nudges
+### Behavioral Savings Nudges
 - micro-saving suggestions
 - user confirmation workflow
 - trust-building encouragement
 
-### 🌐 Multilingual & Inclusive Messaging
+### Multilingual & Inclusive Messaging
 - designed for low-literacy users
 - simple, supportive tone
 
@@ -128,7 +128,7 @@ Optional custom URL:
 | `POST /api/voice-query` | Conversational interaction |
 
 
-## 🔬 Research & Experimentation
+## Research & Experimentation
 
 This prototype enables research into:
 - behavioral response to financial nudges
@@ -142,11 +142,11 @@ This prototype enables research into:
 - `docs/architecture.md`
 - `docs/agent_logic.md`
 
-## ⚠️ Disclaimer
+## Disclaimer
 This is a **research & experimental prototype.**
 It does **not provide financial advice** and is not a production banking system.
 
-## 🌱 Future Directions
+## Future Directions
 ### Agent Intelligence
 - anomaly detection & fraud alerts
 - spending pattern learning
