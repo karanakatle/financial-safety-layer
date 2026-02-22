@@ -23,9 +23,45 @@ function renderAlerts(alerts) {
   alerts.slice().reverse().forEach((a) => {
     const li = document.createElement('li');
     li.className = `priority-${a.priority}`;
-    li.textContent = `${a.message} (${a.reason})`;
+    // message text
+    const msg = document.createElement('div');
+    msg.textContent = `${a.message}`;
+    li.appendChild(msg);
+    
+    // show buttons ONLY for saving suggestion
+    if (a.reason === "income_event") {
+      const btnYes = document.createElement('button');
+      btnYes.textContent = "Yes";
+      btnYes.onclick = () => respondYes();
+
+      const btnNo = document.createElement('button');
+      btnNo.textContent = "No";
+      btnNo.onclick = () => respondNo();
+
+      li.appendChild(btnYes);
+      li.appendChild(btnNo);
+    }
+    // li.textContent = `${a.message} (${a.reason})`;
     ul.appendChild(li);
   });
+}
+
+async function respondYes() {
+  const data = await fetchJSON('/api/voice-query', {
+    method: 'POST',
+    body: JSON.stringify({ query: "yes" }),
+  });
+  document.getElementById('voice-response').textContent = data.response;
+  await refresh();
+}
+
+async function respondNo() {
+  const data = await fetchJSON('/api/voice-query', {
+    method: 'POST',
+    body: JSON.stringify({ query: "no" }),
+  });
+  document.getElementById('voice-response').textContent = data.response;
+  await refresh();
 }
 
 async function refresh() {
@@ -57,6 +93,7 @@ document.getElementById('tx-form').addEventListener('submit', async (e) => {
   await fetchJSON('/api/transaction', {
     method: 'POST',
     body: JSON.stringify({
+      user_id: 1,   // ⭐ add this
       type: form.get('type'),
       amount: Number(form.get('amount')),
       category: form.get('category'),
