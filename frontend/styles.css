@@ -39,3 +39,7 @@ ul { padding-left: 20px; }
 .priority-high { color: #b91c1c; font-weight: 700; }
 .priority-medium { color: #92400e; }
 .priority-info { color: #1f2937; }
+#alerts button {
+  margin-right: 6px;
+  margin-top: 6px;
+}
