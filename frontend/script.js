@@ -23,10 +23,122 @@ function renderAlerts(alerts) {
   alerts.slice().reverse().forEach((a) => {
     const li = document.createElement('li');
     li.className = `priority-${a.priority}`;
-    li.textContent = `${a.message} (${a.reason})`;
+    li.innerHTML = `${a.message}`;
+
+    if (a.reason === "income_event") {
+      li.innerHTML += `
+        <br/>
+        <button onclick="confirmSavings(true)">Yes</button>
+        <button onclick="confirmSavings(false)">No</button>
+      `;
+    }
+    if (a.type === "fraud_warning") {
+      alert(a.message);   // MVP popup
+    }
     ul.appendChild(li);
   });
 }
+
+async function confirmSavings(choice) {
+  const res = await fetch("/api/confirm-savings", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ accept: choice })
+  });
+
+  const data = await res.json();
+
+  alert(data.message);
+  refresh();
+}
+
+function renderSchemes(data) {
+  const container = document.getElementById("scheme-results");
+  container.innerHTML = "";
+
+  if (!data.eligible_schemes.length) {
+    container.innerHTML = "<p>No schemes found based on inputs.</p>";
+    return;
+  }
+
+  data.eligible_schemes.forEach((s) => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <strong>${s.name}</strong><br/>
+      <em>${s.reason}</em><br/>
+      👉 ${s.benefit}<br/>
+      💰 ${s.cost}<br/>
+      📍 ${s.next_step}
+    `;
+    container.appendChild(div);
+  });
+}
+
+let mediaRecorder;
+let audioChunks = [];
+
+async function startRecording() {
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+  mediaRecorder = new MediaRecorder(stream);
+
+  audioChunks = [];
+
+  mediaRecorder.ondataavailable = event => {
+    audioChunks.push(event.data);
+  };
+
+  mediaRecorder.onstop = sendAudioToBackend;
+
+  mediaRecorder.start();
+
+  document.getElementById("mic-btn").textContent = "⏹ Stop";
+}
+
+function stopRecording() {
+  mediaRecorder.stop();
+  document.getElementById("mic-btn").textContent = "🎤 Speak";
+}
+
+async function sendAudioToBackend() {
+  const blob = new Blob(audioChunks, { type: "audio/webm" });
+
+  const reader = new FileReader();
+  reader.readAsDataURL(blob);
+
+  reader.onloadend = async () => {
+    const base64Audio = reader.result.split(",")[1];
+
+    const res = await fetch("/api/voice-audio", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audio: base64Audio })
+    });
+
+    const data = await res.json();
+
+    document.getElementById("voice-response").textContent = data.response;
+
+    // play returned audio if present
+    if (data.audio) {
+      const audio = new Audio("data:audio/wav;base64," + data.audio);
+      audio.play();
+    }
+  };
+}
+
+let recording = false;
+
+document.getElementById("mic-btn").addEventListener("click", () => {
+  if (!recording) {
+    startRecording();
+    recording = true;
+  } else {
+    stopRecording();
+    recording = false;
+  }
+});
 
 async function refresh() {
   const [state, alerts] = await Promise.all([
@@ -71,20 +183,39 @@ document.getElementById('ask-btn').addEventListener('click', async () => {
   if (q) await askQuery(q);
 });
 
-document.getElementById('mic-btn').addEventListener('click', () => {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert('Speech recognition not supported in this browser.');
-    return;
-  }
-  const rec = new SpeechRecognition();
-  rec.lang = 'hi-IN';
-  rec.onresult = async (event) => {
-    const q = event.results[0][0].transcript;
-    document.getElementById('query').value = q;
-    await askQuery(q);
+document.getElementById("scheme-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const form = new FormData(e.target);
+
+  const payload = {
+    age: Number(form.get("age")),
+    income: Number(form.get("income")),
+    occupation: form.get("occupation"),
+    gender: form.get("gender"),
+    rural: form.get("rural") === "true",
+    bank_account: form.get("bank_account") === "true",
+    farmer: form.get("farmer") === "true",
+    business_owner: form.get("business_owner") === "true",
   };
-  rec.start();
+
+  const res = await fetch("/api/schemes", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+  renderSchemes(data);
 });
 
 refresh();
+
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Service worker registration failed:', error);
+    });
+  });
+}
