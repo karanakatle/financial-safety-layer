@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <title>Arthamantri Prototype</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
@@ -37,7 +40,7 @@
     <section class="card">
       <h2>Voice Query</h2>
       <div class="row">
-        <button id="mic-btn">🎤 Ask in Hindi/English</button>
+        <button id="mic-btn">🎤 Speak</button>
         <input id="query" placeholder="e.g. Kitna paisa bacha hai?" />
         <button id="ask-btn">Ask</button>
       </div>
@@ -47,6 +50,62 @@
     <section class="card">
       <h2>Agent Alerts</h2>
       <ul id="alerts"></ul>
+    </section>
+    <section class="card">
+      <h2>Find Government Benefits</h2>
+
+      <form id="scheme-form" class="grid">
+        <label>Age
+          <input name="age" type="number" required />
+        </label>
+
+        <label>Monthly Income (₹)
+          <input name="income" type="number" required />
+        </label>
+
+        <label>Occupation
+          <input name="occupation" type="text" placeholder="labor, vendor, farmer" />
+        </label>
+
+        <label>Gender
+          <select name="gender">
+            <option value="male">Male</option>
+            <option value="female">Female</option>
+          </select>
+        </label>
+
+        <label>Location
+          <select name="rural">
+            <option value="true">Rural</option>
+            <option value="false">Urban</option>
+          </select>
+        </label>
+
+        <label>Bank Account
+          <select name="bank_account">
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </label>
+
+        <label>Farmer
+          <select name="farmer">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
+        </label>
+
+        <label>Business Owner
+          <select name="business_owner">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
+        </label>
+
+        <button type="submit">Check Benefits</button>
+      </form>
+
+      <div id="scheme-results"></div>
     </section>
   </main>
   <script src="script.js"></script>
