@@ -77,13 +77,28 @@ Optional custom URL:
 ### Option A: Installable PWA (fastest)
 This repo now includes a web app manifest + service worker so the app can be installed on Android from Chrome.
 
-1. Deploy the FastAPI app over HTTPS (Render/Railway/Fly.io/etc.):
+1. Start the backend on all interfaces (local LAN test):
    ```bash
-   uvicorn backend.main:app --host 0.0.0.0 --port 8000
+   ./scripts/mobile_lan_run.sh
    ```
-2. Open your deployed URL in Android Chrome.
-3. Tap **Add to Home Screen / Install app**.
-4. Launch it from the home screen in standalone mode.
+   If you prefer manual startup:
+   ```bash
+   uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+   ```
+2. Find your laptop LAN IP and open `http://<LAN_IP>:8000` from Android Chrome on the same Wi-Fi.
+   - Example: `http://192.168.1.54:8000`
+   - `localhost:8000` on phone points to the phone itself, not your laptop.
+3. If LAN URL fails:
+   - allow incoming connections for Terminal/Python in macOS Firewall
+   - disable VPN/proxy temporarily on laptop and phone
+   - confirm server is still running on port `8000`
+4. For install prompt + service worker validation, use HTTPS URL:
+   - deploy app (Render/Railway/Fly) and open deployed `https://...` URL, or
+   - expose local app via HTTPS tunnel (Cloudflare Tunnel/ngrok)
+5. In Android Chrome on HTTPS:
+   - open app URL
+   - tap **Add to Home Screen / Install app**
+   - launch from home screen in standalone mode
 
 ### Option B: Publish to Play Store with Capacitor
 If you want Play Store distribution without rewriting the frontend:
