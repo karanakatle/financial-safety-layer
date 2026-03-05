@@ -69,12 +69,19 @@ object AppConstants {
     }
 
     object Parsing {
-        const val AMOUNT_REGEX_PATTERN = "(?:INR|Rs\\\\.?|₹)\\\\s*([0-9,]+(?:\\\\.[0-9]{1,2})?)"
-        const val NORMALIZE_WHITESPACE_REGEX = "\\\\s+"
+        val AMOUNT_REGEX_PATTERNS = listOf(
+            // Prefix currency marker: "INR 1,100", "Rs. 1100", "₹1100.50"
+            "(?:INR|Rs\\.?|₹)\\s*[:\\-]?\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)",
+            // Suffix currency marker: "1100 INR"
+            "([0-9][0-9,]*(?:\\.[0-9]{1,2})?)\\s*(?:INR|Rs\\.?|₹)",
+            // Verb-led form: "debited by 1100", "spent for Rs 250"
+            "(?:debited|debit|spent|paid|withdrawn)\\s*(?:by|for)?\\s*(?:INR|Rs\\.?|₹)?\\s*([0-9][0-9,]*(?:\\.[0-9]{1,2})?)",
+        )
+        const val NORMALIZE_WHITESPACE_REGEX = "\\s+"
         const val DEDUPE_PAYLOAD_MAX_LENGTH = 180
 
         val SMS_DEBIT_KEYWORDS = listOf(
-            "debited", "debit", "spent", "withdrawn", "upi txn", "paid",
+            "debited", "debit", "spent", "withdrawn", "upi txn", "paid", "purchase", "dr", "txn",
         )
 
         val NOTIFICATION_TXN_KEYWORDS = listOf(

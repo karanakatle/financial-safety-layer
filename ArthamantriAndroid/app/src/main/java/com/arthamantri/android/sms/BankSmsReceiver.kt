@@ -6,6 +6,7 @@ import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
 import com.arthamantri.android.R
+import com.arthamantri.android.config.AppConfig
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
@@ -19,15 +20,32 @@ class BankSmsReceiver : BroadcastReceiver() {
             return
         }
 
+        Log.i(AppConstants.LogTags.BANK_SMS_RECEIVER, "SMS_RECEIVED broadcast received")
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty()) {
+            Log.w(AppConstants.LogTags.BANK_SMS_RECEIVER, "SMS_RECEIVED had no message parts")
             return
         }
 
         val sender = messages[0].originatingAddress
         val body = messages.joinToString(separator = "") { it.messageBody ?: "" }
+        Log.i(
+            AppConstants.LogTags.BANK_SMS_RECEIVER,
+            "Incoming SMS sender=$sender body='${body.take(180)}'"
+        )
 
-        val parsed = SmsParser.parseExpense(sender, body) ?: return
+        val parsed = SmsParser.parseExpense(sender, body)
+        if (parsed == null) {
+            Log.w(
+                AppConstants.LogTags.BANK_SMS_RECEIVER,
+                "SMS ignored: parser did not detect debit/amount pattern"
+            )
+            return
+        }
+        Log.i(
+            AppConstants.LogTags.BANK_SMS_RECEIVER,
+            "Parsed SMS expense amount=${parsed.amount} category=${parsed.category} baseUrl=${AppConfig.getBaseUrl(context)}"
+        )
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -36,6 +54,10 @@ class BankSmsReceiver : BroadcastReceiver() {
                     amount = parsed.amount,
                     category = parsed.category,
                     note = parsed.note,
+                )
+                Log.i(
+                    AppConstants.LogTags.BANK_SMS_RECEIVER,
+                    "sms-ingest API success; alertsCount=${alerts.size}"
                 )
 
                 alerts.forEach { alert ->

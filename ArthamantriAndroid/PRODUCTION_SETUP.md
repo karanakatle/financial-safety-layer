@@ -63,3 +63,23 @@ cd ArthamantriAndroid
 ## 5) Output
 
 - AAB path: `app/build/outputs/bundle/release/app-release.aab`
+
+## 6) Recommended dev vs release usage
+
+- During development, run only `debug` variant (`com.arthamantri.android.dev`).
+- Keep release app uninstalled from emulator/device to avoid confusion.
+- Build `release APK`/`release AAB` only when you need sideload or Play upload.
+
+Debug install flow:
+
+```bash
+adb uninstall com.arthamantri.android
+adb uninstall com.arthamantri.android.dev
+cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
+./gradlew :app:assembleDebug -PAPI_BASE_URL=https://arthamantri-api.onrender.com/
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+adb shell pm list packages | grep arthamantri
+```
+
+Expected package:
+- `package:com.arthamantri.android.dev`
