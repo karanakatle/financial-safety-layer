@@ -69,7 +69,7 @@ object AppConstants {
     }
 
     object Parsing {
-        const val AMOUNT_REGEX_PATTERN = "(?:INR|Rs\\\\.?|₹)\\\\s*([0-9]+(?:\\\\.[0-9]{1,2})?)"
+        const val AMOUNT_REGEX_PATTERN = "(?:INR|Rs\\\\.?|₹)\\\\s*([0-9,]+(?:\\\\.[0-9]{1,2})?)"
         const val NORMALIZE_WHITESPACE_REGEX = "\\\\s+"
         const val DEDUPE_PAYLOAD_MAX_LENGTH = 180
 

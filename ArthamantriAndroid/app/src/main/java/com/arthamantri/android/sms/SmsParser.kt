@@ -21,7 +21,12 @@ object SmsParser {
         }
 
         val match = amountRegex.find(message) ?: return null
-        val amount = match.groupValues.getOrNull(1)?.toDoubleOrNull() ?: return null
+        val normalizedAmount = match.groupValues
+            .getOrNull(1)
+            ?.replace(",", "")
+            ?.trim()
+            ?: return null
+        val amount = normalizedAmount.toDoubleOrNull() ?: return null
 
         val category = when {
             body.contains("upi") -> AppConstants.Domain.CATEGORY_UPI
