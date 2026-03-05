@@ -100,7 +100,20 @@ This repo now includes a web app manifest + service worker so the app can be ins
    - tap **Add to Home Screen / Install app**
    - launch from home screen in standalone mode
 
-### Option B: Publish to Play Store with Capacitor
+### Option B: Deploy backend on Render (fixed HTTPS URL)
+Use this for real-device testing and Play Store builds, so app API base URL is stable.
+
+1. Push this repository to GitHub.
+2. In Render: **New -> Blueprint**.
+3. Select your GitHub repo.
+4. Render reads `render.yaml` and creates service `arthamantri-api`.
+5. Wait until deploy is healthy.
+6. Copy backend URL, for example:
+   - `https://arthamantri-api.onrender.com`
+7. Verify API from browser:
+   - `https://arthamantri-api.onrender.com/api/literacy/status`
+
+### Option C: Publish to Play Store with Capacitor
 If you want Play Store distribution without rewriting the frontend:
 
 1. Keep backend deployed (HTTPS) and note your API base URL.
@@ -117,6 +130,28 @@ If you want Play Store distribution without rewriting the frontend:
    ```
 5. Upload the signed bundle to Google Play Console.
 
+### Android Native App release flow (ArthamantriAndroid)
+If you are shipping the native Android app from `ArthamantriAndroid`:
+
+1. Deploy backend first on Render (or any fixed HTTPS host).
+2. Build Android release using deployed API URL:
+   ```bash
+   cd ArthamantriAndroid
+   ./gradlew :app:bundleRelease \
+     -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+     -PPRIVACY_POLICY_URL=https://your-privacy-page-url
+   ```
+3. AAB output:
+   - `ArthamantriAndroid/app/build/outputs/bundle/release/app-release.aab`
+4. Optional APK (sideload/testing):
+   ```bash
+   ./gradlew :app:assembleRelease \
+     -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+     -PPRIVACY_POLICY_URL=https://your-privacy-page-url
+   ```
+5. APK output:
+   - `ArthamantriAndroid/app/build/outputs/apk/release/app-release.apk`
+
 ### Production checklist
 - Restrict CORS to your app domain (replace `allow_origins=["*"]`).
 - Use HTTPS for voice/microphone features.
@@ -128,6 +163,51 @@ If you want Play Store distribution without rewriting the frontend:
 - `POST /api/transaction`
 - `GET /api/alerts`
 - `POST /api/voice-query`
+- `POST /api/literacy/sms-ingest` (simulate bank SMS expense feed)
+- `POST /api/literacy/upi-open` (simulate UPI app open trigger)
+- `GET /api/literacy/status`
+- `GET /api/pilot/meta` (research-pilot disclaimer and alert policy)
+- `POST /api/pilot/consent` (store participant consent)
+- `POST /api/pilot/feedback` (collect pilot feedback)
+- `POST /api/pilot/app-log` (store app-side activity logs in backend)
+- `GET /api/pilot/summary` (pilot aggregate metrics)
+- `GET /api/pilot/analytics` (event and stage analytics for research)
+
+## Financial Literacy Safety Flow (v1)
+This prototype now supports the first two-step financial safety nudges:
+1. Threshold nudge: when daily spending is about to exceed the safe amount.
+2. UPI nudge: first time user opens a UPI app after threshold risk is active.
+
+Local test sequence:
+```bash
+curl -X POST http://localhost:8000/api/literacy/sms-ingest \
+  -H "Content-Type: application/json" \
+  -d '{"amount":950,"category":"upi","note":"SMS detected payment"}'
+
+curl -X POST http://localhost:8000/api/literacy/upi-open \
+  -H "Content-Type: application/json" \
+  -d '{"app_name":"PhonePe","intent_amount":120}'
+```
+
+## Research Pilot APIs
+For a 50-60 participant pilot run:
+```bash
+curl http://localhost:8000/api/pilot/meta
+
+curl -X POST http://localhost:8000/api/pilot/consent \
+  -H "Content-Type: application/json" \
+  -d '{"participant_id":"pilot-user-001","accepted":true,"language":"en"}'
+
+curl -X POST http://localhost:8000/api/pilot/feedback \
+  -H "Content-Type: application/json" \
+  -d '{"participant_id":"pilot-user-001","rating":4,"comment":"Alert was useful","language":"en"}'
+
+curl http://localhost:8000/api/pilot/analytics
+```
+
+Pilot persistence:
+- Pilot consent/feedback/events are stored in local SQLite: `data/pilot_research.db`
+- This allows analysis across backend restarts during research pilots.
 
 ## Research docs
 - `research/hypotheses.md`

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/nav_manage_access"
+        app:actionLayout="@layout/nav_manage_access_toggle"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:orderInCategory="10"
+        app:showAsAction="always"
+        android:title="@string/menu_manage_access_collapsed" />
+    <item
+        android:id="@+id/nav_feedback"
+        android:icon="@android:drawable/ic_menu_edit"
+        android:orderInCategory="20"
+        android:title="@string/menu_feedback" />
+    <item
+        android:id="@+id/nav_help"
+        android:icon="@android:drawable/ic_menu_help"
+        android:orderInCategory="30"
+        android:title="@string/menu_help" />
+    <item
+        android:id="@+id/nav_privacy_policy"
+        android:icon="@android:drawable/ic_menu_info_details"
+        android:orderInCategory="40"
+        android:title="@string/menu_privacy_policy" />
+</menu>

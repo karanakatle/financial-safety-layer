@@ -1,0 +1,113 @@
+<resources>
+    <string name="app_name">Arthamantri</string>
+    <string name="notification_listener_label">Arthamantri Transaction Listener</string>
+    <string name="notif_channel_name">Financial Safety Alerts</string>
+    <string name="notif_channel_desc">USSD-style intervention nudges</string>
+
+    <string name="menu_open">Open menu</string>
+    <string name="nav_title">Arthamantri Menu</string>
+    <string name="nav_subtitle">Swipe from left edge to open menu</string>
+    <string name="menu_manage_access">Manage Access</string>
+    <string name="menu_manage_access_collapsed">Manage Access</string>
+    <string name="menu_manage_access_expanded">Manage Access</string>
+    <string name="menu_access_notifications">Notification Access</string>
+    <string name="menu_access_overlay">Overlay Access</string>
+    <string name="menu_access_usage">Usage Access</string>
+    <string name="menu_feedback">Submit Pilot Feedback</string>
+    <string name="menu_help">Help &amp; Onboarding</string>
+    <string name="menu_privacy_policy">Privacy Policy</string>
+    <string name="cd_change_language">Change app language</string>
+    <string name="lang_badge_en">El</string>
+    <string name="lang_badge_hi">हिं</string>
+
+    <string name="home_title">Arthamantri Dashboard</string>
+    <string name="home_subtitle">Adaptive financial literacy and safety nudges</string>
+    <string name="pilot_banner_default">Research pilot: this is not an investment advisory product.</string>
+    <string name="status_initial">Status: complete onboarding and then start monitoring.</string>
+    <string name="status_usage_missing">Usage access is missing.</string>
+    <string name="status_overlay_missing">Overlay access is missing.</string>
+    <string name="status_monitoring_active">Monitoring is active.</string>
+    <string name="status_monitoring_failed">Monitoring failed to start.</string>
+    <string name="status_api_connected">API connected.</string>
+    <string name="status_api_disconnected">API disconnected.</string>
+
+    <string name="home_card_monitor_title">Live Monitoring</string>
+    <string name="home_card_monitor_desc">Observes SMS/UPI activity in the background and triggers risk alerts.</string>
+    <string name="action_start_monitor">Start Monitoring</string>
+    <string name="action_stop_monitor">Stop Monitoring</string>
+
+    <string name="home_card_info_title">How It Works</string>
+    <string name="home_card_info_desc">You get a stage-1 warning before threshold breach and a stage-2 warning on the first UPI app open after that.</string>
+
+    <string name="dialog_language_title">Select language</string>
+    <string name="dialog_language_message">Choose your app language from the dropdown below.</string>
+    <string name="lang_english">English</string>
+    <string name="lang_hindi">Hindi</string>
+
+    <string name="dialog_consent_title">Research Pilot Consent</string>
+    <string name="dialog_consent_message">• Arthamantri is a research prototype.
+• This is not investment advice.
+• By continuing, you consent to monitoring and pilot data collection.</string>
+    <string name="consent_accept">I Agree</string>
+    <string name="consent_exit">Exit</string>
+
+    <string name="dialog_perm_title">Permission Setup</string>
+    <string name="dialog_perm_message">To use the app, allow these permissions:
+• SMS
+• Usage Access
+• Overlay access
+
+Follow the system prompts to complete setup.</string>
+    <string name="perm_continue">Continue</string>
+
+    <string name="help_title">Help &amp; Setup</string>
+    <string name="help_subtitle">Follow these quick steps to activate the app safely.</string>
+    <string name="help_content">• Select language after installing the app.
+• Accept consent.
+• Allow runtime permissions.
+• Turn ON Usage Access.
+• Turn ON Overlay Access.
+• Start Monitoring.</string>
+    <string name="help_step_1">Select language after installing the app.</string>
+    <string name="help_step_2">Accept consent.</string>
+    <string name="help_step_3">Allow runtime permissions.</string>
+    <string name="help_step_4">Turn ON Usage Access.</string>
+    <string name="help_step_5">Turn ON Overlay Access.</string>
+    <string name="help_step_6">Start Monitoring.</string>
+    <string name="help_apply_language">Apply Language</string>
+    <string name="help_change_language">Change Language</string>
+    <string name="help_close">Close</string>
+    <string name="icon_close">✕</string>
+    <string name="icon_check">✓</string>
+
+    <string name="feedback_title">Submit Pilot Feedback</string>
+    <string name="feedback_rating_hint">Rating 1-5</string>
+    <string name="feedback_comment_hint">Comment</string>
+    <string name="feedback_submit">Submit</string>
+    <string name="feedback_cancel">Cancel</string>
+
+    <string name="overlay_tag">Live Safety Alert</string>
+    <string name="ussd_tag">USSD Style Alert</string>
+    <string name="alert_title_default">Financial Safety Alert</string>
+    <string name="alert_body_default">This payment may disturb your daily or weekly planning.</string>
+    <string name="alert_ack_short">Okay</string>
+    <string name="alert_ack_long">Okay, I understand</string>
+    <string name="service_notif_title">Arthamantri is running</string>
+    <string name="service_notif_text">Monitoring UPI app open events</string>
+    <string name="alert_payment_risk_title">Payment Risk Warning</string>
+    <string name="alert_spending_threshold">Your spending is crossing a safe threshold.</string>
+    <string name="alert_txn_risk">Spending risk detected from transaction notification.</string>
+
+    <string name="toast_monitor_started">UPI monitoring started.</string>
+    <string name="toast_monitor_stopped">UPI monitoring stopped.</string>
+    <string name="toast_api_ok">API connected.</string>
+    <string name="toast_api_failed">API status check failed.</string>
+    <string name="toast_feedback_ok">Feedback submitted.</string>
+    <string name="toast_feedback_failed">Feedback submission failed.</string>
+    <string name="toast_usage_missing">Please allow Usage Access.</string>
+    <string name="toast_overlay_missing">Please allow Overlay Access.</string>
+    <string name="toast_monitor_failed">Monitoring failed.</string>
+    <string name="toast_settings_open_failed">Unable to open settings page on this device.</string>
+    <string name="toast_manage_access_expanded">Manage Access options expanded.</string>
+    <string name="toast_manage_access_collapsed">Manage Access options collapsed.</string>
+</resources>

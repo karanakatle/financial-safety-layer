@@ -1,0 +1,19 @@
+<resources>
+    <color name="gov_primary">#4DB6AC</color>
+    <color name="gov_primary_dark">#2A8A7F</color>
+    <color name="gov_secondary">#5DADE2</color>
+    <color name="gov_accent">#F5B041</color>
+
+    <color name="screen_bg">#0F1A1F</color>
+    <color name="card_bg">#16242B</color>
+    <color name="card_border">#28414B</color>
+    <color name="text_primary">#E8F1F4</color>
+    <color name="text_secondary">#B4C7CF</color>
+
+    <color name="badge_bg">#1E3B36</color>
+    <color name="badge_text">#9EE3D7</color>
+
+    <color name="btn_primary_text">#081214</color>
+    <color name="btn_secondary_bg">#20313A</color>
+    <color name="btn_secondary_text">#A7D7E7</color>
+</resources>

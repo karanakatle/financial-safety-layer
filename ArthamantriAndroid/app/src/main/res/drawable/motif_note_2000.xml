@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="160dp"
+    android:viewportWidth="320"
+    android:viewportHeight="160">
+
+    <path
+        android:fillColor="#1A000000"
+        android:pathData="M18,24H310V144H18Z" />
+
+    <path
+        android:fillColor="@color/motif_note_2000"
+        android:pathData="M14,20H306V140H14Z" />
+
+    <path
+        android:fillColor="@color/motif_note_2000_line"
+        android:pathData="M36,38H284V44H36Z" />
+    <path
+        android:fillColor="@color/motif_note_2000_line"
+        android:pathData="M36,116H284V122H36Z" />
+    <path
+        android:fillColor="@color/motif_note_2000_line"
+        android:pathData="M66,58H126V64H66Z" />
+    <path
+        android:fillColor="@color/motif_note_2000_line"
+        android:pathData="M194,58H254V64H194Z" />
+    <path
+        android:fillColor="#3046295B"
+        android:pathData="M26,52H74V108H26Z" />
+    <path
+        android:fillColor="#3046295B"
+        android:pathData="M246,52H294V108H246Z" />
+    <path
+        android:fillColor="#2AFFFFFF"
+        android:pathData="M28,30H292V34H28Z" />
+    <path
+        android:fillColor="@color/motif_note_2000_line"
+        android:pathData="M160,56A28,28 0,1 1,159.9 56Z" />
+    <path
+        android:fillColor="#33FFFFFF"
+        android:pathData="M160,66A18,18 0,1 1,159.9 66Z" />
+</vector>

@@ -1,0 +1,30 @@
+<resources>
+    <color name="gov_primary">#5A2E68</color>
+    <color name="gov_primary_dark">#3D2147</color>
+    <color name="gov_secondary">#5D7E62</color>
+    <color name="gov_accent">#C99635</color>
+
+    <color name="screen_bg">#F5F0F7</color>
+    <color name="card_bg">#FCFAFD</color>
+    <color name="card_border">#D8CCE1</color>
+    <color name="text_primary">#27172D</color>
+    <color name="text_secondary">#5E4C69</color>
+
+    <color name="badge_bg">#EFE6F4</color>
+    <color name="badge_text">#4B2359</color>
+
+    <color name="btn_primary_text">#FFFFFF</color>
+    <color name="btn_secondary_bg">#F2EBF6</color>
+    <color name="btn_secondary_text">#4D2A5C</color>
+
+    <color name="bg_grad_top">#FBF5F8</color>
+    <color name="bg_grad_mid">#F3ECF5</color>
+    <color name="bg_grad_bottom">#ECE4EF</color>
+    <color name="motif_rupee_mark">#38502D5C</color>
+    <color name="motif_ring_gold">#40C89A3A</color>
+    <color name="motif_ring_outline">#63B37E2A</color>
+    <color name="motif_note_500">#2A96A47C</color>
+    <color name="motif_note_500_line">#33556438</color>
+    <color name="motif_note_2000">#2AA668AF</color>
+    <color name="motif_note_2000_line">#384E2B63</color>
+</resources>

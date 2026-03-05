@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="300"
+                android:centerColor="@color/bg_grad_mid"
+                android:endColor="@color/bg_grad_bottom"
+                android:startColor="@color/bg_grad_top"
+                android:type="linear" />
+        </shape>
+    </item>
+
+    <item android:alpha="0.08">
+        <bitmap
+            android:gravity="fill"
+            android:src="@drawable/paper_fibers"
+            android:tileMode="repeat" />
+    </item>
+
+    <item
+        android:drawable="@drawable/motif_note_2000_rotated"
+        android:gravity="top|end"
+        android:top="-36dp"
+        android:right="-70dp"
+        android:width="300dp"
+        android:height="156dp" />
+
+    <item
+        android:bottom="28dp"
+        android:drawable="@drawable/motif_note_500_rotated"
+        android:gravity="bottom|start"
+        android:left="-92dp"
+        android:width="292dp"
+        android:height="146dp" />
+
+    <item
+        android:alpha="0.09"
+        android:drawable="@drawable/ornament_ring"
+        android:gravity="center_horizontal|top"
+        android:top="248dp"
+        android:width="332dp"
+        android:height="332dp" />
+
+    <item
+        android:alpha="0.26"
+        android:drawable="@drawable/motif_rupee_center"
+        android:gravity="center_horizontal|top"
+        android:top="354dp"
+        android:width="142dp"
+        android:height="142dp" />
+
+</layer-list>
