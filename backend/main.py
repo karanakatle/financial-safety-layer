@@ -288,6 +288,17 @@ def literacy_status() -> dict:
     return literacy_monitor.status()
 
 
+@app.post("/api/literacy/reset")
+def literacy_reset() -> dict:
+    literacy_monitor.daily_spend = 0.0
+    literacy_monitor.threshold_risk_active = False
+    literacy_monitor.stage1_sent = False
+    literacy_monitor.stage2_sent = False
+    literacy_monitor.notifications.clear()
+    literacy_monitor.current_date = datetime.utcnow().date().isoformat()
+    return {"ok": True, "literacy_state": literacy_monitor.status()}
+
+
 @app.post("/api/voice-query")
 def voice_query(payload: VoiceQueryIn) -> dict:
     nlp = process_text(payload.query)
