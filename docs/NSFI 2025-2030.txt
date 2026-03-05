@@ -1,0 +1,4688 @@
+
+--- PAGE 1 ---
+1
+
+
+
+--- PAGE 2 ---
+वित्तीय समािेशन हेतु राष्टतीय काय्यनतीवत 2025-30
+2
+
+
+--- PAGE 3 ---
+3
+National Strategy for Financial Inclusion 
+2025-30
+
+
+--- PAGE 4 ---
+4
+National Strategy for Financial Inclusion 2025-30
+© Reserve Bank of India 
+All rights reserved. Reproduction is permitted provided an acknowledgment of the source is made. 
+The publication can also be accessed through Internet at https://www.rbi.org.in 
+Published by Financial Inclusion and Development Department (FIDD), Reserve Bank of India, Mumbai 400 001.
+Printed at Onlooker Press. 93219 27244
+
+
+--- PAGE 5 ---
+5
+
+
+
+--- PAGE 6 ---
+6
+National Strategy for Financial Inclusion 2025-30
+
+
+
+--- PAGE 7 ---
+7
+CONTENTS
+List of Abbreviations…………… ……………………………………………….………......8
+Key Terms and Definitions…………………………………………………….……………11
+Executive Summary…………..……………………………………………….…………... 15
+Chapters
+Chapter-I: NSFI: 2019-24 - A Retrospect………………………………….………..........17
+Chapter-II: State of Financial Inclusion in India…………………………………............20
+Chapter-III: NSFI: 2025-30: Vision……………………………………………...…..........29
+Chapter-IV: NSFI: 2025-30: Strategic Goals and Action Points…….…………….…...35
+Chapter-V: Monitoring and Measurement Mechanism……………….………….……..52
+Annex I: NSFI: 2019-24 Milestones and Achievements ………………....…...…….....58
+Annex II: NSFI 2025-30 - Action Points, Stakeholders, and Timeline….……….........68
+References.................................................................................................................71
+
+
+--- PAGE 8 ---
+8
+National Strategy for Financial Inclusion 2025-30
+List of Abbreviations
+AePS
+Aadhaar Enabled Payment System
+AFA
+Additional Factor Authentication
+ASBA
+Application Supported by Blocked 
+Amount
+AI
+Artificial Intelligence
+AMFI
+Association of Mutual Funds in 
+India
+APY
+Atal Pension Yojana
+ATM
+Automated Teller Machine
+BSBDA
+Basic Savings Bank Deposit 
+Account
+BSDA
+Basic Services Demat Account
+BPL
+Below Poverty Line
+BC
+Business Correspondent
+CBDC
+Central Bank Digital Currency
+CGMS
+Central Grievance Management 
+System
+CFL
+Centre for Financial Literacy
+CFCFRMS
+Citizen Financial Cyber Frauds 
+Reporting and Management 
+System
+CRE
+Community Resource Entities
+CA
+Corporate Agent
+CISCE
+Council for the Indian School 
+Certificate Examination
+CIC
+Credit Information Companies
+CDD
+Customer Due Diligence
+DBU
+Digital Banking Unit
+DPI - RBI
+Digital Payments Index – Reserve 
+Bank of India
+DPI
+Digital Public Infrastructures
+DSS
+Digital Signage System
+DBT
+Direct Benefit Transfer
+E-LMS
+E-Learning Management System
+ETF
+Exchange Traded Fund
+EDDPE
+Expanding and Deepening of 
+Digital Payments Ecosystem
+FPO
+Farmer Producer Organization
+FACT
+Financial Awareness and 
+Consumer Training
+FETP
+Financial Education Training 
+Programme
+FI
+Financial Inclusion
+FIF
+Financial Inclusion Fund
+FI-Index
+Financial Inclusion Index
+FLC
+Financial Literacy Center
+FSP
+Financial Service Provider
+FSDC-SC
+Financial Stability and 
+Development Council – Sub 
+Committee
+FBC
+Fixed-Point Business 
+Correspondent
+GCC
+General Credit Card
+GIS
+Geographic Information System 
+GPFI
+Global Partnership for Financial 
+Inclusion
+ID
+Identity Document
+IMPS
+Immediate Payment Service
+IBA
+Indian Banks’ Association
+ITI
+Industrial Training Institute
+ICT
+Information and Communications 
+Technology
+IPO
+Initial Public Offering
+IRDAI
+Insurance Regulatory and 
+Development Authority of India
+
+
+--- PAGE 9 ---
+9
+IGMS
+Integrated Grievance Management 
+System
+IO
+Internal Ombudsman
+INFE
+International Network on Financial 
+Education
+IoRS
+Inter-operable Regulatory Sandbox 
+JSS
+Jan Shikshan Sansthan
+JDD
+Jan-Dhan Darshak 
+JLG
+Joint Liability Group
+KCC
+Kisan Credit Card
+KYC
+Know Your Customer
+LWE
+Left Wing Extremism
+LEDP
+Livelihood and Enterprise 
+Development Programme
+MEDP
+Micro Enterprise Development 
+Programme
+MNREGA
+Mahatma Gandhi National Rural 
+Employment Guarantee Act
+MF-AUM
+Mutual Fund Assets under 
+Management
+MSME
+Micro Small and Medium 
+Enterprises
+MSSP
+Money Smart School Programme
+NABARD
+National Bank for Agriculture and 
+Rural Development 
+NCFE
+National Centre for Financial 
+Education
+NCRP
+National Cybercrime Reporting 
+Portal
+NEFT
+National Electronic Funds Transfer
+NFIR
+National Financial Information 
+Registry
+NFLAT
+National Financial Literacy 
+Assessment Test
+NGO
+Non-Government Organisation
+NIC
+National Informatics Centre 
+NIESBUD
+National Institute for 
+Entrepreneurship and Small 
+Business Development 
+NISM
+National Institute of Securities 
+Markets
+NITI Aayog
+National Institution for Transforming 
+India Aayog
+NPCI
+National Payments Corporation of 
+India
+NPS
+National Pension System 
+NRLM
+National Rural Livelihood Mission
+NSDC
+National Skill Development Council
+NSQF
+National Skills Qualifications 
+Framework
+NSFE
+National Strategy for Financial 
+Education
+NSFI
+National Strategy for Financial 
+Inclusion
+NULM
+National Urban Livelihood Mission
+NBFC
+Non-Banking Financial Companies
+NGO
+Non-Governmental Organisations
+NE
+North-eastern
+OD
+Overdraft
+OECD
+Organisation for Economic Co-
+operation and Development
+OTP
+One Time Password
+PIDF
+Payment Infrastructure 
+Development Fund
+PIN
+Personal Identification Number
+PSO
+Payment System Operators 
+PFRDA
+Pension Fund Regulatory and 
+Development Authority of India
+P2M
+Person to Merchant
+P2P
+Person to Person
+List of Abbreviations
+
+
+--- PAGE 10 ---
+10
+National Strategy for Financial Inclusion 2025-30
+ULI
+Unified Lending Interface
+UPI
+Unified Payments Interface
+UT
+Union Territory
+UTLBC
+Union Territory Level Bankers’ 
+Committee
+POP
+Points of Presence
+POS
+Points of Sale
+PLP
+Potential Linked Plan
+PMFBY
+Pradhan Mantri Fasal Bima Yojana
+PMJDY
+Pradhan Mantri Jan Dhan Yojana
+PMKVY
+Pradhan Mantri Kaushal Vikash 
+Yojana
+PMSBY
+Pradhan Mantri Suraksha Bima 
+Yojana
+PML
+Prevention of Money Laundering
+PCR
+Public Credit Registry
+RTGS
+Real Time Gross Settlement
+RO
+Regional Office 
+RE
+Regulated Entities
+RS
+Regulatory Sandbox
+RBIH
+Reserve Bank Innovation Hub
+RBI
+Reserve Bank of India
+RSETI
+Rural Self Employment Training 
+Institute
+SCORES
+SEBI Complaint Redress System
+SEBI
+Securities and Exchange Board of India 
+SMART
+Securities Market Trainer
+SHG
+Self Help Group
+SRO
+Self-Regulatory Organisation
+SCORM
+Shareable Content Object 
+Reference Model
+SMS
+Short Messaging Service
+SF/MF
+Small and Marginal Farmer
+SIDBI
+Small Industries Development Bank 
+of India
+SRO-FT
+Self-Regulatory Organisation - 
+Fintech Sector
+SOP
+Standard Operating Procedure
+SLBC
+State Level Bankers’ Committee
+STP
+Straight through Processing
+SDG
+Sustainable Development Goal
+SIP
+Systematic Investment Plan
+TGFIFL
+Technical Group on Financial 
+Inclusion and Financial Literacy
+UAP
+Udyam Assist Platform
+UIDAI
+Unique Identification Authority of 
+India
+UN
+United Nations
+USSD
+Unstructured Supplementary 
+Service Data
+V-CIP
+Video based Customer 
+Identification Procedure
+2FA
+Two Factor Authentication
+List of Abbreviations
+
+
+--- PAGE 11 ---
+11
+Key Terms and Definitions
+Aadhaar Seeded Account A bank account linked with the account holder’s unique 12-digit AADHAAR 
+number.  
+Aadhaar Enabled Payments 
+System [AePS]
+AePS is a bank led model which allows online interoperable financial inclusion 
+transaction at PoS (Micro-ATM) through the Business Correspondents of any 
+bank using the Aadhaar authentication. 
+Application Supported by Blocked 
+Amount [ASBA]
+ASBA is an application by an investor containing an authorization to Self-
+Certified Syndicate Bank (SCSB) to block the application money in the bank 
+account, for subscribing to an issue. 
+Asset Under Management Asset Under Management [AUM] refers to the total value of assets that a financial 
+institution or an investment professional manages on behalf of its investors. 
+Atal Pension Yojana [APY] APY is a voluntary, periodic contribution-based pension system, under which the 
+subscriber would receive certain pension benefits from the central government. 
+Banking Outlets A ‘Banking Outlet’ for a Domestic Scheduled Commercial Bank (DSCB), a 
+Small Finance Bank (SFB) and a Payment Bank (PB) is a fixed-point service 
+delivery unit, manned by either bank’s staff or its Business Correspondent where 
+services of acceptance of deposits, encashment of cheques/ cash withdrawal or 
+lending of money are provided for a minimum of 4 hours per day for at least five 
+days a week. 
+Basic Savings Bank Deposit 
+Account [BSBDA]
+The Basic Savings Bank Deposit (BSBD) Account is a type of savings account 
+with provision of basic minimum facilities free of charge, without any requirement 
+of minimum balance. 
+Bounded rationality Bounded rationality is a term introduced by Herbert A. Simon (1957), which 
+proposes an element of behavioural bias in decisions made due to limitations of 
+perfect rationality in real life situations.
+Bundled Products Bundled products refer to financial products, which are packaged/distributed 
+together, but are also available separately.
+Business Correspondents [BCs] Business Correspondents are retail agents engaged by banks for providing 
+banking services at locations other than a bank branch/ATM. 
+Centers for Financial Literacy 
+[CFL]
+CFLs are set up at block level in collaboration of NGOs and sponsor banks 
+towards disseminating financial awareness messages and augmenting financial 
+literacy levels. 
+Centralised KYC [CKYC] Registry Central KYC Registry is a centralized repository of KYC records of customers 
+in the financial sector with uniform KYC norms and inter-usability of the KYC 
+records across the sector with an objective to reduce the burden of producing 
+KYC documents and getting those verified every time when the customer creates 
+a new relationship with a financial entity. 
+Citizen Financial Cyber Frauds 
+Reporting and Management 
+System (CFCFRMS)
+Citizen Financial Cyber Frauds Reporting and Management System has been 
+developed for quick reporting of financial cyber frauds and monetary losses 
+suffered due to use of digital banking/credit/debit cards, payment intermediaries, 
+UPI etc. Complaints can be reported through helpline number 1930 or on 
+National Cybercrime Reporting Portal. 
+Dark Patterns Dark patterns have been defined as any practices or deceptive design patterns 
+using UI/UX (user interface/user experience) interactions on any platform; 
+designed to mislead or trick users to do something they originally did not intend or 
+want to do; by subverting or impairing the consumer autonomy, decision making 
+or choice; amounting to misleading advertisement or unfair trade practice or 
+violation of consumer rights.
+De-duplication De-duplication is a streamlining process in which redundant data is reduced by 
+eliminating extra copies of the same information
+Digital KYC Digital KYC means capturing live photo of the customer and officially valid 
+document or the proof of possession of Aadhaar, where offline verification 
+cannot be carried out, along with the latitude and longitude of the location where 
+such live photo is being taken by an authorised officer of the regulated entity. 
+Digital Payments Index The Reserve Bank of India has constructed a composite Digital Payments Index 
+(DPI) to capture the extent of digitisation of payments across the country. 
+
+
+--- PAGE 12 ---
+12
+National Strategy for Financial Inclusion 2025-30
+Key Terms and Definitions
+Digital Public Infrastructure [DPI] Digital Public Infrastructure (DPI) is described as an infrastructure-based 
+approach that uses technology to achieve societal goals through an ecosystem 
+(comprising technology, markets, and governance) built in the public interest 
+that leverages competitive private innovation within regulatory guardrails.
+Farmer Producers Organisation 
+[FPO]
+It is one type of Producer Organisation [PO] where the members are farmers. 
+PO is a generic name for an organization of producers of any produce, e.g., 
+agricultural, non-farm products, artisan products, etc. 
+Financial Inclusion Index [FI-
+Index]
+The Reserve Bank of India has constructed a composite Financial Inclusion 
+Index (FI-Index) to capture the extent of financial inclusion across the country. 
+The FI-Index has been conceptualised as a comprehensive index incorporating 
+details of banking, investments, insurance, postal as well as the pension sector 
+in consultation with Government and respective sectoral regulators. 
+Financial Awareness and 
+Knowledge
+Financial awareness refers to a broad conceptual understanding, however, 
+financial knowledge is context and process specific and a hands-on ability that 
+can be put to use.
+Financial Literacy Centers [FLCs] FLCs are set up by Lead Banks of the districts. FLCs conduct financial literacy 
+camps for farmers, micro entrepreneurs, Self Help Groups (SHGs), school 
+children and senior citizens.  
+Financial Planning Financial planning is a process of taking well-thought and calibrated steps for 
+using and managing one’s financial resources to meet life goals. 
+Fintech A linguistic blend of two individual terms ‘Finance’ and ‘Technology’, FinTech is 
+being used to denote the wide array of technological innovations that have a 
+bearing on financial services. 
+Fixed Point Business 
+Correspondents [FBC] Outlet
+A FBC Outlet is a ‘Banking Outlet’ of a bank which is a fixed-point service delivery 
+unit, manned by its Business Correspondent [BC] where services of acceptance 
+of deposits, encashment of cheques/cash withdrawal or lending of money are 
+provided for a minimum of 4 hours per day for at least five days a week.  
+Immediate Payment Service 
+[IMPS]
+IMPS is a real time payment service that is available round the clock. This service 
+is offered by National Payments Corporation of India (NPCI) that empowers 
+customers to transfer money instantly through banks and RBI authorized 
+Prepaid Payment Instrument Issuers (PPI) across India. 
+Inactive BCs A BC agent is classified as inactive if he/she has either not done any transaction 
+[financial/non-financial] or logged-in for a period of 3 months [90 days]. 
+India Stack India Stack is the collective name of a set of commonly used DPIs in India; 
+it consists of three different layers—unique identity (Aadhaar), complimentary 
+payments systems (Unified Payments Interface, Aadhaar Payments Bridge, 
+Aadhaar Enabled Payment Service), and data exchange (Digilocker and 
+Account Aggregator)
+Indian Bank’s Association [IBA] IBA is an association of banks and other entities in the banking ecosystem in 
+India. 
+Inoperative Accounts A saving/ current account shall be treated as inoperative if there are no ‘customer 
+induced transactions’ in the account for a period of over two years. 
+Interoperable Interoperability is the technical compatibility that enables a payment system to 
+be used in conjunction with other payment systems. 
+Jan Shikshan Sansthan [JSS] The Scheme of Jan Shikshan Sansthan (JSS) is a Government of India scheme 
+[Ministry of Skill Development & Entrepreneurship] aimed towards providing 
+vocational skills in non-formal mode to non-literate, neo-literates, persons with 
+rudimentary level of education up to 8th and school dropouts up to 12th standard 
+in the age group of 15-45 years.
+Jan Suraksha Schemes Jan Suraksha Schemes are social security schemes [insurance and pension] 
+of Government of India and includes the initiatives of Pradhan Mantri Jeevan 
+Jyoti Bima Yojana [PMJJBY], Pradhan Mantri Suraksha Bima Yojana [PMSBY] 
+[Insurance Schemes] and Atal Pension Yojana [Pension Scheme].
+Micro Enterprises An enterprise is classified as a micro enterprise, where the investment in plant 
+and machinery or equipment does not exceed ₹2.5 crore and turnover does not 
+exceed ₹10 crore. 
+
+
+--- PAGE 13 ---
+13
+Key Terms and Definitions
+Microfinance All collateral-free loans to individual/s belonging to low-income households, i.e., 
+households having annual income up to ₹3 lakh are treated as microfinance 
+loans. 
+National Bank for Agriculture and 
+Rural Development [NABARD]
+NABARD is India’s apex development bank, established in 1982 under an 
+Act of Parliament to promote sustainable and equitable agriculture and rural 
+development. 
+National Centre for Financial 
+Education [NCFE]
+National Centre for Financial Education (NCFE) is a Section 8 (Not for Profit) 
+Company promoted by Reserve Bank of India (RBI), Securities and Exchange 
+Board of India (SEBI), Insurance Regulatory and Development Authority of India 
+(IRDAI) and Pension Fund Regulatory and Development Authority (PFRDA). 
+National Cybercrime Reporting 
+Portal (NCRP)
+Ministry of Home Affairs, Government of India is implementing a scheme called 
+‘Indian Cyber Crime Coordination Centre (I4C)’ to deal with cybercrimes in a 
+coordinated and comprehensive manner. NCRP is one of the components of 
+I4C which facilitates filing of all types of cybercrimes
+National Pension System [NPS] National Pension System is a defined contributory pension system notified by 
+Government of India. 
+National Skills Qualifications 
+Framework [NSQF]
+The NSQF organises qualifications according to a series of levels of knowledge, 
+skills, and aptitude. These levels are defined in terms of learning outcomes which 
+the learner must possess regardless of whether they were acquired through 
+formal, non-formal or informal learning. 
+National Electronic Fund Transfer 
+[NEFT]
+National Electronic Funds Transfer (NEFT) is a nation-wide centralised payment 
+system owned and operated by the Reserve Bank of India (RBI). 
+New to Credit New to credit account means persons/entities who in past did not have any 
+credit facility from the bank and has received a credit facility from the bank for 
+the very first time.
+National Institute for 
+Entrepreneurship and Small 
+Business Development 
+[NIESBUD]
+The National Institute for Entrepreneurship and Small Business Development 
+is an organization of the Ministry of Skill Development and Entrepreneurship, 
+engaged in training, consultancy, research, etc. in order to promote 
+entrepreneurship and Skill Development. 
+Non dedicated BC outlets Outlets/Points which are not exclusively only for BC services but have BC 
+related services as an addon to the primary business such as Mobile Recharge, 
+Kirana Shops etc.
+NPS Lite Swavalamban Scheme The Pension Fund Regulatory and Development Authority (PFRDA) has 
+introduced the National Pension System-Lite (NPS-Lite), a low charge model 
+based on group servicing for economically disadvantaged. 
+National Rural Livelihood Mission 
+[NRLM]
+NRLM is a flagship poverty alleviation programme implemented by the Ministry 
+of Rural Development, Government of India. 
+National Skill Development 
+Corporation [NSDC]
+National Skill Development Corporation (NSDC) is a not-for-profit public limited 
+company under section 25 of the Companies Act, 1956 (now corresponding 
+to section 8 of the Companies Act, 2013), which operates as a Public 
+Private Partnership (PPP) model under the Ministry of Skill Development & 
+Entrepreneurship (MSDE) towards enhancing, supporting, and coordinating 
+various skilling initiatives. 
+Pradhan Mantri Kaushal Vikas 
+Yojana [PMKVY]
+Pradhan Mantri Kaushal Vikas Yojana (PMKVY) was launched in 2015 to 
+encourage and promote skill development in the country by providing free short 
+duration skill training and incentivizing this by providing monetary rewards to 
+youth for skill certification. 
+Potential Linked Plan [PLP] The PLP provides a detailed scientific assessment of credit potential for various 
+sectors in the district. It highlights the sector specific infrastructure gaps and 
+critical interventions to be made by State Governments and FIs for harnessing 
+potential available under priority sector.
+Pradhan Mantri Jeevan Jyoti Bima 
+Yojana [PMJJBY]
+PMJJBY is an insurance scheme, launched by Government of India, offering life 
+insurance cover to individuals in the age group of 18 to 50 years. It is part of the 
+Jan Suraksha Scheme of the Government along with PMSBY and APY. 
+Pradhan Mantri Suraksha Bima 
+Yojana [PMSBY]
+PMSBY is an accident insurance scheme, launched by Government of India, 
+offering accidental death and disability cover to individuals in the age group of 
+18 to 70 years. It is part of the Jan Suraksha Scheme of the Government along 
+with PMJJBY and APY. 
+
+
+--- PAGE 14 ---
+14
+National Strategy for Financial Inclusion 2025-30
+Key Terms and Definitions
+Registrar and Transfer Agents 
+[RTA]
+Registrar or transfer agents are the trusts or institutions that register and 
+maintain detailed records of the transactions of investors for the convenience of 
+mutual fund houses. 
+Regulatory Sandbox The Regulatory sandbox provides an opportunity for the eligible entities to 
+live test their innovative products or services in a controlled environment. This 
+is a collaboration between the regulator, the innovators, the financial service 
+providers, and the end users.
+Rural Self Employment and 
+Training Institute [R-SETIs]
+Rural Self Employment Training Institutes are managed by Banks with active 
+co-operation from the Government of India and State Government to ensure 
+necessary skill training and skill up gradation of the rural youth to mitigate the 
+unemployment problem. 
+Self-Regulatory Organizations 
+[SROs]
+Self-Regulatory Organizations (SROs) enhance the effectiveness of regulations 
+by drawing upon the technical expertise of practitioners and aid in framing/ fine-
+tuning regulatory policies acting as feedback mechanism for regulators. 
+Small Industries Development 
+Bank of India [SIDBI]
+Small Industries Development Bank of India (SIDBI) set up on 2nd April 1990 
+under an Act of Indian Parliament, acts as the Principal Financial Institution 
+for promotion, financing and development of the Micro, Small and Medium 
+Enterprise (MSME) sector as well as for co-ordination of functions of institutions 
+engaged in similar activities. 
+Skill Digital India Hub Skill India Digital Hub is designed to skill, reskill, and upskill Indian individuals 
+through online platform and acts as a bridge between the employees and 
+employers and allow educational institutes to create/modify curricula as per 
+industry demands. 
+Skill India Mission Skill India Mission is a flagship initiative of the Government of India. Under Skill 
+India Mission, Ministry of Skill Development and Entrepreneurship (MSDE) is 
+implementing various skill development programmes / schemes through training 
+centers across the country. 
+State Level Bankers Committee 
+[SLBC]
+The State Level Bankers’ Committee was constituted in April 1977, as an 
+apex inter-institutional forum [consisting of banks, Government departments, 
+Development Finance Institutions etc.] to create adequate coordination 
+machinery in all States, on a uniform basis for development of the State. 
+Sustainable Development Goals 
+[SDG]
+The Sustainable Development Goals (SDGs), a set of 17 global goals, were 
+adopted by the United Nations in 2015 as a universal call to action to end 
+poverty, protect the planet, and ensure that by 2030 all people enjoy peace and 
+prosperity. 
+Sustainable Indebtedness A rule of thumb measure for sustainable indebtedness is ensuring that monthly 
+repayment amount towards outstanding loans should not be more than half of 
+the monthly income of the household. 
+Tier V & VI Centers Tier Wise classification of centers as per population [Census 2011]. 
+Tier V – Centers with population between 5,000 to 9,999. 
+Tier VI – Centers with population less than 5000.
+Udyam Assist Platform The Udyam Assist Platform of Ministry of MSME, Govt. of India facilitates online 
+registration of Informal Micro Enterprises through Assist Process for generation 
+of Udyam Registration Number and Udyam Assist Certificate.
+Unified Payment Interface [UPI] 
+Lite
+UPI LITE is a payment solution which runs off the existing UPI ecosystem 
+protocols for enabling low value transactions without utilizing a Remitter bank’s 
+core banking systems in real-time. It operates currently with a per transaction 
+limit of ₹ 1000, cumulative usage per day at ₹ 10000, and maximum balance at 
+a time of ₹5000.
+Unified Payment Interface [UPI] 
+Lite X
+UPI LITE X is same as UPI LITE except that it allows offline payments without 
+internet connectivity, enhancing the existing UPI LITE functionalities. It operates 
+currently with a per transaction limit of ₹ 500, cumulative usage per day at ₹ 
+4000, and maximum balance at a time of ₹ 2000.
+Unstructured Supplementary 
+Service Data [USSD]
+USSD (Unstructured Supplementary Service Data) is a Global System for 
+Mobile Communications (GSM) protocol that is used to send text messages. In 
+India, *99# is a USSD-based mobile banking service of NPCI. 
+Union Territory Level Bankers’ 
+Committee [UTLBC]
+Similar to SLBC, a forum at Union Territory Level [ India has 28 States and 8 
+Union Territories] 
+
+
+--- PAGE 15 ---
+15
+EXECUTIVE SUMMARY
+The National Strategy for Financial Inclusion 
+(NSFI) 2019-2024 had set forth the vision and 
+key objectives of the financial inclusion policies 
+in India to help expand and sustain the financial 
+inclusion process at the national level through 
+a broad convergence of action involving all the 
+stakeholders in the financial sector. It aimed 
+at broadening, deepening, and accelerating 
+financial inclusion alongside promoting 
+financial literacy and consumer protection, 
+with a view to promoting economic wellbeing, 
+prosperity, and sustainable development. The 
+five-year period of NSFI: 2019-24 witnessed 
+significant improvements across the access, 
+usage, and quality dimensions of financial 
+inclusion.
+2. Continuing the journey and leveraging the 
+gains in the bank account ownership to near 
+saturation, expansion in physical and digital 
+access infrastructure, and improvements 
+in customer awareness and protection 
+measures, NSFI: 2025-30 envisions 
+upscaling the financial inclusion efforts 
+towards seamless and effective access to a 
+bouquet of formal financial services, coupled 
+with financial literacy, consumer awareness 
+and customer protection. It emphasises 
+adoption of a synergistic ecosystem approach 
+and focusing on improving the quality and 
+consistency of last mile access, and effective 
+usage of financial services through linkages 
+with skilling and livelihood initiatives. 
+3. NSFI: 2025-30 document comprises of five 
+chapters. Chapter-I provides a retrospect of 
+NSFI: 2019-24. It highlights the strategic pillars 
+and milestones under NSFI:2019-24 and 
+offers detailed assessment of the progress in 
+the achievement of its milestones. 
+4. Chapter-II analyses the state of financial 
+inclusion in India by presenting the trends 
+relating to key parameters of financial inclusion, 
+namely, banking infrastructure, number 
+of bank accounts/cards per capita, bank 
+deposits, credit, and mutual-fund - asset under 
+management, insurance/pension subscribers 
+and supporting infrastructure, volume 
+and value of digital transactions, financial 
+literacy programmes, and financial inclusion 
+index. The analysis shows good progress 
+in various financial inclusion parameters. 
+This chapter also discusses certain supply 
+and demand side impediments to financial 
+inclusion based on empirical studies, so that 
+the recommendations of NSFI: 2025-30, are 
+aligned to addressing such impediments 
+through suitable policy solutions.
+5. Chapter-III of the NSFI document 
+underscores that the mandate of financial 
+inclusion goes beyond access to financial 
+services to ensure effective usage of financial 
+services towards wellbeing of people that 
+can lead to desirable outcomes in terms of 
+financial safety, financial security, financial 
+resilience, and financial discipline. The vision 
+of NSFI: 2025-30 is to strengthen the financial 
+inclusion ecosystem with the synergised 
+efforts of stakeholders for ensuring delivery 
+of equitable, responsible, suitable, and 
+affordable financial services duly supported 
+by livelihood enablers, financial literacy, digital 
+
+
+--- PAGE 16 ---
+16
+National Strategy for Financial Inclusion 2025-30
+public infrastructure, and customer protection. 
+The timeline of NSFI: 2025-30 is synchronized 
+with the 2030 UN Agenda for Sustainable 
+Development. The principle of universality: 
+‘Leave No One Behind’ and omni-dimensional 
+development as the global agenda for 2030, 
+aligns well with the NSFI’s strategic objectives 
+intended towards ensuring wellbeing of people, 
+especially the vulnerable and marginalised.
+6. Chapter-IV of the NSFI: 2025-30 puts 
+forward the following five strategic objectives 
+(Panch-Jyoti) towards elevating the state of 
+financial inclusion in the country. 
+I. Improving the availability and use of 
+Equitable, Responsible, Suitable, and 
+Affordable Bouquet of Financial Services 
+to achieve Financial Safety and Financial 
+Security for households and micro enterprises.
+II. Adopting Gender-Sensitive Approach 
+for Women-led Financial Inclusion and 
+Differentiated Strategies for Improving 
+Financial Resilience of Households, especially 
+for the Underserved and Vulnerable segments.
+III. Synergizing Livelihood, Skill Development 
+and Support Ecosystem and its linkages with 
+Financial Inclusion.
+IV. Leveraging Financial Education as a tool 
+for Promoting Financial Discipline.
+V. Strengthening the Quality and Reliability of 
+Customer Protection and Grievance Redressal 
+Measures.
+7. The strategic objectives under Panch-
+Jyoti have structured recommendations to 
+be implemented through 47 action points, 
+including three measurement related action 
+points indicated in Chapter-V on Monitoring 
+and Measurement Mechanism. The focus of 
+the recommendations is on enhancing the 
+usage and quality dimensions of financial 
+inclusion, while improving the last mile access 
+and ensuring effectiveness and granularity in 
+the monitoring and measurement mechanism. 
+The action-points and timelines under NSFI: 
+2025-30 are distributed across financial 
+sector regulators (Reserve Bank of India 
+– RBI, Securities and Exchange Board of 
+India – SEBI, Insurance Regulatory and 
+Development Authority of India – IRDAI, and, 
+Pension Fund Regulatory and Development 
+Authority – PFDRA), and financial services 
+providers under their respective jurisdictions, 
+along with National Bank for Agriculture and 
+Rural Development – NABARD, National 
+Skill Development Corporation – NSDC, and 
+National Centre for Financial Education – 
+NCFE. 
+8. To sum up, NSFI: 2025-30 leverages the 
+gains and progress made during the period 
+of the previous strategy and strives to put in 
+place a strategic vision and pathway to further 
+deepening and strengthening the financial 
+inclusion ecosystem towards the wellbeing of 
+people.
+
+
+--- PAGE 17 ---
+17
+CHAPTER - I 
+NATIONAL STRATEGY FOR FINANCIAL INCLUSION 
+(NSFI) 2019-24: A RETROSPECT
+The National Strategy for Financial Inclusion 
+(NSFI) 2019-2024 set forth the vision and key 
+objectives of the financial inclusion policies in 
+India to help expand and sustain the financial 
+inclusion process at the national level through 
+a broad convergence of action involving all 
+the stakeholders in the financial sector. The 
+strategy provided a pathway to accelerate 
+financial inclusion to promote economic 
+wellbeing, prosperity, and sustainable 
+development in the country.
+2. The strategy was prepared based on 
+the consultations and suggestions from 
+Government of India, other Financial 
+Sector Regulators namely, Securities and 
+Exchange Board of India (SEBI), Insurance 
+Regulatory and Development Authority of 
+India (IRDAI), and Pension Fund Regulatory 
+and Development Authority of India (PFRDA) 
+as also the specialised institutions and 
+market participants, namely, National Bank 
+for Agriculture and Rural Development 
+(NABARD), National Payments Corporation 
+of India (NPCI), Commercial Banks, etc.
+3. Anchored to the country’s development 
+priorities, the strategy sought to address the 
+inherent barriers in access to formal financial 
+products and services. It recognised that an 
+inclusive financial system, ably supported 
+through sound financial inclusion policies with 
+focus on financial education and customer 
+protection, is not only pro-growth but also pro-
+poor. Further, it has the potential to reduce 
+income inequality and poverty, promote social 
+cohesion and shared economic development. 
+NSFI underscored that financial exclusion 
+leaves the disadvantaged and low- income 
+segments of society with no choice other than 
+informal options, making them vulnerable 
+to financial distress, debt, and poverty, and 
+ultimately leading to several multi-dimensional 
+physical, socio-cultural, and psychological 
+barriers and deprivations. Hence, it warranted 
+attention from the policy makers for effective 
+action.  
+4. NSFI concurred with the widely available 
+empirical evidence on how financial inclusion 
+has a multiplier effect in boosting overall 
+economic output and reducing poverty and 
+income inequality at the national level. It 
+emphasised that financial inclusion of women 
+is particularly important for gender equality 
+and women’s economic empowerment. With 
+greater control over their financial lives, 
+women can help themselves and their families 
+to come out of poverty, reduce their risk of 
+falling into poverty; eliminate their exploitation 
+from the informal sector; and increase their 
+ability to fully engage in measurable and 
+productive economic activities. An inclusive 
+financial system supports stability, integrity, 
+and equitable growth, which the NSFI intended 
+to achieve through a set of six strategic pillars 
+(Figure I.1) and 18 milestones.
+
+
+--- PAGE 18 ---
+18
+National Strategy for Financial Inclusion 2025-30
+Figure I.1: NSFI (2019-24) Strategic Pillars
+Assessment of Progress in Achievement 
+of NSFI Milestones
+5. Released in January 2020, the strategy 
+aimed to provide access to formal financial 
+services in an affordable manner, besides 
+broadening and deepening financial inclusion 
+and promoting financial literacy and consumer 
+protection. Over the course of strategy, the 
+NSFI has catalysed the deepening of financial 
+inclusion in the country. With emphasis 
+on the last mile delivery of formal financial 
+services, some form of banking access has 
+been provided within a radius of 5 KM of 
+99.9 percent of the identified villages/hamlets 
+of 500 households and a slew of measures 
+were undertaken towards strengthening the 
+Business Correspondent (BC) channel for last 
+mile access. 
+6. There has been marked improvement in the 
+availability of acceptance infrastructure leading 
+to accelerated adoption of digital financial 
+services by way of setting up of Payment 
+Infrastructure development Fund (PIDF), 
+Bharat Net Project, provision of e-KYC across 
+financial sector regulators and scaling up of 
+Expanding and Deepening of Digital Payments 
+Ecosystem (EDDPE) project. The five-year 
+period has also witnessed efforts towards 
+bolstering responsible financial innovation with 
+several cohorts launched under Regulatory 
+Sandbox and by mainstreaming of novel 
+financial solutions for reaching the last mile. 
+There were several landmark achievements 
+on the demand side of financial inclusion 
+with coverage of all the blocks in the country 
+through Centres for Financial Literacy (CFL), 
+development of tailored financial literacy 
+modules for key segments by National Centre 
+for Financial Education (NCFE), setting up/
+strengthening of web portals for grievance 
+redressal and institutionalisation of toll-free 
+helpline numbers by all the financial sector 
+regulators. 
+7. During the five-year period of the strategy, 
+the extent of financial inclusion has improved 
+significantly. The total number of banking 
+outlets in villages has increased from 5.97 lakh 
+in March 2019 to 15.98 lakh in March 2024 1. 
+Similarly, total number of basic savings bank 
+deposit accounts has increased from 57.42 
+crore in March 2019 to 70.59 crore in March 
+20242. The enrolment in case of insurance 
+and pension schemes has also shown 
+improvement during the strategy period, with 
+enrolment in Pradhan Mantri Jeevan Jyoti 
+Bima Yojana (PMJJBY) improving from 5.34 
+crore in March 2019 to 16 crores in March 
+20243, with a CAGR of 25 percent. Similarly, 
+enrolment in Pradhan Mantri Suraksha Bima 
+Yojana (PMSBY) improved from 13.52 crore to 
+33.78 crore during the period4, with a CAGR of 
+20 percent. Cumulative number of subscribers 
+1 Financial Inclusion Plan [FIP] Monthly Return
+2 ibid
+3 https://dfs.dashboard.nic.in/
+4 ibid
+
+
+--- PAGE 19 ---
+19
+CHAPTER - I
+to Atal Pension Yojana (APY) grew at a CAGR 
+of 42 percent from 97 lakh to 555 lakhs during 
+the period of strategy.  
+8. Furthermore, during the period of strategy, 
+the Reserve Bank launched two specific 
+indices viz. Digital Payments Index (DPI) 
+and Financial Inclusion Index (FI-Index) in 
+2021, to capture the extent of digitalisation 
+of payments and assess the level of financial 
+inclusion across the country, respectively. The 
+DPI, which stood at 153.47 in March 2019, 
+has risen to 445.50 in March 2024. The FI-
+Index has improved from 49.9 in 2019 to 64.2 
+in 2024, with Access sub-index improving from 
+67.5 in 2019 to 79.3 in 2024, usage sub-index 
+improving from 38.7 in 2019 to 55.5 in 2024 
+and quality sub-index improving from 52.6 in 
+2019 to 65.8 in 2024. 
+9. A brief summary of the progress made with 
+regard to each of the NSFI strategic objectives/ 
+milestones is presented in the Annex-I. 
+
+
+--- PAGE 20 ---
+20
+National Strategy for Financial Inclusion 2025-30
+CHAPTER-II 
+STATE OF FINANCIAL INCLUSION IN INDIA
+Financial Inclusion: Progress and Key 
+Trends – 2019-24
+The five-year period of NSFI: 2019-24 
+witnessed significant improvements across 
+the access, usage, and quality dimensions of 
+financial inclusion. While moving forward to 
+the NSFI: 2025-30, it is important to take stock 
+of the progress achieved during the period of 
+NSFI: 2019-24 and look forward to the journey 
+ahead. 
+2. The following paragraphs present the 
+progress and trends 5 relating to key aspects 
+of financial inclusion, namely, banking 
+infrastructure, number of bank accounts/
+cards per capita, bank deposits, credit, and 
+mutual-fund–asset under management, 
+insurance/pension subscribers and supporting 
+infrastructure, volume and value of digital 
+transactions, financial literacy programmes 
+and participants, and the financial inclusion 
+index.
+Banking Infrastructure
+3. The banking infrastructure in terms of the 
+number of bank branches, Automated Teller 
+Machines (ATMs), NBFC branches, and fixed-
+point business correspondents is shown in 
+Chart II.1.  The chart shows moderate but 
+consistent expansion in branches and ATMs, 
+along with rapid rise in the number of fixed-
+point business correspondents (FBCs). FBCs 
+have provided a significant support to the last 
+mile reach of banking infrastructure. 
+0
+2
+4
+6
+8
+10
+12
+14
+0
+0.5
+1
+1.5
+2
+2.5
+3
+Mar-19 Mar-20 Mar-21 Mar-22 Mar-23 Mar-24
+FBCs - Number 
+Bank Br, ATMs, NBFC Br. Number Chart II.1: Banking Infrastructure (Numbers in Lakhs)
+Bank Branches ATMs NBFC  Branches Business Correspondents (FBCs)
+4. In terms of banking infrastructure per lakh 
+population, the progress shows 85.6 FBCs 
+per lakh population, up from 30.1 FBCs per 
+lakh population in 2019. The position of bank 
+branches and ATMs has been consistent with 
+the average number of branches per lakh 
+population hovering around 12.5 and average 
+number of ATMs per lakh population around 
+17 to 18 (Chart II.2).
+0.0
+10.0
+20.0
+30.0
+40.0
+50.0
+60.0
+70.0
+80.0
+90.0
+0.0
+2.0
+4.0
+6.0
+8.0
+10.0
+12.0
+14.0
+16.0
+18.0
+20.0
+Mar-19 Mar-20 Mar-21 Mar-22 Mar-23 Mar-24
+FBCs Number/ Population (per Lakhs)
+Number/ Population (per Lakhs)
+Chart II.2: Banking Infrastructure per Lakh Population 
+Bank Branches ATMs NBFC  Branches Business Correspondents (FBCs)
+Usage of Banking Infrastructure
+5. Chart II.3 throws light on usage of banking 
+infrastructure in terms of per capita number of 
+bank accounts and cards, followed by trend of 
+mutual fund assets under management (MF-
+AUM), bank deposits, and credit over the last 
+five years in Chart II.4.
+5 Based on the data collected from banks and other stakeholders (2019-2024) and projected population.
+
+
+--- PAGE 21 ---
+21
+6. Both the charts (II.3, II.4) show consistent growth 
+in the parameters indicating gradual expansion 
+of footprints of the financial system, with none of 
+the parameters showing any negative trend. MF-
+AUM has also shown consistent growth along 
+with rise in current deposits. 
+7. Another important dimension of usage is 
+reflected in Chart II.5, which shows the trend 
+of insurance/pension (NPS) subscribers and 
+the corresponding infrastructure (offices 
+and agents of insurance companies). All the 
+parameters, except office (non-life) indicate 
+growth and there is a significant improvement 
+in the subscriber base of Atal Pension Yojana. 
+Digital Transactions and Usages
+8. Riding on the backbone of Digital Public 
+Infrastructure, digital transactions both in 
+terms of volume and value have contributed 
+significantly to the deepening and broad 
+basing of the reach of financial inclusion 
+initiatives (Charts II.6 and II.7). There has 
+been an exponential increase in the volume 
+of digital transactions led by Unified Payments 
+Interface (UPI). Amongst the retail digital 
+payments, there has been substantial growth 
+across the board in national electronic funds 
+transfer (NEFT), immediate payment service 
+(IMPS) and UPI, with UPI touching more than 
+13,000 crore transactions in 2023-24. The 
+NEFT however, carried much higher value of 
+transactions as shown in Chart II.7.
+Quality of Financial Inclusion – Financial 
+Literacy
+9. Financial literacy being one of the key 
+enablers of the quality of financial inclusion has 
+shown tremendous progress over the period 
+2019-24. Chart II.8 shows a consistent rise 
+(except during the period of Covid-19) in the 
+number of financial literacy programmes run 
+by Centers for Financial Literacy (CFLs) and 
+Financial Literacy Centers (FLCs), especially 
+during the last two years with rapid expansion 
+in the opening of CFLs touching more than 3.5 
+Crore participants. Besides financial literacy
+CHAPTER - II
+
+
+--- PAGE 22 ---
+22
+National Strategy for Financial Inclusion 2025-30
+6 As per Para IV (8) of Statement on Developmental and Regulatory Policies (under first Bi-monthly Monetary Policy Statement for 2021-22 dated April 7, 2021) 
+a Financial Inclusion Index (Fl-Index) was to be constructed and published annually by the Bank, to measure the extent of FI in the country.
+programmes run by RBI regional offices, 
+National Centre for Financial Education 
+(NCFE) and other sectoral regulators have 
+also covered significant ground in this regard.
+Overall Progress – Financial Inclusion (FI-
+Index)
+10. Chart II.9 shows trend of FI-Index 6 and 
+its sub-indices (Access, Usage, and Quality). 
+Their respective contribution to FI-Index is 
+shown in Chart II.10. The index shows a 
+consistent growth over the period of 5 years 
+with improvements seen across all the sub-
+indices. In the year 2024, the major growth in 
+the index was on account of the usage sub-
+index, which shows deepening of financial 
+inclusion. The dip in quality sub-index in 2021 
+was due to reduced number of financial literacy 
+activities due to lockdown led restrictions 
+during the COVID-19 pandemic.
+11. The above analysis shows substantial 
+growth and progress in various financial 
+inclusion parameters as discussed above. 
+NSFI also played a key role during the 
+period of COVID-19 pandemic (Box II.1). 
+However, financial inclusion initiatives being 
+aspirational in nature should always keep 
+striving for improvements and effectiveness 
+by mitigating gaps and improving the ground 
+level implementation with a holistic approach 
+and outcome orientation. Accordingly, it 
+is important to gather feedback, examine 
+existing and incipient supply and demand 
+side impediments to financial inclusion and 
+implement suitable policy solutions. The 
+recommendations and approach of NSFI: 
+2025-30, are aligned to this edifice and 
+direction. 
+Note - Negative contribution of Quality during 2021 due to reduced FL activities during Covid pandemic
+
+
+--- PAGE 23 ---
+23
+COVID-19 pandemic induced an unforeseen 
+global socio-economic distress and caused 
+loss of lives and livelihood with substantial spill 
+overs. This created an extraordinary challenge 
+for the governments and policymakers to 
+implement appropriate relief, restoration, and 
+stimulus package to minimise and absorb the 
+pandemic induced hardships.
+Government of India, State Governments, 
+Reserve Bank of India and other relevant 
+stakeholders took numerous steps to leverage 
+the last mile reach of the FI ecosystem and 
+digital transactions in furthering and deepening 
+the financial inclusion efforts, especially 
+through Digital Public Infrastructures (DPI) 7 
+in a cost-effective and innovative manner. 
+To mitigate the adverse impact of COVID-19 
+pandemic, the Government of India was 
+able to smoothly deliver an amount of ₹5.53 
+lakh crore digitally across 319 government 
+schemes spread over 54 ministries during 
+2020-218 under the PM Garib Kalyan Yojana, 
+using DPI. 
+The Business Correspondent (BC) Model 
+emerged as a critical lifeline in disbursing 
+such benefits to the doorstep of the people, 
+especially in rural areas of the country. 
+During the pandemic, ICT-BC transaction 
+routed through BC outlets witnessed a 
+significant surge crossing more than 94 crore 
+transactions accounting for ₹2.25 lakh crore 
+during 2020-219. 
+RBI in its pursuit to support digital financial 
+services enhanced limit for additional factor 
+of authentication (AFA) per transaction for 
+card transactions in contactless mode at 
+Points of Sale (PoS) terminals, while actively 
+promoting use of digital payments. Further, 
+to alleviate stress amongst small borrowers, 
+RBI undertook measures, namely, grant 
+of moratorium on consumer term loan for a 
+period of six months (March 1, 2020 – August 
+31, 2020), deferment of interest on working 
+capital facilities in the form of cash credit/
+overdraft, easing of working capital financing, 
+and facilitating financial institutions to resolve 
+stressed loans to individuals, small business 
+and MSMEs, besides several relaxations in 
+priority sector lending. 
+Since the pandemic created hurdles in 
+delivering financial literacy to the masses 
+through physical modes, Regional Offices 
+(ROs) of the Bank explored innovative 
+approaches to promote financial literacy 
+amongst the masses, such as Community 
+Radio Channels, Local TV Channels and Local 
+FM stations to impart the financial education in 
+regional languages/local dialects. On its part, 
+SEBI adopted virtual mode to reach out to 
+investors across the country covering over one 
+lakh participants through investor awareness 
+programmes conducted by exchanges, 
+depositories, and SEBI recognised investor 
+associations and trainers.
+Box II.1: Role of FI Ecosystem during COVID-19 Pandemic
+7 DPI, generally understood as interoperable, open, and inclusive systems supported by technology to provide essential society-wide public and private services, 
+can play a critical role in accelerating this digital transformation in an inclusive way. Conceptually, DPIs, in general, include Digital ID, Digital Payments, and Data 
+Exchange in the financial sector. – (G20 GPFI World Bank 2023). In case of India, DPI harnessed the state-of-the-art layer of national ID (Aadhaar), fast payment 
+system (UPI) and data sharing protocols [Account Aggregators] to advance digital financial inclusion.
+8  Excerpts from Governor’s Speech on Financial Inclusion – Past, Present and Future dated July 15, 2021.
+9 https://m.rbi.org.in/Scripts/BS_ViewBulletin.aspx?Id=20366 – FY 2020-21.
+
+
+--- PAGE 24 ---
+24
+National Strategy for Financial Inclusion 2025-30
+Supply and Demand Side Impediments to 
+Financial Inclusion
+12. Financial inclusion initiatives start from 
+the supply side of financial services whereby 
+the availability of financial services in terms 
+of access points, products, etc. is ensured. 
+Availability of adequate supply infrastructure for 
+financial services in terms of well-functioning 
+access points, physical or digital interfaces, 
+suitable products, and services, etc., is 
+necessary though not a sufficient condition 
+for effective financial inclusion, as demand for 
+financial services also plays a crucial role in 
+effectiveness of financial inclusion initiatives. 
+Hence, both supply and demand aspects of 
+financial inclusion should be paid adequate 
+attention to, while formulating financial 
+inclusion strategies. 
+13. Amongst the key supply side challenges, 
+the quality and effectiveness of last mile reach 
+to the financial services remains the most 
+important element. On the other hand, demand 
+side issues are conditioned by several factors 
+in the usage and quality dimension of financial 
+inclusion. 
+14. The first set of challenges to the demand 
+for financial services stem from information 
+asymmetry, lack of proper knowhow about 
+availability, cost, and use of financial services, 
+and at times, inability to understand and 
+comprehend the information due to language 
+or literacy barriers. Secondly, behavioural 
+factors, such as personality traits, experiential 
+factors, bounded rationality, and impulsive 
+actions also play a role in catalyzing or 
+dampening the usage of financial services. 
+Behaviourally, the perceived need for financial 
+services, and trust in the system are the two 
+most crucial determinants of the demand 
+side of financial inclusion. If people trust that 
+it is in their benefit to use formal financial 
+services, they will seek access and ensure 
+usage, provided the services are suitably 
+and conveniently made available in an 
+affordable manner. Another critical demand-
+side impediment to financial inclusion falls 
+in the domain of financial constraints, which 
+either sway away people from the banking 
+system or their usage remains very low. 
+The effectiveness of customer protection 
+and grievance redressal measures remains 
+at the core of the demand for financial 
+services, especially for the underprivileged 
+and vulnerable segments of the population. 
+Moreover, the ecosystem gaps, namely, 
+inefficient, or broken linkages between various 
+initiatives, and gaps in market access coupled 
+with funding constraints could dampen the 
+demand side of financial inclusion. 
+15. The success in financial inclusion 
+initiatives, therefore, requires multi-
+stakeholder contribution in all its dimensions, 
+namely, access, usage, and quality. To be 
+effective, financial inclusion policies besides 
+having a focus on strengthening supply 
+initiatives in the financial sector in terms of 
+easy and trustworthy availability of access 
+points, minimum cost of services, suitable 
+products, financial literacy and proper flow 
+of information, and an effective grievance 
+redressal mechanism, should also adequately 
+focus on understanding and mitigating demand 
+side impediments and improving the enablers 
+both in supply and demand dimensions.  
+16. The National Strategy for Financial 
+Inclusion (NSFI: 2019-24) highlighted the need 
+
+
+--- PAGE 25 ---
+25
+CHAPTER - II
+for periodic evaluation of the state of financial 
+inclusion through monitoring of financial 
+inclusion parameters to provide policy makers 
+and stakeholders with necessary insights 
+to understand the achievements made and 
+to address issues and challenges through a 
+coordinated approach. NSFI also underlined 
+that in addition to data collected from financial 
+service providers (supply-side data), there 
+is also a need to seek views and insights 
+from the customers (demand-side insights) 
+at periodic intervals. Accordingly, specific 
+studies and surveys were undertaken by the 
+Reserve Bank to understand the ground level 
+issues and impediments, in both demand and 
+supply dimensions. Based on the studies, 
+the following is a summary of key supply 
+and demand side impediments to financial 
+inclusion.
+Supply Side Impediments – Last Mile 
+Reach by Business Correspondents
+17. An assessment of supply side impediments, 
+especially from the angle of last mile access 
+reveals that the last mile reach of financial 
+services being carried out by business 
+correspondents (BC) requires improvements. 
+An all-India survey was conducted by the 
+Bank on the operations of BCs during 
+January-March 2024 through its Regional 
+Offices across the country. About 63% of BCs 
+covered by the survey were in rural areas, 
+23% in semi-urban areas, and 14% in urban 
+areas. The survey covering 13274 BC outlets 
+in 31 States/UTs involving 154 districts with 
+a greater weightage to aspirational districts, 
+revealed the following areas of concerns, 
+which require corrective measures. 
+(a) The presence of a significant number of 
+non-dedicated outlets in the BC ecosystem 
+was a matter of concern, as financial services 
+not being their primary business, diluted 
+the access and quality of financial services 
+available at these outlets, especially in the 
+areas where BCs were the only or primary 
+modes of access to financial services. 
+Representation of women in the BC agents 
+also needed an uptick.
+(b) Remittances and cash in/out were the most 
+commonly provided services by BC outlets. 
+Some BCs also provided services relating 
+to savings, recurring, and fixed deposits. 
+However, other services, such as insurance, 
+micro-pension, loans, overdrafts, KCC, GCC, 
+etc. were provided only at select BC outlets. 
+Hence, there was a possibility of deficiency 
+in the uniform availability of services in areas 
+entirely dependent on BC outlets.
+(c) There was a lack of standardization in the 
+services offered by BCs, due to absence of any 
+prescribed minimum standard set of services 
+to be provided by BCs, with proper signage 
+and bank linkage. As a result, it was difficult 
+to properly anchor and monitor the customer 
+expectations and the service delivery.
+(d) The BC ecosystem was marred by a 
+significant proportion of inactive 10 and/or 
+closed BC outlets. The distribution of BCs 
+was skewed in many places, as BCs tends 
+to congregate towards market centres or 
+bank branches, thereby compromising on the 
+need for equitable access to people and also 
+causing a lack of easy access in remote areas. 
+(e) Insufficient and lack of timely remuneration 
+10 BCs are defined as inactive if there are no financial/non-financial transactions or log-in for a period of 90 days. [Ref. IBA letter to their member banks – IBA/
+PSBT/L/2024/110 dated 05/12/2024.]
+
+
+--- PAGE 26 ---
+26
+National Strategy for Financial Inclusion 2025-30
+was observed as a major reason for inactivity, 
+service apathy, and certain unscrupulous 
+practices amongst BCs. The lack of a fixed 
+component of remuneration as a constraint 
+was highlighted by several BCs during the 
+survey.
+(f) Several BC outlets/agents were 
+simultaneously working for multiple banks 
+thereby leading to accountability vacuum 
+from the point of view of customer service. 
+Since banks are responsible for the business 
+conducted by BCs, this was unhelpful from the 
+point of quality of financial services.
+(g) The survey showed that a majority of BCs 
+did not display fees levied for services. While 
+certain charges are built into the transactions 
+by banks, there were concern relating to 
+upfront unauthorized/unaccounted levying of 
+charges by BC agents. 
+(h) Lack of a standardised mandatory 
+transaction confirmation SMS (in vernacular 
+language) or audio-based confirmation 
+(through the sound-box mechanism) for all 
+transactions impacted the trust in the services 
+rendered by BC agents. 
+(i) The quality of services rendered by BC 
+outlets needed improvement as many BC 
+outlets did not display the details of the 
+grievance redressal mechanism, base branch, 
+banking ombudsman, etc. 
+(j) The service quality at the last mile was also 
+impacted by connectivity issues, operational 
+difficulties, limited inter-operability, and unscrupulous 
+practices like transaction splitting, etc.
+Demand Side Impediments and Challenges 
+18. To assess the demand side impediments 
+to financial inclusion at a disaggregated 
+level with demographic details, an all-India 
+survey was conducted during March-April 
+2024. The survey had a total number of 9,147 
+respondents spread across 34 States/Union 
+Territories11 of the country. With a median 
+respondent’s age of 32 years, and median 
+income of ₹ 1.60 lakh, the survey offered a 
+reasonably representative all-India sample to 
+deep dive into financial inclusion ecosystem 
+and gain the ground level perspectives on the 
+demand-side impediments to the progress of 
+financial inclusion. The following is a summary 
+of key observations of the survey.
+19. Access and Usage of Bank Account – 
+(a) With account ownership at nearly universal 
+level (96% respondents had a bank account), 
+a key demand side impediment to account 
+ownership/usage was lack of source of deposit 
+to bank account, which indicates regularity and 
+sustenance of income as a key demand-side 
+impediment to the usage of financial services 
+for people hailing from relatively lower income 
+groups. 
+(b) Besides the income, a preference for 
+cash, lack of knowledge, or family members 
+having an account emerged as common 
+impediments to bank account ownership and 
+usage for relatively lower income groups. 
+Awareness about deposit insurance was 
+lower as compared to zero balance bank 
+account facility under BSBDA. Illiteracy or lack 
+of formal education and low income emerged 
+as impediments to the intended level of 
+11 Except Manipur and UT of Lakshadweep.
+
+
+--- PAGE 27 ---
+27
+CHAPTER - II
+awareness focused on under financial literacy 
+initiatives. 
+(c) Non-usage of bank accounts due to 
+lack of regular source of deposit was more 
+dominant for male respondents and was more 
+pronounced in other than semi-urban areas. 
+In case of semi-urban areas, banking fee/
+charges were reported as major impediments. 
+People’s trust in banks to save money was 
+more pronounced in rural areas. The level of 
+education helped in strengthening trust and 
+retaining customer relationship in the formal 
+financial system. Generally, people with lower 
+education were relatively unable or unwilling 
+to save through banking channels.
+(d) Usage of BC outlets was higher in rural/
+semi-urban areas as compared to urban areas, 
+especially for female respondents vis-à-vis 
+male respondents. The study shows that as one 
+moves up the hierarchy in terms of income and 
+education levels, the preference for transacting 
+through branch or BC mode diminishes and 
+preference for digital transactions enhances. 
+However, transactions at ATMs seem to be 
+not impacted by income or education levels. 
+Hence, income and education emerge as 
+a couple of key demand side determinants 
+of the choice of access points and mode of 
+transactions. 
+(e) Preference for digital transactions was 
+seen conditioned by gender, education, 
+and income levels. Male respondents and 
+people form higher income groups had higher 
+preference for digital transactions. Having 
+a smartphone did not necessarily translate 
+as a fillip for digital transactions as several 
+respondents felt dissuaded from undertaking 
+digital transactions due to connectivity issues, 
+complex interfaces, language barrier and 
+concerns regarding breach of OTP/PIN, etc.
+20. Access and Usage of Credit Facilities – 
+(a) In the household segment, personal 
+loans, education loans, and home loans were 
+the top three credit facilities in demand, yet 
+about 50 percent of aspirants had unmet 
+credit needs. Lack of awareness about the 
+procedure, unavailability of nearby bank 
+branch, and lack of collateral were cited as top 
+three impediments in that order, for inability 
+to get credit. Interestingly, high cost (interest 
+rate) of credit was the least cited impediment.
+(b) Around 16 per cent of the respondents 
+used informal sources of credit mostly for 
+small ticket loans, with its share being higher 
+in rural areas. In general, people may have 
+relied upon informal sources of credit due to 
+ease, timeliness, and convenient access. 
+21. Access and Usage of Insurance and 
+Pension Facilities – 
+(a) Income and education levels emerged as 
+key enablers for better usage of insurance 
+and pension facilities (Chart II.11). 
+b) While female respondents lagged their male 
+counterparts in access to life insurance, they 
+had an edge in non-life insurance indicating 
+a possibility of gradually increasing asset 
+ownership by female.
+(c) Among the respondents who did not 
+have any insurance/pension product, the 
+awareness about the need for insurance 
+and pension products was found to be low. 
+In general, awareness about schemes like 
+PMSBY, PMJJBY, PMFBY, and APY ranged 
+between 30-35%. However, the respondents 
+who knew some beneficiary of insurance claim 
+
+
+--- PAGE 28 ---
+28
+National Strategy for Financial Inclusion 2025-30
+were generally more likely to opt for it.
+22. Quality of Financial Services: Financial 
+Literacy, Customer Service and Grievance 
+Redressal – 
+(a) Long wait hours for undertaking financial 
+transactions at branches and high customer 
+burden complaint resolution systems, which 
+puts the primary onus on customers, were 
+highlighted as key impediments. There were 
+hardly any customer complaints at BC points, 
+which was not helpful.
+(b) While high level of service satisfaction from 
+bank services was expressed by respondents, 
+it did not match with the relatively lower 
+satisfaction with attention and sensitivity shown 
+by the bank staff, and comparatively lesser 
+awareness about complaint process, etc. This 
+could imply that the overall feedback about 
+customer satisfaction may not be properly 
+anchored to its underlying parameters. 
+23. NSFI: 2025-30 leverages the gains and 
+progress made during the period of pervious 
+strategy and strives to put in place a strategic 
+vision and pathway to mitigate demand and 
+supply impediments while further deepening 
+and strengthening the financial inclusion 
+ecosystem.
+
+
+--- PAGE 29 ---
+29
+CHAPTER - III 
+VISION OF NSFI (2025-30):  
+AN INCLUSIVE FINANCIAL SYSTEM TOWARDS 
+WELLBEING OF PEOPLE
+12 The 17 Goals – Sustainable Development; https://sdgs.un.org/goals
+Financial inclusion initiatives generally begin 
+with supply initiatives to provide affordable, 
+easy, trusted, and fair access to regulated 
+financial services, namely, savings, payments, 
+investments, credit, remittances, insurance, 
+and pension to hitherto excluded and 
+marginalized segments of society. Though 
+financial inclusion falls within the ambit of the 
+financial sector, financial inclusion policies 
+have far and wide positive impacts and 
+correlations in the socioeconomic domain. 
+Financial inclusion is referred in the targets 
+of eight out of the seventeen United Nations 
+Sustainable Development Goals (SDGs) 12, 
+namely, SDG-1 on eradicating poverty, SDG-
+2 on ending hunger, achieving food security, 
+and promoting sustainable agriculture, 
+SDG-3 on promoting health and well-being, 
+SDG-5 on achieving gender equality and 
+economic empowerment of women, SDG-
+8 on promoting economic growth and jobs, 
+SDG-9 on supporting industry, innovation and 
+infrastructure, SDG-10 on reducing inequality, 
+and SDG-17 on strengthening the means of 
+implementation (Table III.1). 
+2. Financial inclusion being an aspirational 
+journey starts from creating opportunities for 
+access to the formal financial system for the 
+hitherto excluded and underserved segments, 
+but its mandate goes beyond access to 
+ensure effective usage of financial services to 
+the benefit of people. Effective usage requires 
+that people have an economic case for using 
+the formal financial services which primarily 
+comes from their capacity to have regular 
+income/cash flow through employment, 
+livelihood, etc., and have a perceptible 
+economic incentive for using formal financial 
+services. 
+3. The sustenance and growth of usage also 
+require continued trust of the people, suitability 
+of products and services, sound financial 
+literacy, a pro-active/quick grievance redressal 
+mechanism, and a positive perception of being 
+heard, which are some of the quality aspects 
+of financial inclusion. 
+4. Seen in the above context and in accordance 
+with the role of financial inclusion in the 
+achievement of sustainable development 
+goals, it is obvious that financial inclusion 
+is not just an end in itself but a means to a 
+greater end of ensuring the overall wellbeing 
+of people.
+Table III.1: Role of FI Policies in Specific SDGs and Targets
+SDG 1: Poverty Reduction
+Financial inclusion by improving access to financial services and skilling/livelihood opportu -
+nities helps to improve the sustenance, sufficiency, and safety of income, thereby helping to 
+reduce poverty.
+
+
+--- PAGE 30 ---
+30
+National Strategy for Financial Inclusion 2025-30
+SDG 2: Ending Hunger
+An inclusive financial system incentivises credit led investments for adoption of sustainable 
+and productivity enhancing agricultural practices, which results in better agricultural yields. 
+Thereby, helping in reducing hunger due to enhanced food security.
+SDG 3: Health and Wellbeing
+Financial inclusion through its multi-faceted socio-economic dimensions aids human devel -
+opment and augments resilience of the marginalised and vulnerable, thereby fostering health 
+and well-being.
+SDG 5: Gender Equality
+Gender sensitive financial inclusion policies decrease gender inequality by empowering wom-
+en and improving their overall socio-economic status.
+SDG 8: Decent Work and Economic Growth
+Financial inclusion with its ecosystem approach supports economic growth by providing nec-
+essary funding, augmenting employment, and entrepreneurship, and boosting consumption. 
+SDG 9: Industry, Innovation, and Infrastructure
+Financial inclusion policies support the industry, especially the micro and small enterprises by 
+providing credit linkages and digital infrastructure for promoting innovation and boosting their 
+progress.
+SDG 10: Reducing Inequalities
+Financial inclusion policies with their specific focus on the upliftment of the poor, marginalised, 
+and vulnerable segments, and the last mile reach, help to reduce inequalities.
+SDG 17: Strengthening the means of Implementation
+Financial inclusion is an important means of implementation for achieving SDGs, through mo-
+bilization of savings/investments and boosting consumption, and improving overall wellbeing 
+of people, that can help in achieving broader developmental goals.
+Definition of Financial Inclusion
+5. The Committee on Financial Inclusion 
+(Chairman: Dr C Rangarajan, RBI, 2008) 
+defined financial inclusion as “the process of 
+ensuring access to financial services, timely 
+and adequate credit for vulnerable groups 
+such as weaker sections and low-income 
+groups at an affordable cost”. 
+6. Further, the Committee on Medium-Term 
+Path to Financial Inclusion (Chairman: Shri 
+Deepak Mohanty, RBI, 2015) viewed financial 
+inclusion as, “convenient access to a basket 
+
+
+--- PAGE 31 ---
+31
+CHAPTER - III
+of basic formal financial products and services 
+that should include savings, remittance, credit, 
+government-supported insurance and pension 
+products to small and marginal farmers 
+and low income households at reasonable 
+cost with adequate protection progressively 
+supplemented by social cash transfers, 
+besides increasing the access of small and 
+marginal enterprises to formal finance with a 
+greater reliance on technology to cut costs 
+and improve service delivery.”
+7. The NSFI (2019-24) aimed at broadening, 
+deepening, and accelerating financial 
+inclusion alongside promoting financial 
+literacy and consumer protection, with a view 
+to promoting economic wellbeing, prosperity, 
+and sustainable development. 
+8. Continuing the journey and leveraging the 
+substantial gains during the last decade in the 
+bank account ownership to near saturation, 
+robust expansion in physical and digital access 
+infrastructure, and improvements in customer 
+awareness and protection measures, it is 
+desirable to upscale the focus of financial 
+inclusion by adopting a synergistic ecosystem 
+approach. This would ensure integrated and 
+seamless involvement of stakeholders for 
+developing a truly inclusive financial system 
+towards wellbeing of people by minimization 
+of inequality of opportunities for people to 
+reap the benefits of access to formal financial 
+system, while substantially improving the 
+quality and consistency of last mile reach. 
+9. Financial inclusion policies duly integrated 
+with livelihood support, market linkages, 
+financial education, and customer protection 
+initiatives are great enablers of an improved 
+state of the economic wellbeing of people. 
+Pursued holistically, financial inclusion 
+can lead to desirable outcomes in form of 
+a quadrangle of financial safety, financial 
+security, financial resilience, and financial 
+discipline, in turn contributing towards overall 
+wellbeing of people. 
+10. Hence, the objectives and intended 
+outcome of financial inclusion to be pursued 
+under NSFI: 2025-30 are presented below. 
+Figure III.1 provides a diagrammatic 
+presentation of components and outcome of 
+financial inclusion.
+The objective of financial inclusion 
+is ensuring availability of equitable, 
+responsible, suitable, and affordable 
+access to a bouquet of formal financial 
+services, namely, savings, payments, 
+remittances, credit, investments, 
+insurance, and pension, across socio-
+economic and geographical strata, 
+coupled with effective financial literacy, 
+robust consumer awareness and 
+customer protection measures. 
+Financial inclusion, as above, with the 
+involvement of all stakeholders improves 
+financial safety, financial security, 
+financial resilience, and financial 
+discipline of individuals (households) 
+and micro-enterprises.
+11. To explain, the usage of terms regarding 
+access to a bouquet of financial services in 
+the above definition would generally mean the 
+following – 
+a) Equitable – The access infrastructure 
+should be available across the geographic 
+strata in a reasonably homogeneous manner. 
+
+
+--- PAGE 32 ---
+32
+National Strategy for Financial Inclusion 2025-30
+b) Responsible – The financial service 
+providers should ensure that their products/ 
+services do not manipulate or impede 
+customers’ free choices, interests, and 
+right to product suitability, and do not leave 
+customers’ worse off in terms of the economic, 
+behavioural, and social outcomes.
+c) Suitable – Financial products and services 
+should be appropriate to customers need and 
+based on customers’ financial circumstances 
+and understanding. Differentiated/customised 
+services should be available to enable people 
+to choose what is best for them.
+d) Affordable – The basic minimum financial 
+services (basic transaction account, basic 
+savings and investment account, small value 
+remittances, small value digital payments, 
+etc.) should be offered free of cost. Pricing 
+of other services should have an essential 
+element of affordability keeping in mind the 
+marginal cost of services.
+12. The quadrangle of financial safety, 
+security, resilience, and discipline positioned 
+as the outcome of financial inclusion rests on 
+specific anchors presented in Table III.1. 
+FI Ecosystem
+13. As already discussed, an ecosystem 
+approach to financial inclusion is required 
+for ensuring an integrated and synergistic 
+involvement of stakeholders for effectiveness 
+in financial inclusion initiatives and outcomes. 
+Hence, a clear understanding and definition 
+of financial inclusion (FI) ecosystem could 
+be helpful for a seamless working towards 
+achieving the shared goals. 
+14. FI ecosystem refers to a synergised 
+network of stakeholders working and/or 
+connected with financial inclusion initiatives 
+and its outcome in form of wellbeing of people 
+in terms of quadrangle of financial - safety, 
+security, resilience, and discipline. Seamless 
+and synergised functioning of the ecosystem 
+comprising of stakeholders, namely, banks/ 
+Figure III.1: Financial Inclusion: Components and Outcomes
+
+
+
+--- PAGE 33 ---
+33
+CHAPTER - III
+Table III.1: The quadrangle of financial safety, security, resilience, and discipline and 
+their anchors.
+Dimension Anchors Explanatory Details on Anchors
+Financial 
+Safety – 
+“Smoothly 
+managing 
+day-to-day 
+transactions” Suitable 
+Access. 
+Livelihood 
+Support.
+Customer 
+Protection.
+- Fair, suitable, and affordable financial products and 
+services.
+- Quick, simple, and efficient grievance redressal 
+mechanism.
+- Meeting basic subsistence needs (minimum basic needs 
+for day-to-day life – food, shelter, education, travel, etc., at 
+a household level).
+- Regular and sustained income stream through wage or 
+non-wage livelihood.
+Financial 
+Security – 
+“Ability to meet 
+any contingency”
+- Regular Savings – Liquid (for at least two-months’ 
+average household expenses) and Long-Term (in form of 
+physical/financial assets).
+- Continued subscription of any pension scheme 
+(retirement pension/ Atal pension Yojana/ other social 
+security pensions).
+- Effective ex ante Customer Protection Measures and 
+Deposit Insurance.
+Financial 
+Resilience - 
+“Ability to 
+recover from 
+financial 
+setbacks”
+Insurance 
+Coverage.
+Credit 
+Facilities.
+- Unexpired insurance coverage within acceptable/ 
+bearable cost – life coverage, health coverage, asset 
+coverage (vehicles/property/machines, etc.).
+- Fair Emergency Credit to reasonably cope with a financial 
+setback/sudden difficult situation such as, loss of life/ 
+livelihood/assets without excessive debt burden or losses 
+impeding day-to-day life.
+Financial 
+Discipline – 
+“Attitude and 
+behaviour 
+towards a steady 
+financial future”
+Financial 
+Education.
+Experiential 
+Learning
+- Financial Awareness and Confidence.
+- Diversified Investments - Distributing savings /
+investments across different banks/asset classes.
+- Sustainable Indebtedness - monthly repayment amount 
+towards outstanding loans not exceeding half of the 
+monthly income of the household.
+- Realistic Goal Setting and Planning - Making financial 
+goals within one’s means, and planning for future 
+expenses/ life-events (education/ marriage of children, 
+retirement, etc.)
+
+
+--- PAGE 34 ---
+34
+National Strategy for Financial Inclusion 2025-30
+13 Livelihood opportunity providers are the entities/institutions which offer support for wage employment and self-employment to unskilled, semi-skilled, and skilled 
+workers. For instance, services aggregators, NRLM, NULM, etc.
+financial institutions including NABARD, SIDBI 
+etc., central government, state governments, 
+financial sector regulators, SROs/IBA, private 
+players including fintech companies, think 
+tanks, academia, community organizations, 
+centres for financial literacy and NCFE, 
+livelihood opportunity providers 13, and skilling 
+institutions, is essential for effectiveness and 
+outcome orientation in financial inclusion 
+policies (Figure III.2). 
+Figure III.2: Financial Inclusion (FI) Ecosystem
+Vision of NSFI (2025-30)
+15. Following the above discussions, the 
+vision of NSFI is as under – 
+To strengthen the financial inclusion 
+ecosystem with the synergised efforts 
+of stakeholders towards wellbeing of 
+people by ensuring delivery of equitable, 
+responsible, suitable, and affordable 
+financial services duly supported by 
+livelihood enablers, effective financial 
+literacy, digital public infrastructure, and 
+robust customer protection. 
+16. The current iteration of the National 
+Strategy for Financial Inclusion for the period 
+2025-30 (NSFI: 2025-30) is an outcome of 
+wide-ranging stakeholder consultations. The 
+strategy is informed of the achievements of 
+the NSFI 2019-24 and focusses on further 
+deepening, sustaining, and synergising 
+financial inclusion initiatives.
+
+
+--- PAGE 35 ---
+35
+CHAPTER – IV 
+NSFI (2025-30): STRATEGIC OBJECTIVES AND 
+ACTION POINTS
+As discussed in Chapter III, National Strategy 
+for Financial Inclusion (NSFI) intends to 
+achieve integrated, seamless, and synergised 
+working of stakeholders of the FI ecosystem 
+to augment the effectiveness of financial 
+inclusion policies through the availability and 
+use of equitable, responsible, and affordable 
+financial services along with skilling/livelihood 
+opportunities, duly supported by Digital Public 
+Infrastructure, effective financial literacy, 
+robust consumer awareness and protection 
+measures.
+2. The timeline of NSFI: 2025-30 is 
+synchronized with the 2030 Agenda for 
+Sustainable Development adopted by 193 
+Member States at the UN General Assembly 
+Summit in September 2015, and which came 
+into effect on January 01, 2016. The principle 
+of universality: ‘Leave No One Behind’ and 
+omni-dimensional development as the global 
+agenda for 2030, fits perfectly well with the 
+outcome-oriented financial inclusion goals 
+intended towards ensuring wellbeing of 
+people. 
+3. As India’s contribution is critical to the global 
+achievement of SDGs, the strategy intends 
+to meet the national priorities and assist in 
+the achievement of targets as a part of the 
+transformative agenda, which recognizes that 
+it is no longer sufficient to focus on economic 
+growth, but on fairer and more equal societies, 
+and a safer and more prosperous planet. 
+NSFI’s ecosystem approach as discussed 
+in the Chapter-III bodes well with the SDG’s 
+philosophy, namely, coordinated efforts by all 
+the stakeholders to achieve the developmental 
+agenda of leaving no one behind, seeking 
+participation of everyone - everywhere, 
+especially the vulnerable and marginalised. 
+NSFI Strategic Objectives: 
+Elevating the State of Financial 
+Inclusion through Panch Jyoti 
+(पंच ज्योति)14 
+4. As discussed in Chapter-III, a quadrangle 
+of financial safety, security, resilience, and 
+discipline towards well-being of people 
+is positioned as the outcome of financial 
+inclusion. NSFI: 2025-30, learning from the 
+impediments and leveraging upon the gains 
+during 2019-24, sets up the following five 
+strategic and synergised objectives (Panch-
+Jyoti), which would help in elevating the state 
+of financial inclusion in the country. 
+I. Improving the availability and use of 
+Equitable, Responsible, Suitable, and 
+Affordable Bouquet of Financial Services 
+to achieve Financial Safety and Financial 
+Security for households and micro enterprises.
+II. Adopting Gender-Sensitive Approach 
+for Women-led Financial Inclusion and 
+Differentiated Strategies for Improving 
+Financial Resilience of Households, especially 
+for the Underserved and Vulnerable segments.
+14 The Panch Jyoti intends to elevate the level of financial inclusion in the country. The analogy comes from a lamp with five different lighting wicks synergically 
+integrated as a single source of illumination. 
+
+
+--- PAGE 36 ---
+36
+National Strategy for Financial Inclusion 2025-30
+III. Synergizing Livelihood, Skill Development 
+and Support Ecosystem and its linkages with 
+Financial Inclusion.
+IV. Leveraging Financial Education as a tool 
+for promoting Financial Discipline.
+V. Strengthening the Quality and Reliability of 
+Customer Protection and Grievance Redressal 
+Measures.
+5. Linkages of the above strategic objectives 
+and related action points with the impediments 
+and challenges as discussed in Chapter-II, as 
+also the stakeholder wise action points are 
+presented in Table IV.1 and IV.2, at the end 
+of this chapter. FI-dimensions wise distribution 
+matrix of the action points is presented in Table 
+IV.3. A detailed description of the strategic 
+objectives in terms of recommendations and 
+action points follows. 
+I. Improving the availability and use of 
+Equitable, Responsible, Suitable, and 
+Affordable Bouquet of Financial Services 
+to achieve Financial Safety and Financial 
+Security for households and micro 
+enterprises.
+Under the NSFI: 2019-24, with emphasis 
+on the last mile delivery of formal financial 
+services, significant progress has been 
+made in providing some form of banking 
+access, within a radius of 5 KM/ hamlet of 
+500 households, in more than 99.9 percent 
+of the 1.21 lakh identified villages. Besides, 
+a slew of measures was undertaken towards 
+strengthening the Business Correspondent 
+(BC) channel for the last mile access. However, 
+a supply side assessment reveal that the 
+quality, consistency, and breadth of services 
+available at the last mile, uniformly, may not 
+be as expected due to low population density 
+in certain pockets, geographical remoteness, 
+relatively lesser economic potential, and lack 
+of economic viability for financial services 
+providers, and infrastructural bottlenecks 
+(connectivity, electricity, roads, etc.), hence, 
+requiring improvements.
+Digital financial services operating on the 
+backbone of Digital Public Infrastructure 
+(DPI) have provided a significant fillip to 
+financial inclusion initiatives across a wide 
+spectrum ranging from account ownership, 
+social benefit transfers, quicker and efficient 
+remittances/payments, and access to credit. 
+DPI, as interoperable, open, and inclusive 
+systems supported by technology, serves 
+to provide essential public and private 
+services for the common good. The India 
+Stack exemplifies this approach, combining 
+digital ID, interoperable payments, a digital 
+credentials ledger, and account aggregation 
+framework. By leveraging the gains made, 
+there is scope for further expanding the digital 
+footprints for discharge of a range of financial 
+services. 
+Recommendation:
+It is recommended to improve the equity, 
+reach, consistency, and quality of last mile 
+access by strengthening the network of 
+business correspondents and expanding 
+the delivery of safe and cost-effective digital 
+financial services at the last mile.
+Action Points:
+1. Improving equity, reach, consistency, 
+and quality of last mile access
+To bring about substantial improvements in 
+the equity, reach, consistency, and quality of 
+
+
+--- PAGE 37 ---
+37
+CHAPTER - IV
+last mile access to financial services, there is 
+a need to ensure availability of at least one 
+banking outlet – branch /digital banking unit 
+(DBU)/ fixed point business correspondent 
+outlet (FBC) 15 in each revenue centre 16, so 
+that financial services are fairly and equitably 
+available across the depth and breadth of the 
+country. Such outlets, under adequate control 
+and oversight of banks, are expected to provide 
+a minimum standard set of financial services, 
+namely, deposits, withdrawals, remittances, 
+account opening and servicing, Jan Suraksha 
+Schemes, loan leads/applications, pension 
+schemes, etc. This would be a substantial 
+value addition to the work on ‘universal access’ 
+wherein access to some form of banking 
+services has been provided to 99.9 per cent 
+of the targeted villages within 5 KM radius/ 
+hamlets with 500 households in hilly areas. 
+SLBCs/UTLBCs should put in place an action 
+plan and allocate goals to banks in a phased 
+manner to achieve the action point during the 
+period of the strategy, with suitable mid-term 
+goals.
+2. Incentive mechanism for BC agents from 
+hilly and rural areas
+With inadequacies of bank branches 17 in the 
+north eastern (NE)/ hilly states, and rural areas, 
+banking services are mostly dependent upon 
+the BC outlets. Further, owing to topographic 
+conditions of hilly regions, the distribution of 
+FBCs, especially in the NE region is skewed 
+with only 165 FBCs per thousand square 
+kilometres vis-à-vis 379 FBCs per thousand 
+square kilometres at the national level 18. 
+Skewed population density and sparse 
+availability of access points is also reflected 
+in lower number of transactions at BC points. 
+Since, remuneration of BCs depends on the 
+volume of transactions, viability of BC business 
+in the region gets impacted due to sparse 
+population and difficult terrain leading to high 
+level of inactivity and consequent negative 
+impact on financial inclusion outcomes. 
+Accordingly, to improve the availability and 
+consistency of last mile access in hilly and 
+rural areas, the existing scheme of incentives, 
+under Financial Inclusion Fund (FIF), to BCs 
+operating in Tier V & Tier VI centres in NE 
+States and other Hilly States/UTs (Himachal 
+Pradesh, Jammu & Kashmir, Ladakh & 
+Uttarakhand) may be extended in a calibrated 
+manner to all Fixed-Point BCs 19 operating in 
+Tier VI centres. 
+3. Strengthening the Remuneration 
+Structure of BCs.
+To ensure quality and consistency in delivery 
+of financial services at the last mile, fair 
+and reasonable remuneration structure for 
+BC agents is a must. Notwithstanding the 
+regulatory prescriptions, and in view of the 
+prevailing varied practices, a fair remuneration 
+15 Working for a minimum of 4 hours per day for at least five days a week.
+16 Revenue Centre is defined as the revenue unit (and not just the locality) classified and delineated by the respective State Government, i.e., a revenue village/ 
+city/ town/ municipality/ municipal corporation, etc., as the case may be. Based on the size of the population, a revenue centre is classified into rural, semi-urban, 
+urban, or metropolitan as under:
+i. Rural: population less than 10,000.
+ii. Semi-Urban: 10,000 and above and less than 1 lakh.
+iii. Urban: 1 lakh and above and less than 10 lakhs.
+iv. Metropolitan: 10 lakhs and above.
+Source: Guidelines for Identifying Census Centres -
+https://www.rbi.org.in/scripts/bs_viewcontent.aspx?Id=2035#:~:text=Census%202011%20in%20proforma%20I,which%20the%20branch%20is%20situated
+17 The number of bank branches per thousand square km, on an all-India basis, is 51, but the same is only 18 for rural areas. For hilly regions, there are 30 
+bank branches per thousand square km area. [Source – DBIE (Mar 24) /Census 2011 Data]
+18 As on March 2024
+19 Working for a minimum of 4 hours per day for at least five days a week.
+
+
+--- PAGE 38 ---
+38
+National Strategy for Financial Inclusion 2025-30
+structure of BC agents relating to banking 
+products and services may be worked out 
+under the aegis of Indian Banks Association 
+(IBA). 
+4. Expanding the scope of services and 
+improve the sustenance of BC operations.
+(a) To augment the scope of services offered 
+by FBCs20 and to improve their sustenance in 
+terms of earning potential, financial services 
+providers should consider offering additional/
+value-added services through well-functioning 
+BCs, based on an objective and transparent 
+performance criterion, while meeting 
+regulatory norms.
+(b) The network of well-functioning FBCs 
+may be leveraged for offering additional basic 
+financial services, namely, basic mutual fund, 
+pension and insurance products and related 
+services, subject to meeting requisite criteria 
+and regulatory norms.
+5. Strengthening of BC Registry
+The existing BC registry portal being maintained 
+by IBA provides a dynamic and comprehensive 
+dataset to monitor the operations of BCs with 
+a view to ensuring quality and last mile reach. 
+IBA should further strengthen and develop 
+additional capabilities in the registry portal to 
+improve periodic updation of the data, location 
+mapping, de-duplication, certification status, 
+etc. This would enhance the functionalities 
+and effectiveness of the portal.
+6. Expanding Digital Financial Services
+(a) Reaching one billion users in digital 
+payments
+UPI recorded nearly 16.7 billion transactions 
+during the month of December 2024 21. There 
+were 424 million unique UPI users in June 
+202422. In this backdrop, it is desirable that 
+the coverage of digital payments, led by UPI, 
+is expanded to cover most of the population. 
+Therefore, the goal of reaching one billion 
+users in digital payments ecosystem by 
+December 2029 may guide further efforts in 
+expanding the reach of such payment modes.
+(b) Expanding and Deepening Digital 
+Payment Ecosystem (EDDPE) 
+Expanding and Deepening of Digital Payments 
+Ecosystem (EDDPE) programme, which 
+aims at providing every eligible individual in 
+identified districts at least one mode of digital 
+payments namely, debit/rupay cards, net 
+banking, mobile banking, UPI, USSD, AEPS 
+etc., is underway. Considering the ongoing 
+work, EDDPE should aim to achieve – (i) 
+100% coverage in 80% of districts by March 
+2026, and (ii) 100% coverage in all identified 
+districts by March 2027.
+(c) Programmable CBDC to Facilitate 
+Targeted Credit Flow and Expand Access
+Programmability feature in Central Bank 
+Digital Currency (CBDC) could help in tying up 
+the end use. For example, agriculture credit 
+by banks using CBDC can be programmed 
+to ensure its use only at input store outlets. 
+Similarly, for MSMEs etc., programmability 
+may take care of the issue of diversion of funds 
+and ensure optimum utilisation. This may help 
+in ensuring the end-use which banks have to 
+continuously grapple with across the globe. 
+20 Ibid
+21 Payment System Indicators – Dec 2024, https://www.rbi.org.in/Scripts/PSIUserView.aspx?Id=43
+22 Report on Currency and Finance 2023-24 (page 9) - Data as of June 2024
+
+
+--- PAGE 39 ---
+39
+CHAPTER - IV
+Accordingly, programmable CBDC may 
+be leveraged to facilitate credit flow to 
+underserved segments like tenant farmers, 
+micro enterprises, etc., by conducting pilots 
+of programmable CBDC across various 
+borrower segments. Offline functionality in use 
+cases may also be explored to make CBDC 
+accessible to individuals in areas with limited 
+or no connectivity.
+(d) Unified Lending Interface (ULI)
+With rapid progress in digitalisation, India has 
+embraced Digital Public Infrastructure (DPI) 
+which has enabled convenience, transparency, 
+and enhanced efficiency for all citizens across 
+digital identity, payments, and other financial 
+and non-financial services. While diverse 
+sources of financial and non-financial data 
+required by lenders for digital credit delivery 
+may exist, it often lies in silos across different 
+entities, which lenders, as part of their credit 
+underwriting, need to individually connect 
+with all these data sources, making it highly 
+cumbersome and costly.
+Unified Lending Interface (ULI), as a DPI, 
+has been conceptualised to enable delivery 
+of frictionless credit by facilitating seamless 
+flow of required digital information to lenders 
+through conduct of pilots on various loan 
+journeys, while onboarding of more and more 
+lenders and data service providers. ULI may 
+be rolled out in a phased manner.
+(e) Onboarding of all banks and insurance 
+companies to Jansuraksha Portal and 
+improving coverage of Atal Pension Yojana 
+(APY).
+Jansuraksha portal provides access to Social 
+Security Insurance Schemes introduced by the 
+Government of India. It is an end-to-end portal 
+for enrolments and claims under Pradhan 
+Mantri Suraksha Bima Yojana (PMSBY), and 
+Pradhan Mantri Jeevan Jyoti Bima Yojana 
+(PMJJBY).
+Accordingly, all banks and insurance companies 
+should be onboarded to the Jansuraksha portal 
+to provide a seamless digital journey for the 
+subscribers for enrolments, issuance of policy 
+certificates and claims processing. Improved 
+efficiency and transparency of transactions 
+through the portal would augment trust in the 
+schemes and help increasing the coverage 
+level in a systematic manner. Further, sectoral 
+regulator and FSPs should make concerted 
+efforts to improve the coverage of APY by 
+strengthening its distribution network and 
+creating awareness.
+(f) Simpler Digital Interface and Use of AI
+Complex and confusing digital interfaces 
+coupled with language barriers may deter fair 
+customer choices and impede the uptake of 
+usage. Accordingly, financial service providers 
+should improve and simplify interfaces of 
+digital channels to facilitate ease of use and 
+address the language barrier by supporting 
+digital transaction interfaces in vernacular 
+languages. 
+For this, awareness of the AI powered 
+language translation platform like Bhashini 
+may be developed among users and financial 
+service providers for its integration into 
+financial services.
+7. Micro Enterprises to receive focussed 
+attention
+New-to-credit micro enterprises, especially 
+those onboarded through Udyam Assist 
+Platform, should be supported by financial 
+
+
+--- PAGE 40 ---
+40
+National Strategy for Financial Inclusion 2025-30
+services providers to mitigate their difficulties 
+in access to credit due to insufficient financial 
+records/history by adopting innovative 
+solutions such as digital credit platforms, 
+simplified application processes, automated 
+business plan generation, alternative data for 
+credit assessments and tailored repayment 
+schedules. 
+8. Role of Self-Regulatory Organisations
+Self-Regulatory Organisation (SRO) in the 
+fintech sector (SRO-FT), microfinance sector 
+and other domains may endeavour to promote 
+the extension of responsible, suitable, and 
+affordable financial products/services and 
+adoption of financial inclusion policies by their 
+member entities, by incorporating suitable 
+provisions in the code of conduct for members.
+II. Adopting Gender-Sensitive Approach 
+for Women-led Financial Inclusion and 
+Differentiated Strategies for Improving 
+Financial Resilience of Households, 
+especially the Underserved and 
+Vulnerable Segments. 
+Over the past several years, the Government 
+and financial service providers in India 
+have made significant strides in creating 
+opportunities to increase women’s financial 
+inclusion. Adoption of gender sensitive 
+approach is needed to augment and promote 
+women agency in the FI ecosystem to take 
+advantage of women-led financial inclusion 
+and extension initiatives.
+One of the demand side impediments to the 
+usage of financial services stem from the 
+fact that people from different geographic/
+demographic/economic strata have varying 
+needs and sensitivities regarding usage of 
+financial services, and hence, to be effective, 
+financial inclusion policies must facilitate 
+a differentiated approach towards suitable 
+customization and delivery of financial 
+products and services in accordance with the 
+needs and preferences of the end-users. 
+Recommendation:
+Adoption of a gender sensitive approach 
+is recommended to strengthen women led 
+financial inclusion and extension initiatives 
+for the improved outcomes, besides following 
+a differentiated approach towards delivery 
+of financial services for underserved and 
+vulnerable segments.
+Action Points:
+1. Increasing the share of women business 
+correspondents
+Going beyond greater participation of women 
+in the financial services as users of financial 
+services, there is a need to promote and 
+encourage women as facilitators of financial 
+services by increasing their numbers as 
+business correspondent agents. 
+The goal would be to ensure at least 30% 
+share of women BCs in the medium term from 
+the current level of around 15% 23. SLBCs/
+UTLBCs should put in place a voluntary action 
+plan adopted by member banks to deploy 
+women as business correspondents in a 
+phased manner to achieve the milestone by 
+December 2028.
+23 As on April 22, 2025 – IBA BC registry Portal
+
+
+--- PAGE 41 ---
+41
+CHAPTER - IV
+2. Identification of Vulnerable / Underserved 
+Segments for focused services
+With a view to providing suitable and timely 
+financial services to the underserved and 
+vulnerable segments, there is a need to 
+develop suitable markers/matrix to be followed 
+by financial services providers in dealing with 
+such customers. Accordingly, financial sector 
+regulators may develop an identification matrix 
+both based on a combination of categorical 
+and circumstantial factors24. 
+3. Differentiated products and delivery 
+channel for vulnerable segments
+(a) Going beyond the approach of offering 
+low-cost universal financial products and 
+services to promote financial inclusion, there 
+is a need to focus on product suitability and 
+personal suitability, especially for underserved 
+and vulnerable segments. Accordingly, 
+financial services providers should develop 
+suitable basket of products (such as, basic 
+MF products, calamity insurance, etc.) to meet 
+the requirements of such segments. Financial 
+sector regulators may appropriately mandate 
+the development of such products.
+(b) To strengthen financial security and 
+financial resilience of people, suitable bundled 
+products may be developed in the investment, 
+pension, and insurance domains (e.g., a 
+single insurance product offering life, health, 
+accident, and property cover).
+(c) To strengthen financial resilience of people, 
+suitable and fair credit products with easier 
+documentation process and quick disbursals 
+should be launched especially for small ticket 
+loans to prevent people from having to access 
+informal sources of finance/ unauthorized 
+digital lenders, etc. for small and urgent credit 
+requirements. 
+(d) To further strengthen the institutional means 
+for provision of fair and easy emergency credit, 
+an overdraft facility25 charged at a reasonable 
+interest rate may be made a default product 
+feature in all Aadhar-seeded BSBD Accounts 
+(to avoid duplication) after regular operation of 
+the account for at least six months. 
+III. Synergizing Livelihood, Skill 
+Development and Support Ecosystem 
+and its linkages with Financial Inclusion.
+One of the significant demand-side attributes 
+of effective financial inclusion is sustenance, 
+regularity, and sufficiency of income to 
+smoothly meet basic subsistence needs 
+and the ability to make some savings. The 
+sustenance and basic sufficiency of income 
+are core elements of financial safety. This, in 
+turn, depends upon meaningful employment, 
+entrepreneurial pursuits, market linkages, etc. 
+for which livelihood and skilling opportunities 
+are of utmost importance. 
+Sustenance and deepening of the skilling for 
+livelihood ecosystem requires backward and 
+forward linkages in the financial inclusion 
+ecosystem, and integrated efforts to improve 
+the outcomes. The nature of the tasks in 
+financial inclusion initiatives is such that 
+there is a need for interconnectedness and 
+synergy amongst various stakeholders for the 
+24 Illustratively, categorical factors, such as people of certain age groups (young adults, and super senior citizens), people with low education, differently-abled 
+people, occupational migrants, etc., and circumstantial factors, such as, loss of life, livelihood, and assets due to natural/physical disasters, people facing a 
+situation of over-indebtedness, etc. could be selected for development of common principles/parameters to be followed by all financial services providers for the 
+ease of their onboarding, transactions and sustenance of delivery of financial services to such segments.
+25 For instance, an overdraft (OD) facility up to Rs. 10,000 is available to PMJDY account holders. (https://www.pmjdy.gov.in/scheme)
+
+
+--- PAGE 42 ---
+42
+National Strategy for Financial Inclusion 2025-30
+sustenance of employment, market linkages, 
+suitable funding, awareness, and handholding. 
+Recommendation:
+Leveraging Skill India Digital Hub and local 
+community organizations is recommended 
+for augmenting synergy and convergence in 
+the skilling and livelihood ecosystem to plug 
+gaps in credit/market linkages and mitigate 
+demographic/geographic inequalities to 
+improve employability, and entrepreneurial 
+opportunities to facilitate better income 
+earning capabilities, in turn leading to 
+effective access and usage of financial 
+services.
+Action Points:
+1. Content Development and Delivery for 
+Skill Training 
+(a) NSDC, with its mandate of catalysing the 
+skilling ecosystem for last mile participation 
+and as the strategic implementation and 
+knowledge partner to Skill India Mission, 
+may act as the nodal agency for developing 
+content and arranging skill training across 
+the skilling and livelihood ecosystem. New 
+content development and/or updation of 
+existing content on financial literacy included 
+in the skill development programme may be 
+undertaken in consultation with NCFE.
+(b) NSDC may steer the adoption of National 
+Skills Qualifications Framework (NSQF) by all 
+skill training institutions to enable individuals 
+to acquire desired competency levels, to 
+enhance employability potential. Skill training 
+curriculum should be made available in all 
+scheduled languages on the Skill India Digital 
+Hub and be readily accessible to all.
+(c) NSDC may lead the efforts to synergize 
+the resources of all skill training entities 
+(RSETIs, JSS, PMKVY, NISEBUD, Skill India 
+Centers, ITIs, Skill and Vocational Colleges, 
+etc.) through onboarding and data sharing on 
+the Skill India Digital Hub. A gender-sensitive 
+approach may be adopted by all the skilling 
+and livelihood institutions to help in achieving 
+the national target under SDG-2030 (SDG-5).
+2. Data Sharing and Reporting
+NSDC may leverage Skill India Digital Hub 
+to collate and publish periodic reports on 
+numbers and types of skill training conducted 
+by various skilling/training entities and their 
+settlement. Skilling and settlement initiatives 
+under other Government programmes such as 
+NRLM and NULM, including financial literacy 
+focused training for SHG members, may be 
+integrated into the database in due course, to 
+have complete pan-India data on the skilling 
+and livelihood ecosystem.
+3. Funding and Financial Support to Skill 
+Trained Individuals
+(a) Information on skill loan schemes of NSDC, 
+Government of India and State Governments 
+may be made available widely, including 
+by participating financial sector entities, to 
+encourage individuals to enroll for suitable 
+skill training with financial support. 
+(b) Potential Linked Plan (PLP) of each district 
+under respective State/UTs should have a 
+suitable allocation for the individuals trained by 
+recognised skill training institutions (R-SETIs, 
+PMKVY, JSS etc.) to enable credit support to 
+such individuals by banks. Trained candidates 
+must be provided with the necessary support 
+through handholding arrangements in 
+approaching financial institutions for credit 
+facilities. 
+
+
+--- PAGE 43 ---
+43
+CHAPTER - IV
+4. Leveraging Local Community 
+Organizations
+To involve local communities for social 
+intermediation by way of a structured 
+mechanism to synergise the efforts made 
+by various stakeholders through a trusted-
+assisted middle layer of social infrastructure in 
+form of Community Resource Entities (CREs). 
+CREs refer to locally rooted community 
+organizations, such as cooperatives, trusts/
+societies, and NGOs, that would provide social 
+intermediation within skilling for livelihood 
+ecosystem. 
+The purpose of CREs is to create synergy in 
+the financial inclusion ecosystem by offering 
+community-oriented intermediation and 
+localized support for facilitating access to 
+skilling/livelihood, market linkages, and bank 
+credit. It would create a trusted-assisted 
+middle layer in form of a social infrastructure 
+to undertake the following functions. 
+a. Assessment of training gap - CREs will 
+collect data of unemployed, underemployed, 
+school dropouts and other in need for skill 
+training via survey or through participatory 
+identification process.
+b. Liaison with skill training entities – CREs 
+should have appropriate linkages with relevant 
+skill training agencies, potential employers, 
+and banks.
+c. CREs should map training needs of the 
+locality with respective skill development 
+institutions. 
+d. Handholding of trained individuals after 
+completion of training and providing support 
+for employment/entrepreneurship and funding.
+CREs being locally rooted will have the 
+capacity to mobilize individuals and gain the 
+trust of the local communities. By engaging 
+with the community, CREs would act as a 
+bridge between the skilling centers, banks, 
+and livelihood providers/ employers on one 
+end, and aspirants on the other end, thereby 
+providing a broader spectrum of forward and 
+backward linkages while reducing information 
+asymmetry in the FI ecosystem. 
+A small-scale pilot on operationalizing CREs 
+may be undertaken to assess workability of 
+the concept. Further action on implementation 
+may be decided based on findings and 
+evaluation of the pilot phase.
+IV. Leveraging Financial Education as a 
+Tool for Promoting Financial Discipline.
+Financial Discipline as an integral element 
+of wellbeing of people is manifested in their 
+financial behaviour, namely, knowledge and 
+awareness, decision-making, choices and 
+outlook, dependence, influence, etc. To 
+some extent, financial discipline depends 
+on the innate cognitive characteristics of 
+individuals, however, to a large extent financial 
+discipline could be a learned behaviour with 
+identifiable markers, namely, a) financial 
+knowledge, b) sustainable indebtedness, c) 
+realistic goal setting, d) financial planning, 
+and e) diversification of savings/investments. 
+Accordingly, financial education could be 
+leveraged to work on the above markers.
+
+
+--- PAGE 44 ---
+44
+National Strategy for Financial Inclusion 2025-30
+Recommendation:
+Considering financial discipline essentially 
+as a learned behaviour, financial education/
+literacy mechanisms may be leveraged to go 
+beyond the creation of awareness in general 
+and aim at improving financial discipline 
+amongst households. Accordingly, the 
+financial education/literacy initiatives should 
+have an additional targeted focus on the 
+following three dimensions.
+a) Providing context and process-oriented 
+financial knowledge 26 with suitably 
+differentiated content and differentiated 
+delivery models, beyond broad conceptual 
+awareness, for effectuating enhanced and 
+safe usage of financial services.
+b) Promoting sustainable indebtedness and 
+guarding against over-indebtedness with a 
+focus on highlighting risks of repaying loans 
+through fresh borrowings, and repayment 
+obligations exceeding half27 of the income. 
+c) Encouraging and emphasizing the 
+importance of realistic financial goal setting 
+and financial planning for the wellbeing 
+of the households, besides the need for 
+diversification of savings/investments.
+Action Points: 
+1. Sustaining and deepening financial 
+literacy initiatives. 
+To sustain efforts of financial literacy through 
+constant policy review of dissemination 
+channels such as Centres of Financial Literacy 
+(CFL) and Financial Literacy Centres (FLCs) 
+along with supplementing efforts in capacity 
+building, content updation, etc.
+2. Targeted Financial Literacy Initiatives 
+(a) Differentiated content and focused delivery 
+channels could make the dissemination of 
+financial literacy more meaningful by involving 
+entities connected with the target segments 
+with functional linkages and could further 
+boost the quality and effectiveness of financial 
+literacy extension initiatives. Accordingly, 
+National Centre for Financial Education 
+(NCFE) may conceptualise and execute an 
+appropriate delivery model for targeted FL 
+content to cater to the needs of students, 
+elderly, migrants, differently abled, and other 
+similar groups on a sustained basis. 
+(b) In addition to existing CFL mechanism, 
+financial literacy units may be established 
+at select schools, colleges, farmer-
+producer organizations (FPOs), community 
+organisations, etc., to disseminate 
+contextualised and focused FL content.
+3. Improving Digital Literacy
+Expansion in digital footprints of financial 
+services requires upgrading the digital skills of 
+the people, as lack of experience and comfort 
+with digital devices and applications could 
+make people vulnerable to frauds and hamper 
+the progress of digital financial inclusion. 
+Accordingly, NCFE and financial service 
+providers may run focussed and innovative 
+campaigns to augment digital literacy to 
+enable people to identify attempts to defraud, 
+while allaying the concerns of people relating 
+to safety and security of digital transactions.
+26 The awareness refers to a broad conceptual understanding, while knowledge is context and process specific and hands-on ability that can be put to use.
+27 Para 5.2 (Limit on Loan Repayment Obligations of a Household) - Master Direction – Reserve Bank of India (Regulatory Framework for Microfinance Loans) 
+Directions, 2022.
+
+
+--- PAGE 45 ---
+45
+CHAPTER - IV
+4. Development and dissemination of 
+content on areas of emerging relevance
+NCFE may develop suitable content on the 
+following aspects for dissemination through 
+Centers for Financial Literacy (CFLs), 
+Financial Literacy Centers (FLCs), and other 
+channels –  
+(a) Promoting sustainable indebtedness 
+and guarding against over-indebtedness in 
+households. 
+(b) Developing understanding about realistic 
+financial goal setting, need for financial 
+planning, and diversification of savings/
+investments.
+5. Periodic Assessment of the state of 
+financial literacy.
+(a) NCFE may conduct periodic surveys 
+(including limited surveys covering specified 
+segments) to assess the state of financial 
+literacy and financial inclusion.
+(b) Based on the gaps assessed through the 
+survey findings, NCFE may conceptualise 
+and execute awareness initiatives for specific 
+regions/ groups.
+6. Developing AI & ML-based public query 
+systems on common banking and finance-
+related aspects.
+Considering the need for access to quick, 
+correct, and authenticated information relating 
+to financial services/products to protect 
+customers from falling prey to grapevine, it is 
+recommended that financial service providers 
+should -  
+(a) make available a duly authenticated 
+public query systems for clarifying doubts and 
+seeking information through their websites 
+and social media extensions.
+(b) conduct suitably positioned social media 
+campaigns for effective dissemination of 
+engaging content on consumer protection and 
+grievance redressal measures.
+V. Strengthening the Quality and 
+Reliability of Customer Protection and 
+Grievance Redressal Measures.
+Consumer protection forms one of the core 
+elements of the quality of financial inclusion, 
+which instills trust and confidence amongst 
+users of financial services. Robust consumer 
+protection measures are needed so that 
+users of financial services have adequate 
+safeguards towards protection of their rights 
+and interests.  Hence, specific measures are 
+needed to strengthen the customer protection 
+edifice.
+Recommendation:
+In order to cater to the various segments of 
+populations in a cost-effective manner, banks 
+have leveraged digital/fintech platforms to 
+curate and deliver financial services/products. 
+The extension of financial services has to be 
+duly supported by easy, reliable, trusted, and 
+effective customer protection and grievance 
+redressal measures, as the effectiveness of 
+customer protection remains at the core of 
+the demand for financial services.
+Action Points:
+1. Improving Grievance Redress 
+Mechanism - Reducing High Customer 
+Burden in Redress Mechanism
+(a) Simpler Solutions
+In order to strengthen the demand for formal 
+
+
+--- PAGE 46 ---
+46
+National Strategy for Financial Inclusion 2025-30
+financial services and boost people’s trust in 
+the system, grievance redressal processes at 
+FSP’s end need to be made simpler so as to 
+reduce the customer’s time and resources. In 
+addition to existing grievance redressal portals 
+and helpline numbers, simpler solutions may 
+be adopted whereby an aggrieved customer 
+only needs to dial a missed call service 
+number without the need to go through a long 
+winded and queued process. Such a missed 
+call may prompt a call back from the service 
+provider from a designated number to register 
+and record the grievance to be acknowledged 
+and progress updated through SMS in a time-
+bound manner. Simple apps/solutions may 
+also be developed, which support filing of 
+complaints in regional languages for resolution 
+by FSPs.
+(b) Effective use of Citizen Financial 
+Cyber Frauds Reporting and Management 
+System (CFCFRMS) to attend cyber fraud 
+complaints. 
+To deal with the rising menace of financial 
+frauds, a common integrated platform in 
+the form of Citizen Financial Cyber Frauds 
+Reporting and Management System 
+(CFCFRMS) has been created, where 
+all concerned stakeholders, namely, law 
+enforcement agencies, banks, financial 
+service providers, etc. work in tandem to 
+ensure that quick, and system-based effective 
+action is taken to prevent flow of money 
+siphoned off from innocent citizens to the 
+fraudsters. CFCFRMS receives complaints 
+through helpline number 1930 or on National 
+Cybercrime Reporting Portal (NCRP).
+Banks should put in place a designated 
+mechanism available in near real time for 
+withholding/blocking the flow of funds against 
+which a complaint ticket is raised in CFCFRMS.
+(c) Board approved Customer Grievance 
+Redress Policy
+Financial sector regulators may ensure that 
+all FSPs have a well-documented Board 
+approved Customer Grievance Redress 
+Policy, widely publicised and prominently 
+displayed on their respective websites and a 
+direct link to lodge a complaint may be provided 
+at all customer interface points/media. Such 
+information may also be made available 
+in vernacular languages, and timeline and 
+quality of resolution may be monitored by top 
+management of the respective FSPs.
+2. Strengthening Customer Protection 
+Measures
+(a) Digital Payments Intelligence Platform 
+to Mitigate Payment Frauds
+Sustaining confidence in digital services 
+requires minimizing incidence of frauds. 
+Since, many frauds occur by influencing 
+unsuspecting victims to make the payment 
+or share credentials, besides measures on 
+an ongoing basis to protect customers from 
+such frauds, there is a need for network-level 
+intelligence and real-time data sharing across 
+payment systems. Accordingly, advanced 
+technologies may be harnessed to mitigate 
+payment fraud risks through a special platform 
+designed for the purpose, which may be 
+operationalized by December 2026.
+(b) Protection against dark patterns
+With a view to protecting customers against 
+dark patterns, which manipulate or impede 
+customers’ choices and autonomy to their 
+detriment, regulators may issue guidelines 
+
+
+--- PAGE 47 ---
+47
+CHAPTER - IV
+requiring financial service providers not to 
+resort to dark patterns in their conduct and 
+operations.
+(c) Guardrails against Tech Innovations 
+Technological innovations while facilitating 
+access and usage of financial services also 
+bring to fore unintended customer protection 
+issues such as data breaches, manipulations, 
+frauds, and unfair practices, etc., requiring 
+suitable guardrails.
+Regulators may leverage supervisory 
+processes to bolster customer protection 
+to ensure fair treatment of customers in 
+the financial sector by adopting focussed 
+supervisory methods, in tandem with the 
+evolving financial landscape, as well as strict 
+supervisory action in cases of non-adherence 
+to regulatory framework for customer 
+protection.  
+(d) Use of pre-intimated official phone 
+numbers by banks
+One of the common modes used by fraudsters 
+is to impersonate bank employees by phone 
+calls/e-mails/SMSes targeting unsuspecting 
+customers. Inability of customers to distinguish 
+between a genuine phone call/SMS from 
+bank and that from a fraudster impersonating 
+a bank staff poses a serious risk to customer 
+protection. 
+Therefore, mechanism should be put in 
+place requiring financial service providers to 
+designate specific phone numbers/ email IDs 
+from which customers/potential customers 
+to be contacted. Such details should be 
+prominently displayed in all their commercial 
+channels as well as notified to customers. Use 
+of any other phone/mobile numbers/e-mail 
+should be prohibited. 
+(e) Conduct of regular customer awareness 
+campaigns
+Financial sector regulators may prescribe 
+conduct of regular awareness campaigns for 
+customers on suitable themes by financial 
+services providers.
+The recommendations and action points 
+for addressing various impediments 
+and challenges and achieving strategic 
+objectives under Panch Jyoti offer a holistic 
+and synergistic approach towards financial 
+inclusion. Table IV.1 provides a snapshot of 
+challenges/ impediments, recommendations/ 
+action points aimed at addressing them and 
+also identifies the stakeholders responsible 
+for implementation.
+
+
+--- PAGE 48 ---
+48
+National Strategy for Financial Inclusion 2025-30
+Table IV.1: Challenges/ Impediments to FI, Strategic Objectives/ Action Points, and Implementing Stakeholders
+Identified Challenges/
+Impediments to Financial 
+Inclusion
+(Ref: Chapter-II)
+Addressing Challenges/Impediments Through 
+Strategic Objectives 
+(Panch Jyoti)
+(Ref: Chapter- IV)
+Dimensions of FI
+Implementing Stakeholders
+(*Including FSPs under their 
+respective jurisdictions)
+Strategic 
+Objectives 
+(Panch Jyoti)
+Action Points
+*RBI
+*IRDAI
+*PFRDA
+*SEBI
+NABARD
+NSDC
+NCFE
+Deficiencies in quality and 
+consistency of the access to 
+financial services and need for 
+availability of full range of basic 
+financial services.
+Improving the availability and use of Equitable, Responsible, Suitable, and Affordable Bouquet of Financial Services to achieve Financial Safety and 
+Financial Security for households and micro enterprises. (13 Action Points)
+Improving equity, reach, 
+consistency, and quality of last 
+mile access.
+Access
+
+Incentive mechanism for BC 
+agents from hilly and rural areas.
+Access
+ 
+Lack of timely and commensurate 
+remuneration to BC agents.
+Strengthening the Remuneration 
+Structure of BCs.
+Access
+
+Difficulties in commercial viability 
+of BC outlets due to low transaction 
+volume in certain pockets.
+Expanding the scope of services 
+and improve the sustenance of 
+BC operations.
+Access
+   
+Gaps in operations of BC agents 
+and inadequate monitoring.
+Strengthening of BC Registry.
+Access
+
+Need for further expansion and 
+deepening of digital financial 
+services.
+Reaching one billion users in 
+digital payments.
+Usage
+
+Expanding and Deepening Digital 
+Payment Ecosystem (EDDPE). 
+ 
+  Usage
+
+Need for targeted credit flow by 
+leveraging digital channels.
+Programmable CBDC to Facilitate 
+Targeted Credit Flow and Expand 
+Access.
+  Usage
+
+Unified Lending Interface (ULI) as 
+a DPI.
+Usage
+
+Need for improving financial 
+resilience at household level.
+Onboarding of all banks 
+and insurance companies 
+to Jansuraksha Portal and 
+increasing coverage of APY.
+Usage
+   
+Low usage of financial services 
+due to complex interfaces and 
+language barriers.
+Simpler Digital Interfaces.
+Usage
+   
+Credit gaps for micro enterprises. Micro Enterprises to receive 
+focussed attention.
+Usage
+
+Encouraging adoption of code of 
+conduct and best practices.
+Promoting Responsible 
+Innovation through Self- 
+Regulatory Organisations.
+Quality
+   
+
+
+--- PAGE 49 ---
+49
+Insufficient representation of 
+women as BC agents.
+Adopting Gender-Sensitive Approach for Women-led Financial 
+Inclusion and Differentiated Strategies for Improving Financial 
+Resilience of Households, especially for the Underserved and 
+Vulnerable segments. (6 Action Points)
+Increasing the share of women 
+business correspondents.
+Access
+
+Lack of focused and suitable 
+services to vulnerable/ 
+underserved segments.
+Identification of vulnerable and 
+underserved Segments for 
+focused services.
+Usage
+   
+Differentiated suitable products 
+and delivery channel for 
+underserved and vulnerable 
+segments.
+Usage
+   
+Ineffective financial resilience at 
+the household level.
+Development of suitable bundled 
+products in investment, pension, 
+and insurance domain.
+Usage
+  
+Suitable and fair credit products 
+with easier documentation 
+process and quick disbursals.
+Usage
+
+Emergency Credit - Overdraft in 
+BSBDAs.
+Usage
+
+Lack of regular and sustained 
+income/ livelihood and inefficient 
+linkages in the financial inclusion 
+ecosystem, besides information 
+asymmetry.
+Synergizing Livelihood, Skill Development and Support 
+Ecosystem and its linkages with Financial Inclusion. 
+(7 Action Points)
+Content Development and 
+Delivery for Skill Training.
+Usage
+ 
+Adoption of NSQF by all skilling 
+institutions and availability of 
+course content in all languages.
+Usage
+
+Synergize resources of all the 
+skilling institutions with focus on 
+gender sensitive approach.
+Usage
+
+Data Sharing and Reporting on 
+number and types of skill training 
+conducted.
+Usage
+
+Dissemination of Information on 
+Skill Loan schemes of NSDC, 
+GOI, and State Govt.
+Usage
+ 
+Lack of sufficient credit linkage of 
+skill trained individuals.
+Funding and Financial Support to 
+Skill Trained Individuals through 
+Potential Linked Plan of each 
+district.
+Usage
+ 
+Lack of sufficient community 
+participation to aid the institutional 
+efforts in FI.
+Leveraging Local Community 
+Organizations.
+Usage
+ 
+Information asymmetry, Linguistic 
+and/or literacy barriers, and 
+low level of financial and digital 
+awareness.
+Leveraging Financial 
+Education as a tool for 
+Promoting Financial 
+Discipline.
+(10 Action Points)
+Sustaining and deepening 
+financial literacy initiatives.
+Quality
+     
+Differentiated contents and 
+focussed delivery channels.
+Quality
+
+Setting up of Targeted Financial 
+Literacy Units.
+Quality
+ 
+CHAPTER - IV
+
+
+--- PAGE 50 ---
+50
+National Strategy for Financial Inclusion 2025-30
+Information asymmetry, Linguistic 
+and/or literacy barriers, and 
+low level of financial and digital 
+awareness.
+Leveraging Financial Education as a tool for Promoting Financial 
+Discipline.
+(10 Action Points)
+Improving Digital Literacy.
+Quality
+
+Development and dissemination 
+of contents – Sustainable 
+Indebtedness.
+Quality
+
+Need for focus on emerging risks 
+to financial resilience.
+Development and dissemination 
+of contents – Realistic goal 
+setting, financial planning, etc.
+Quality
+
+Need for assessment and focused 
+financial literacy campaigns.
+Periodic Assessment of the state 
+of financial literacy.
+Quality
+
+Focused awareness initiatives for 
+specific regions/ groups.
+Quality
+
+Need for easy availability of 
+authentic information and 
+awareness campaigns for 
+customer protection and grievance 
+redressal measures.
+Developing AI & ML-based public 
+query systems on common 
+banking and finance-related 
+aspects.
+Quality
+   
+Conduct of suitably positioned 
+social media campaigns on 
+consumer protection and 
+grievance redressal measures.
+Quality
+   
+Need for simple and efficient 
+grievance redress mechanism.
+         Strengthening the Quality and Reliability of Customer Protection and Grievance 
+Redressal Measures. 
+(8 Action Points)
+Simpler and Less Burdensome 
+Solutions. 
+Quality
+   
+Use of pre-intimated official phone 
+numbers by banks. 
+Quality
+   
+Need for effective measures for 
+mitigation and protection form 
+cyber/ payment fraud.
+Streamlining and Onboarding 
+of banks on Citizen Financial 
+Cyber Frauds Reporting and 
+Management System.
+Quality
+
+Board approved Customer 
+Grievance Redress Policy.
+Quality
+   
+Digital Payments Intelligence 
+Platform.
+Quality
+
+Need for responsible behaviour by 
+financial service providers.
+Protection against dark patterns.
+Quality
+   
+Need for focused attention 
+to customer protection while 
+promoting tech innovations.
+Guardrails against Tech 
+Innovations.
+Quality
+   
+Need for creation of customer 
+awareness
+Conduct of regular customer 
+awareness campaigns.
+Quality
+   
+
+
+--- PAGE 51 ---
+51
+Improving effectiveness of 
+measurement and monitoring 
+mechanism.
+Monitoring and measurement 
+mechanism for assessing progress 
+in FI space. (3 Action Points)
+Data collection and dissemination 
+by financial sector regulators.
+   
+Development of broader and 
+disaggregated FI-Index.
+   
+Conduct of studies/surveys.    
+Table IV.2 Stakeholder-Wise Distribution Matrix of the Action Points
+Sr Chap-
+ters /
+Strategic 
+Objec-
+tives
+Number 
+of action 
+points
+Number of action points for each stakeholder
+RBI
+IRDAI
+PFRDA
+SEBI
+NABARD
+NSDC
+NCFE
+1 IV.1 13 13 4 4 3 2 - -
+2 IV.2 6 5 3 3 3 - - -
+3 IV.3 7 3 - - - 2 5 1
+4 IV.4 10 4 3 3 3 2 - 7
+5 IV.5 8 8 6 6 6 - - -
+6 V 3 3 3 3 3 - - -
+Total 47 36 (77%) 19 (40%) 19 (40%) 18 (38%) 6 (13%) 5 (11%) 8 (17%)
+Table IV.3 - FI-Dimensions Wise Distribution Matrix of the Action Points
+FI - Dimensions Number of action points
+Access 6 (13%)
+Usage 19 (40%)
+Quality 19 (40%) 
+Monitoring & Measurement 3 (7%)
+Total 47 (100%)
+CHAPTER - IV
+
+
+--- PAGE 52 ---
+52
+National Strategy for Financial Inclusion 2025-30
+CHAPTER-V 
+Monitoring and Measurement Mechanism
+The NSFI envisions an ecosystem approach 
+towards achieving universal financial inclusion. 
+A set of milestones encompassing various 
+areas where specific actions are required on 
+the part of stakeholders are also laid down. 
+Periodic evaluation and measurement are 
+integral to the strategy as they provide the 
+evidence needed to gauge the impact of the 
+measures taken under its ambit. For this, it is 
+necessary to identify suitable indicators so that 
+the progress in the intended direction can be 
+assessed, and impact of policy formulations 
+and focus areas can be identified, as the 
+adage goes - ‘If you can measure it, you can 
+improve it.’
+2. Indicators related to financial inclusion are 
+typically classified under ‘Access’, ‘Usage’ 
+and ‘Quality’ with associated disaggregation 
+to allow for detailed evaluation based on 
+geography and demography (gender, age, 
+income, etc.). While supply side assessment 
+can be facilitated trough regulatory returns 
+and other such readily available data points, 
+the demand side assessment necessitates 
+conduct of studies/surveys to gain insights into 
+the quality of financial inclusion at the ground 
+level and identify enablers for advancing 
+financial inclusion. 
+3. As such, it is recommended that the state 
+of financial inclusion be measured and 
+monitored to cover both the supply side of 
+financial inclusion (type of financial products 
+and services, and delivery channels) and the 
+demand side of financial inclusion (factors that 
+affect the usage of financial services).
+Supply Side Measurement: 
+4. While there would always be a need for the 
+traditional data sets related to banking outlets, 
+ATMs, basic savings bank deposit accounts, 
+credit, digital payments, investments in 
+mutual funds, insurance, and pension 
+products, awareness initiatives, etc., to have 
+more detailed and granular assessment, the 
+disaggregated data based on geography, 
+gender, age, etc. are also vital. In addition, to 
+evaluate the quality of inclusion and understand 
+the barriers to financial access, data on new-
+to-credit entrants, cost of accessing financial 
+services at the last mile, inoperative accounts, 
+inactive business correspondents, etc., 
+assume significance. 
+5. Based on the above, the following approach 
+may be adopted towards data collection and 
+dissemination by all financial sector regulators, 
+going forward. 
+a) Data collection efforts may ensure coverage 
+of formal financial institutions in the financial 
+inclusion ecosystem, in totality.
+b) Data should be captured at the district level 
+with gender and age disaggregation so as to 
+facilitate assessment of geographical, gender, 
+and age-related dimensions in access and 
+usage of financial products and services and 
+gain cross-sectional insights. An indicative list 
+of datapoints pertaining to the banking sector 
+is placed in the appendix to this chapter. The 
+
+
+--- PAGE 53 ---
+53
+same may be made available in public domain.
+c) Customer data captured by financial 
+services providers should include broad 
+categories such as income level, education, 
+occupation, purpose, etc. to enable analysis 
+and better positioning of policy measures.
+d) Widely acceptable and harmonized data 
+definition should be developed for select 
+terminologies, namely, Vulnerable Consumers, 
+Migrants, etc., which can be used across the 
+financial sector for suitable interventions.
+e) The current FI-Index reflects the advances 
+made in the financial inclusion space at the 
+country level. With a view to assessing the 
+extent of financial inclusion at the regional level, 
+there is a need for developing disaggregated 
+FI Index, preferably at State/UT level. To begin 
+with, during the period of NSFI:2025-30, a 
+new series of FI-Index with broader coverage 
+and State/UT level disaggregation may be 
+constructed and published.
+Demand Side Measurement - Conduct of 
+Studies/Surveys
+6. In conjunction with supply side data 
+collection, to gather details about the barriers 
+to access and usage of financial services, 
+and quality of inclusion, especially at the 
+last mile, demand side measurement is 
+necessary. This can be done through demand 
+side surveys/ focus group studies, which can 
+reveal the drivers of financial inclusion and 
+help identifying impeders in the form of socio-
+economic factors, suitability of products and 
+services, debt vulnerabilities at household 
+level, level of financial literacy and capability, 
+state of grievance redress, etc.
+7. Arguably, focusing on the end user’s 
+perspective, the demand side measurement 
+has the potential to throw light on aspects 
+such as alignment of need and demand, 
+bottlenecks in delivery of financial services at 
+the last mile, regional inadequacies, evolving 
+preferences, etc. 
+8. It is recommended that a mechanism of 
+conducting regular studies/ surveys to assess 
+the state of financial inclusion to be put in 
+place by financial sector regulators. 
+Way Forward 
+9. Financial inclusion policies duly integrated 
+with financial education, customer protection, 
+skill development, livelihood support, 
+entrepreneurship, and market linkages, with a 
+multi-stakeholder approach, can be enablers 
+of desired outcomes reflected in an improved 
+state of financial safety, financial security, 
+financial resilience, and financial discipline, in 
+turn contributing towards wellbeing of people. 
+Hence, adoption of a holistic and synergistic 
+approach to financial inclusion is the way 
+forward.
+
+
+--- PAGE 54 ---
+54
+National Strategy for Financial Inclusion 2025-30
+Appendix: District wise data points pertaining to the banking sector:
+Sr No Indicators/Data Points Disaggregation
+Access  
+1 Number of Banking Outlets manned by bank’s own staff Population Group Wise
+2 Number of Banking outlets manned by BC [Fixed Point BC 
+Outlet [FBC]] Population Group Wise
+3 Number of Digital Banking Units (DBUs) Population Group Wise
+4 Number of BC Outlets other than FBCs Population Group Wise
+5 Number of ATMs Population Group Wise
+6 Number of Inactive FBC Population Group Wise
+7 Number of Inactive BC Outlets other than FBC Population Group Wise
+Usage – Savings
+8 Number of Savings Accounts Gender, Age and Population Group 
+Wise
+9 Balance Outstanding in Savings Accounts Gender, Age and Population Group 
+Wise
+10 Number of BSBD Accounts Gender, Age and Population Group 
+Wise
+11 Balance Outstanding in BSBD Accounts Gender, Age and Population Group 
+Wise
+12 Out of BSBD Accounts, Number of PMJDY accounts Gender, Age and Population Group 
+Wise
+13 Out of BSBD Accounts, balance outstanding in PMJDY ac-
+counts
+Gender, Age and Population Group 
+Wise
+14 Out of BSBD Accounts, Number of BSBD Small Accounts Gender, Age and Population Group 
+Wise
+15 Out of BSBD Accounts, balance outstanding in BSBD- Small 
+Accounts
+Gender, Age and Population Group 
+Wise
+16 Number of dormant/ inoperative BSBD accounts Gender, Age and Population Group 
+Wise
+17 Balance outstanding in dormant/ inoperative BSBD accounts Gender, Age and Population Group 
+Wise
+18 Number of dormant/ inoperative PMJDY accounts Gender, Age and Population Group 
+Wise
+19 Balance outstanding in dormant/ inoperative PMJDY accounts Gender, Age and Population Group 
+Wise
+20 Number of BSBD Accounts availing Overdraft (OD) Facility Gender, Age and Population Group 
+Wise
+21 Balance outstanding in BSBD Accounts availing OD Facility Gender, Age and Population Group 
+Wise
+22 Number of PMJDY Accounts availing Overdraft (OD) Facility Gender, Age and Population Group 
+Wise
+
+
+--- PAGE 55 ---
+55
+APPENDIX
+Appendix: District wise data points pertaining to the banking sector:
+Sr No Indicators/Data Points Disaggregation
+23 Balance outstanding in PMJDY Accounts availing OD Facility Gender, Age and Population Group 
+Wise
+24
+Number of BSBD Accounts in which Value-Added Services 
+(Cheque Book, Mobile Banking, SMS, Internet Banking etc.) 
+are provided
+Gender, Age and Population Group 
+Wise
+Usage - Entrepreneurial Credit
+25 Number of loan accounts to Micro Enterprises Gender and Population Group Wise
+26 Amount outstanding in the loan to Micro Enterprises Gender and Population Group Wise
+27 Loans to Micro Enterprises - Disbursement during the Quarter Gender and Population Group Wise
+28 Number of loan accounts to Individual [Entrepreneurs not 
+classified as MSME] Gender and Population Group Wise
+29 Amount outstanding in the loan accounts to Individual [Entre-
+preneurs not classified as MSME] Gender and Population Group Wise
+30 Loans to Individual [Entrepreneurs not classified as MSME] - 
+Disbursement during the Quarter Gender and Population Group Wise
+Usage - Farm Credit  
+31 Number of loans accounts to SF/MF Gender, Age and Population Group 
+Wise
+32 Amount outstanding in loan to SF/MF Gender, Age and Population Group 
+Wise
+33 Loans to SF/MF - Disbursement during the Quarter Gender, Age and Population Group 
+Wise
+34 Number of KCC accounts Gender, Age and Population Group 
+Wise
+35 Amount outstanding in KCC accounts Gender, Age and Population Group 
+Wise
+36 KCC Loans - Disbursement during the Quarter Gender, Age and Population Group 
+Wise
+Usage - New to Credit 
+37 Number of New to Credit Accounts [Individual] Gender, Age and Population Group 
+Wise
+38 Sanctioned amount of loan to New to Credit Accounts [individ-
+ual]
+Gender, Age and Population Group 
+Wise
+39 Number of New to Credit Accounts-Micro Enterprises [MSME] Gender, and Population Group Wise
+40 Sanctioned amount of loan to New to Credit Accounts - Micro 
+Enterprises [MSME] Gender, and Population Group Wise
+41 Number of New to Credit Accounts-Small Enterprises [MSME] Gender, and Population Group Wise
+42 Sanctioned amount of loan to New to Credit Accounts - Small 
+Enterprises [MSME] Gender, and Population Group Wise
+43 Number of New to Credit Accounts- [MSME] Gender, and Population Group Wise
+
+
+--- PAGE 56 ---
+56
+National Strategy for Financial Inclusion 2025-30
+Appendix: District wise data points pertaining to the banking sector:
+Sr No Indicators/Data Points Disaggregation
+44 Sanctioned amount of loan to New to Credit Accounts - 
+[MSME] Gender, and Population Group Wise
+Usage - Micro Credit 
+45 Number of Savings Bank Account of SHGs Population Group Wise
+46 Amount outstanding in Savings Bank Account of SHGs Population Group Wise
+47 Number of credit-linked SHGs with outstanding credit Population Group Wise
+48 Amount outstanding in credit linked SHG accounts Population Group Wise
+49 Loans to SHGs - Disbursement during the Quarter Population Group Wise
+50 Number of loan accounts to JLG Population Group Wise
+51 Amount outstanding to JLG Population Group Wise
+52 Loans to JLGs - Disbursement during the Quarter Population Group Wise
+Indicators on Business Correspondents/ Last mile delivery 
+53 Number of BC Agents Gender and Population Group Wise
+54
+Out of total Number of BCs, BCs providing at least cash in, 
+cash out, remittance and opening of savings account facilities 
+(population group wise)
+Gender and Population Group Wise
+55 Commission Paid to BC Agents
+Amount [ Nil, Less than 10K; 10k to 
+20k and 20K & Above], Gender and 
+Population Group Wise
+Indicators on Doorstep Banking Services 
+56 Number of Senior Citizen A/C holders Gender, Age and Population Group 
+Wise
+57 Number of Senior Citizen A/C holders provided Doorstep 
+Banking Services
+Gender, Age and Population Group 
+Wise
+58 Number of Differently abled A/C holders Gender, Age and Population Group 
+Wise
+59 Number of Differently abled A/C holders provided Doorstep 
+Banking Services
+Gender, Age and Population Group 
+Wise
+Indicators on transactions through Business Correspondent/ Last mile delivery 
+60 Remittances through ICT-BC transactions (Number) Gender and Population Group Wise
+61 Remittances through ICT-BC transactions (Amt.) Gender and Population Group Wise
+62 Deposits through ICT-BC transactions (Number) Gender and Population Group Wise
+63 Deposits through ICT-BC transactions (Amt.) Gender and Population Group Wise
+64 Withdrawals through ICT-BC transactions (Number) Gender and Population Group Wise
+65 Withdrawals through ICT-BC transactions (Amt.) Gender and Population Group Wise
+66 Non-Financial Transactions (Number) Gender and Population Group Wise
+
+
+--- PAGE 57 ---
+57
+APPENDIX
+Appendix: District wise data points pertaining to the banking sector:
+Sr No Indicators/Data Points Disaggregation
+67 Other FI products - Micro-Insurance, Pension, etc. through 
+BCs (Number) Gender and Population Group Wise
+68 Charges recovered from customers for transactions undertak-
+en through BC Gender and Population Group Wise
+Usage of Digital Access Methods  
+69 Number of accounts that used RTGS/NEFT/IMPS/UPI/Other 
+Digital methods during the reporting quarter
+Gender, Age and Population Group 
+Wise
+
+
+--- PAGE 58 ---
+58
+National Strategy for Financial Inclusion 2025-30
+NSFI (2019-24) - STRATEGIC PILLARS, 
+MILESTONES AND ACHIEVEMENTS
+Strategic Pillar – I: Universal Access to 
+Financial Services
+Every village to have access to a formal financial 
+service provider within a reasonable distance of 
+5 KM radius. The customers may be onboarded 
+through an easy and hassle-free digital process 
+and processes should be geared towards a less-
+paper ecosystem.
+Milestones –
+● Increasing outreach of banking outlets of 
+Scheduled Commercial Banks /Payments Banks/ 
+Small Finance Banks, to provide banking access 
+to every village within a 5 KM radius/ hamlet of 
+500 households in hilly areas by March 2020.
+● Strengthen eco-system for various modes of 
+digital financial services in all the Tier-II to Tier 
+VI centres to create the necessary infrastructure 
+to move towards a less cash society by March 
+2022.
+● Leverage on the developments in fin-tech 
+space to encourage financial service providers 
+to adopt innovative approaches for strengthening 
+outreach through virtual modes including mobile 
+apps so that every adult has access to a financial 
+service provider through a mobile device by 
+March 2024.
+● Move towards an increasingly digital and 
+consent-based architecture for customer 
+onboarding by March 2024.
+Achievements – 
+1. As per the milestone,1.21 lakh villages were 
+identified for providing banking access within a 
+radius of 5 Kms/hamlet of 500 households. In 
+this regard, more than 99.9 percent villages have 
+been provided with some form of banking access.
+2. In order to facilitate digital on-boarding of 
+customers by leveraging the latest technology, 
+RBI amended the Master Direction on KYC 
+dated February 25, 2016 on January 9, 2020 to 
+introduce Video based Customer Identification 
+Process (V-CIP) for customer on-boarding. This 
+is an alternative, consent-based customer on-
+boarding process with certain risk-mitigants and 
+can be implemented using digital devices such 
+as mobile phones etc. In addition, ‘Digital KYC’ 
+and ‘Equivalent e-Documents’, as provided in the 
+amendment dated August 19, 2020 to the PML 
+Rules, have also been introduced in the Master 
+Direction on KYC for digital on-boarding of the 
+customers.
+3. To further leverage V-CIP for customer due 
+diligence (CDD), RBI vide changes in the MD 
+on KYC dated May 10, 2021, has expanded the 
+scope of Video based Customer Identification 
+Procedure (V-CIP) to include all categories of 
+customers including Authorised Signatories 
+and Beneficial Owners of Legal Entities by 
+leveraging Aadhaar number of the UIDAI and the 
+KYC Identifier of the Centralised KYC Registry. 
+Besides, periodical up-dation has also been 
+enabled using V-CIP.
+4. In a bid to provide fillip to innovative solutions 
+Regulatory Sandbox mechanism has been 
+institutionalised and five cohorts have been hosted 
+till now, with availability of On-Tap application 
+different products being tested in respective 
+areas. Further, to facilitate innovation of financial 
+products / service providers whose business 
+models / activities / features fall within the remit 
+of more than one financial sector regulator, a 
+Standard Operating Procedure (SOP) for Inter-
+ANNEX I – NSFI: 2019-24 MILESTONES AND ACHIEVEMENTS
+
+
+--- PAGE 59 ---
+59
+operable Regulatory Sandbox (IoRS) has been 
+put in place.
+5. Unified Payments Interface (UPI): RBI has 
+facilitated linking of credit cards with UPI which 
+will enable even small merchants with QR codes 
+to have a share of spends in credit. UPI Lite an 
+on-device wallet put in place offers payment 
+facility up to ₹ 1,000 without the requirement of 
+UPI PIN, with wallet having a limit of ₹5,000. 
+The payments from UPI Lite does not hit the 
+issuer bank thus reducing the load on CBS and 
+increasing the success rate of the transactions. 
+As an extension of UPI Lite, UPI Lite X (offline 
+payments) has been launched in September 
+2023. UPI payments (P2P and P2M) of up to 
+₹500- can be made without the requirement of 
+mobile network
+6. A framework for Facilitating Small Value Digital 
+Payments in Offline Mode was initiated by DPSS, 
+RBI in January 2022. 
+7. Conversational payments were launched in 
+September 2023, enabling users to engage 
+in a conversation with an Artificial Intelligence 
+(AI) powered system to initiate and complete 
+transactions in a safe and secure environment. 
+This is expected to create a shift in payments 
+and banking from the graphical user interface 
+towards conversational user payments navigated 
+by voice. Since payments are facilitated in Indian 
+regional languages, this will increase payment 
+accessibility to the population conversant with 
+their mother tongue. This will also help in inclusion 
+of senior citizens, divyangjan  and new users to 
+digital payments.
+8. The Reserve Bank has set up the Reserve Bank 
+Innovation Hub (RBIH) to promote innovation 
+across the financial sector by leveraging on 
+technology and creating an environment which 
+would facilitate and foster innovation.
+9. With the objective of encouraging fintech 
+adoption and innovation, IRDAI has notified 
+Regulatory Sandbox under which over 300 
+proposals have been examined and appropriate 
+approvals given. There were proposals related 
+to deployment of fintech in onboarding, policy 
+service and claim settlement to customers.
+10. IRDAI has instructed all the stakeholders 
+on the progressive implementation of digital 
+based customer on-boarding, policy servicing 
+and policyholder education. Most of the insurers 
+have developed different innovative solutions like 
+Customer Portals, Mobile Apps, WhatsApp, web-
+based tools, etc. to engage with the customers. 
+About 60% of the insurers have launched mobile 
+apps to provide access to insurance sales as 
+well as services. IRDAI is following-up with 
+the remaining for the same and are confident 
+of reaching out to all adults to provide access 
+through mobile device within the timelines.   
+11. Insurers have been allowed to design products 
+which offer a range of policy terms, subject to a 
+minimum policy term of one month, with respect 
+to individual pure risk product, group term, group 
+credit life and micro insurance products.
+12. IRDAI has revised its regulations of rural and 
+social sector obligations for insurers.  The revised 
+regulations mark a significant change in how 
+insurance inclusion is measured. For General 
+insurance, the focus has shifted from Gross 
+Direct Premium to the number of policies issued 
+at Gram Panchayat level, with an emphasis on 
+covering motor vehicles, dwellings and shops. 
+For Life and Health insurance, the number of 
+lives covered under life insurance or health and 
+
+
+--- PAGE 60 ---
+60
+National Strategy for Financial Inclusion 2025-30
+personal accident insurance in a gram panchayat 
+are reckoned instead of number of policies 
+issued. 
+13. The scope of social sector has been 
+enhanced to cover cardholders (like BPL 
+Cardholders, E-Shram cardholders, MNREGA 
+cardholders, DBT beneficiaries, Jan Dhan 
+Account holders etc.) and beneficiaries under 
+various insurance scheme. To enable greater 
+coverage of lives, the proportion of lives stipulated 
+as social sector obligation has been raised from 
+0.5-5 per cent to 10 per cent of all lives covered 
+for all Life, General and Standalone Health 
+insurers. This shift widens the social sector 
+insurance net significantly, bringing more lives 
+under its protection. 
+14. To enable the policyholders/prospects 
+to have wider choice and access to insurance 
+through various distribution channels and 
+facilitate the reach of insurance to the last mile, 
+the maximum number of tie ups for Corporate 
+Agents (CA) and Insurance Marketing Firms 
+(IMF) have been increased. A CA can tie up with 
+9 insurers (earlier 3 insurers) and IMF can tie up 
+with 6 insurers (earlier 2 insurers) in each line of 
+business of life, general and health for distribution 
+of their insurance products. The area of operation 
+of IMF has also been expanded to cover entire 
+state in which they are registered.
+15. PFRDA has enabled Points of Presence 
+(PoPs) to onboard subscribers under National 
+Pension System (NPS) through double factor 
+authentication and video KYC. Further, PFRDA 
+had made major strides in digital consent-based 
+architecture by using offline/online Aadhaar for 
+not only onboarding but for servicing and exit.
+16. Mobile applications have been developed 
+by PFRDA for service related to NPS, NPS-
+Lite, Swavalamaban Scheme, and Atal Pension 
+Yojana (APY).
+17. In order to facilitate universal access 
+to financial services and to leverage on the 
+developments in fin-tech space, SEBI has taken 
+various measures such as:
+18. SEBI introduced Straight through 
+Processing (STP) for automating the end-
+to-end processing of transactions of various 
+financial instruments. The market participants 
+like stockbrokers, etc. also started introducing 
+mobile apps for facilitating trading mechanism for 
+investors. 
+19. Investors were enabled to open their 
+trading and demat accounts and mutual fund 
+folios online using e-KYC and can use these 
+accounts for trading purposes. Further, SEBI 
+has also provided a facility of Basic Services 
+Demat Account (BSDA) to retail investors, where 
+no/ minimal annual maintenance charges are 
+required to be paid by investors having a holding 
+value up to ₹ 10 lakh.
+20. In order to increase the accessibility of 
+mutual funds to a wider population base, the 
+minimum amount for investment in a scheme of 
+mutual funds has been maintained at Rs.500/-. 
+Further, SEBI had also introduced the concept 
+of micro-SIP, where an individual can invest in 
+mutual funds through SIP mode by making a 
+minimal investment of Rs.100/- per month. As on 
+March 2024, there were 17.78 crore mutual fund 
+folios.
+21. To facilitate the accessibility of the 
+primary market to investors, the mechanism of 
+IPO investing has been digitalised. Investors can 
+bid In IPOs using their banking Account through 
+
+
+--- PAGE 61 ---
+61
+ANNEX I
+ASBA and UPI. Further, the offer documents 
+are also made available on online platforms like 
+websites of the company launching the IPO, 
+stock exchange and SEBI, so that they are easily 
+available for the investors’ reference.
+22. Online platforms are available in the 
+securities markets so as to enable mutual fund 
+investors/holders to register their KYC, invest/
+redeem units of mutual funds and carry out non-
+financial transactions like change in email ID/bank 
+account/contact number etc. Further, in order to 
+safeguard the interest of unitholders, SEBI has 
+introduced Two Factor Authentication (2FA) for 
+online transactions for purchase/redemption/
+nomination of mutual fund units. 
+23. ‘Risk-o-meter’ was introduced in mutual 
+fund schemes which enables mutual fund 
+unitholders to align risk that a fund carries with 
+the risk profile of the investor.
+Strategic Pillar – II: Providing Basic Bouquet 
+of Financial Services
+Every adult who is willing and eligible needs to 
+be provided with a basic bouquet of financial 
+services that include a Basic Savings Bank 
+Deposit Account, credit, a micro life and non-
+life insurance product, a pension product, and a 
+suitable investment product.
+Milestones – 
+● Every willing and eligible adult who has been 
+enrolled under the PMJDY (including the young 
+adults who have recently taken up employment) 
+to be enrolled under an insurance scheme 
+(PMJJBY, PMSBY, etc.), Pension scheme (NPS, 
+APY, etc.) by March 2020.
+● Capacity building of all BCs either directly by 
+the parent entity or through accredited institutions 
+by March 2020.
+● Make the Public Credit Registry (PCR) fully 
+operational by March 2022 so that authorised 
+financial entities can leverage on the same for 
+assessing credit proposals from all citizens.
+Achievements – 
+1. Pradhan Mantri Jeevan Jyoti Bima Yojana 
+[PMJJBY]: As of March 2024, 16 crore 
+beneficiaries have been enrolled under PMJJBY.
+2. Pradhan Mantri Suraksha Bima Yojana 
+[PMSBY]: As of March 2024, 33.78 crore 
+beneficiaries have been enrolled under PMSBY.
+3. Atal Pension Yojana [APY]: As of March 2024, 
+5.55 crore subscribers were enrolled under APY.
+4. The Government in its Union Budget 2023-24 
+has announced setting up a separate National 
+Financial Information Registry (NFIR) to serve 
+as the central repository of financial and ancillary 
+information. 
+5. Train the Trainers Programme aimed at 
+sensitising the Business Correspondents 
+[BCs] through the rural branch managers was 
+instrumental in capacity building of the BC agents. 
+More than 51000 bank officials were trained, who 
+in turn sensitised more than 27 lakh BCs. The 
+programme led to handholding of BC agents by 
+banks on a regular basis.
+Strategic Pillar – III: Access to Livelihood and 
+Skill Development
+The new entrant to the financial system, if 
+eligible and willing to undergo any livelihood/ 
+skill development programme, may be given 
+the relevant information about the ongoing 
+Government livelihood programmes thus 
+helping them to augment their skills and engage 
+in meaningful economic activity and improve 
+
+
+--- PAGE 62 ---
+62
+National Strategy for Financial Inclusion 2025-30
+income generation.
+Milestones – 
+● All the relevant details pertaining to the 
+ongoing skill development and livelihood 
+generation programmes through RSETIs, NRLM, 
+NULM, PMKVY shall be made available to the 
+new entrants at the time of account opening. 
+The details of the account holders including 
+unemployed youth, and women who are willing 
+to undergo skill development and be a part of 
+the livelihood programme may be shared to the 
+concerned skill development centres/ livelihood 
+mission and vice versa by March 2020.
+● Keeping in view the importance of handholding 
+for the newly financially included SHGs/ Micro 
+entrepreneurs, a framework for a focused 
+approach ensuring convergence of efforts from 
+civil society/ banks/ NGOs to increase their 
+awareness on financial literacy, managerial 
+skills, credit, and market linkages needs to be 
+developed by National Skill Development Mission 
+by March 2022.
+Achievements – 
+1. Sensitisation of beneficiaries under various 
+skill development and livelihood generation 
+programmes are deliberated at SLBC/UTLBC. 
+2. During the FY 2023-24, more than 18.42 
+lakh beneficiaries have been sensitised through 
+different skill development programmes, with 
+approximately 49.02% (9.03 lakh) of the total 
+beneficiaries sensitised being bank linked or 
+credit linked. Nearly 90% of the total beneficiaries 
+were women. 
+3. Further, banks were advised to institutionalise 
+a mechanism to provide details of relevant skill 
+development related information to ‘new to bank’ 
+customers by sourcing the relevant information/
+details from respective SLBC/UTLBC website. 
+Most of the banks have confirmed action taken 
+in this regard.
+4. NABARD provides grant support for 
+promotion, nurturing and credit linkage of SHGs 
+with the banks. Further, NABARD is conducting 
+livelihood interventions through Micro Enterprise 
+Development Programme (MEDP) and Livelihood 
+and Enterprise Development Programme (LEDP) 
+targeted towards SHGs.
+5. In the programmes implemented through 
+NRLM, a dedicated field level architecture for 
+financial literacy has been created.
+6. SIDBI under its mandate, had been actively 
+engaged in implementing several schemes 
+and programmes directed at promotion and 
+development of the MSME sector as a whole.
+Strategic Pillar IV: Financial Literacy and 
+Education
+Easy to understand financial literacy modules 
+with specific target audience orientation (e.g.  
+children, young adults, women, new workers/ 
+entrepreneurs, family person, about to retire, 
+retired etc. in the forms of Audio-Video/ booklets 
+shall be made available for understanding 
+the product and processes involved. It is also 
+expected that these modules would help the new 
+entrants.
+Milestones –
+● Develop financial literacy modules through 
+National Centre for Financial Education (NCFE) 
+that cover financial services in the form of 
+Audio-Video content/ booklets etc. These 
+modules should be with specific target audience 
+orientation (e.g. children, young adults, women, 
+
+
+--- PAGE 63 ---
+63
+ANNEX I
+new workers/ entrepreneurs, senior citizens etc.) 
+by March 2021.
+● Focus on process literacy along with concept 
+literacy which empowers the customers to 
+understand not only what the product is about, 
+but also helps them how to use the product by 
+using technology led Digital Kiosks, Mobile apps 
+etc. through the strategy period (2019-2024).
+● Expand the reach of Centres for Financial 
+Literacy (CFL) at every block in the country by 
+March 2024.
+Achievements – 
+1. National Centre for Financial Education 
+(NCFE) has developed a comprehensive course 
+content covering all the four sector regulators in 
+the Audio-Video format hosted on NCFE website 
+and is Shareable Content Object Reference 
+Model [SCORM] compliant. The content has 
+four sections (Banking, Securities Markets, 
+Insurance and Pension products), further sub-
+divided into 20 modules (Money & Transactions, 
+Financial Records and Contracts, Managing 
+Income & Expenditure, Long Term Planning, 
+Financial Safety Nets & Insurance, Scams & 
+Frauds etc) of 15 - 20 minutes each as per the 
+overall architecture of the OECD/INFE Core 
+Competencies Framework on Financial Literacy. 
+Different modules cater to different target groups 
+viz. Entrepreneurs/MSMEs, Senior Citizens, 
+Women, Young Adults, Children, etc.
+2. The revised National Strategy for Financial 
+Education (2020-2025) came up with a 
+comprehensive five-year action plan which inter 
+alia, also covers process literacy and digital 
+literacy.
+3. RBI in its endeavour to disseminate financial 
+literacy has updated financial literacy content 
+in various languages on its website including 
+financial education webpage, namely, “RBI Kehta 
+Hai” and social media channels. Further, the 
+FAME (Financial Awareness Messages) booklet 
+containing twenty institution/product neutral 
+financial awareness messages, propagating 
+relevant messages across the four themes of 
+Financial Competencies, Basic Banking, Digital 
+Financial Literacy and Consumer Protection has 
+been placed on Bank’ website.
+4. NCFE has been conducting its Financial 
+Education programmes, namely Financial 
+Education Training Programme (FETP), Financial 
+Awareness and Consumer Training (FACT) 
+and Financial Education Programme for Adults 
+(FEPA) both in online and offline mode. Further, 
+NCFE’s Money Smart School Programme 
+(MSSP) encourages school students from Class 
+VI - X to enhance their financial knowledge. In line 
+with OECD recommendation, National Financial 
+Literacy Assessment Test (NFLAT) conducted 
+by the NCFE, encourages school students of 
+Class VI to XII, to acquire basic financial skills 
+necessary to make informed and effective 
+financial decisions throughout each stage of their 
+lives. 
+5. NCFE has developed an E-Learning platform 
+(E-LMS), wherein interactive audio-visual modules 
+are available on financial literacy. NCFE has also 
+installed an Artificial Intelligence based chatbot 
+on its official website to answer consumer queries 
+on financial education. Apart from these, NCFE 
+has developed Financial Education Handbook for 
+Micro, Small and Medium Enterprises (MSMEs) 
+as well as 15 graphic novels/comic books on 
+Financial Education topics.
+
+
+--- PAGE 64 ---
+64
+National Strategy for Financial Inclusion 2025-30
+6. NCFE also promotes its financial education 
+activities on various social media and has a 
+cumulative reach of 21 Million+ since inception. 
+NCFE has installed a network of 71 large format 
+Digital Signage Systems (DSS) and 31 interactive 
+touch screen kiosks at 102 different locations in 
+5 states of India, to disseminate messages on 
+financial awareness.
+7. Council for the Indian School Certificate 
+Examination (CISCE) Board has integrated 
+financial education in their school curriculum for 
+standard VI-X.
+8. A common financial education booklet for 
+different target groups has been developed 
+by SEBI in English, Hindi, and other regional 
+languages. This booklet covers various basic 
+concepts related to securities market, banking, 
+insurance and pension sector, government 
+schemes, do’s and don’ts of investing, etc. It is 
+available in digital format on the SEBI investor 
+website. A securities market booklet has also 
+been developed by SEBI in English, Hindi and 
+other 11 regional languages. This booklet covers 
+basic concepts related to basics of investing, 
+account opening process, process of investing 
+in the markets, Mutual Funds and ETFs and 
+grievance redressal in Securities Markets, thus 
+focusing on process literacy. It is available in 
+digital format on the SEBI investor website.
+9. SEBI has put in place a network of Securities 
+Market Trainers (SMARTs) to enhance investor 
+education activities and generate awareness 
+regarding securities market by engaging trainers 
+from various fields. SMARTs are expected to 
+conduct investor awareness programmes for 
+existing and prospective investors in securities 
+market, the topics covering different aspects of 
+the securities market viz, introduction to securities 
+markets, KYC, IPO, mutual funds, grievance 
+redressal mechanism, etc. 
+10. A dedicated SEBI investor website – www.
+sebi.investor.gov.in hosts a repository of digital 
+content in the format of videos created by Stock 
+Exchanges, Depositories and Association of 
+Mutual Funds of India on investor education and 
+awareness. Similarly, investor education learning 
+modules have been curated and hosted on SEBI 
+Investor Website.
+11. The SEBI Investor website also hosts tools 
+like financial calculators, and financial health 
+check. Spot a scam has also been developed to 
+assist investors in their wellbeing and in avoiding 
+potential investment scams.
+12. A Mobile App (Saa₹thi) on investor awareness 
+developed by SEBI has been made available in 
+Hindi and English and on both iOS & Android 
+platforms, covering basic aspects of securities 
+market, KYC, investor grievance redressal 
+mechanism, etc. The app also features a range 
+of videos designed to assist investors in their 
+personal finance planning.
+13. SEBI has issued investor charter to promote 
+transparency and create awareness among the 
+investors. It covers different services provided to 
+them, timelines related to various services like 
+investor grievance redressal mechanism, their 
+rights and responsibilities and do’s and don’ts of 
+investing in securities market.
+14. As part of a digital strategy for investor 
+awareness and education, SEBI, in collaboration 
+with the stakeholders of securities market 
+ecosystem like Exchanges, Depositories and 
+AMFI has created and disseminated digital 
+content through social media. The content is in 
+
+
+--- PAGE 65 ---
+65
+ANNEX I
+the form of videos, shorts, reels, infographics, 
+quizzes, podcasts, crosswords, newsletters, 
+etc. on important investor friendly initiatives of 
+SEBI, do’s and don’ts of investing and general 
+awareness about securities market. WhatsApp is 
+also used by the market infrastructure institutions 
+(MIIs) to circulate messages on investor 
+awareness and education.
+15. SEBI in collaboration with National Institute 
+of Securities Markets (NISM) has launched a 
+free, voluntary online SEBI-Investor Certification 
+Examination to help investors in their journey 
+towards gaining comprehensive knowledge 
+about investing in the Indian securities markets.
+16. Pension Sanchay has been launched on 
+the website of PFRDA as an initiative to create 
+awareness about pension and other concepts 
+related to savings and investments. Media 
+campaigns and print advertisements have also 
+been rolled out by PFRDA to create awareness 
+among public at large.
+17. IRDAI maintains the consumer education 
+website www.policyholder.gov.in which provides 
+easily understandable information about 
+insurance to the public.
+18. To promote financial inclusion through 
+insurance, IRDAI has encouraged insurance 
+companies to adopt districts for spreading 
+insurance literacy and coverage. The campaigns 
+target aspirational districts identified by NITI Aayog.
+19. IRDAI also conducts various insurance 
+awareness campaigns through a multi-pronged 
+approach using electronic, print, digital and social 
+media platforms.
+20. The consumer web site (IRDAI) has 
+information on life, general and health insurance 
+dealing with the following questions on how 
+to use the product a) You and your insurance 
+policy b) Do’s and Don’ts, and c) General Advice. 
+Further the sales literatures of the products by 
+all insurers invariably describe how the product 
+works.
+21. As on March 31, 2024, a total of 2414 Centres 
+for Financial Literacy (CFLs) have been set up 
+covering 7225 blocks.
+Strategic Pillar – V: Redressal of Grievance 
+and Customer Protection
+Customers shall be made aware of the recourses 
+available for resolution of their grievances. About 
+storing and sharing of customer’s biometric and 
+demographic data, adequate safeguards need 
+to be ensured to protect the customer’s Right to 
+Privacy.
+Milestones –
+● Strengthening the Internal Grievances 
+Redressal Mechanism of financial service 
+providers for effectiveness and timely response 
+by March 2020.
+● Develop a robust customer grievance portal/ 
+mobile app which acts as a common interface 
+for lodging, tracking and redressal status of the 
+grievances pertaining to financial sector collectively 
+by all the stakeholders by March 2021.
+● Operationalize a Common Toll-Free Helpline 
+which offers response to the queries pertaining to 
+customer grievances across banking, securities, 
+insurance, and pension sectors by March 2022.
+● Develop a portal to facilitate inter-regulatory co-
+ordination for redressal of customer grievance by 
+March 2022.
+
+
+--- PAGE 66 ---
+66
+National Strategy for Financial Inclusion 2025-30
+Achievements – 
+1. Internal Ombudsman (IO) Scheme is in place 
+for regulated entities of RBI viz. banks, NBFCs, 
+Payment System Operators (PSOs) and Credit 
+Information Companies (CICs), as specified in 
+Master Direction - Reserve Bank of India (Internal 
+Ombudsman for Regulated Entities) Directions, 
+2023, dated December 29, 2023. 
+2. Integrated Ombudsman Scheme was launched 
+by RBI in November 2021, which integrates the 
+existing three Ombudsman schemes of RBI 
+namely, (i) the Banking Ombudsman Scheme, 
+2006; (ii) the Ombudsman Scheme for Non-
+Banking Financial Companies, 2018; and (iii) the 
+Ombudsman Scheme for Digital Transactions, 
+2019. 
+1. Central Grievance Management System 
+(CGMS) of PFRDA is in place with provision of 
+escalation matrix if the grievance is not resolved 
+within the timelines.
+2. SEBI Complaint Redress System (SCORES - 
+www.scores.sebi.gov.in), a web and mobile based 
+portal/app is available for lodging complaints.
+3. For resolving disputes with market participants 
+in the Indian securities market, a common 
+Securities Market Online Dispute Resolution 
+Portal has been launched which harnesses online 
+conciliation and online arbitration for resolution of 
+disputes arising in the Indian Securities Market.
+4. Integrated Grievance management System 
+(IGMS) was launched by IRDAI in the year 2010 
+to facilitate registration of complaints by policy 
+holders against Insurance Companies.
+5. All the sectoral regulators viz. RBI (14448), SEBI 
+(1800-266-7575/1800-22-7575), IRDAI (155255) 
+and PFRDA (1800-110-708/069), have put in 
+place separate toll-free numbers for addressing 
+queries and grievances. The details of the same 
+are published on the website of NCFE and are 
+also available in the chatbot facility to respond to 
+consumer queries.
+6. Sachet portal has links to grievance portals 
+of all the sectoral regulators and the same is 
+prominently displayed in the portal. Further, 
+Sachet Portal is available in 13 different 
+languages and has a mechanism for inter 
+regulatory coordination. The details are also 
+hosted on NCFE website.
+Strategic Pillar – VI: Effective Co-ordination
+There needs to be a focused and continuous 
+coordination between the key stakeholders 
+viz. Government, the Regulators, financial 
+service providers, Telecom Service Regulators, 
+Skills Training institutes etc. to make sure that 
+the customers are able to use the services 
+in a sustained manner. The focus shall be to 
+consolidate gains from previous efforts through 
+focus on improvement of quality of service of last 
+mile delivery viz., capacity building of Business 
+Correspondents, creating payments system 
+ecosystems at village levels to deepen the 
+culture of digital finance leading to ease of use 
+and delivery.
+Milestones – 
+● Clearly articulate the responsibilities/ 
+expectations of each of the stakeholders at the 
+grass-root level to ensure convergence of action 
+between the Government/ Regulators/ financial 
+service providers/ Civil Society etc. With the 
+Lead Bank Scheme completing 50 years in 2019, 
+SLBCs may review and implement the vision, 
+action plans and the milestones to be achieved 
+during the NSFI period (2019-24).
+
+
+--- PAGE 67 ---
+67
+ANNEX I
+● With advancements in Geo-Spatial Information 
+Technology, a robust monitoring framework 
+leveraging on the said technology can be 
+developed for monitoring progress under 
+financial inclusion with special emphasis given 
+to Aspirational Districts, North Eastern Region 
+and Left-Wing Extremist affected Districts. A 
+monitoring framework and a GIS dashboard to 
+be developed by March 2022.
+Achievements – 
+1. SLBC/UTLBCs in co-ordination with RBI ROs 
+monitor and review the progress made under 
+access to livelihood and skill development and 
+social security scheme (PMJJBY, PMSBY, APY).
+2. The Government of India has launched a 
+Geographic Information System (GIS) based 
+app, namely Jan-Dhan Darshak (JDD) App 
+developed by National Informatics Centre (NIC). 
+The App displays availability of banking outlets 
+within 5 km of all inhabited villages. Coverage of 
+unbanked villages is regularly monitored based 
+on the information updated by banks on the JDD 
+App, with SLBCs playing a constructive role in 
+identifying unbanked locations and ensuring 
+banking presence in all such locations.
+3. Further, with regard to monitoring the progress 
+under financial inclusion, RBI has constructed a 
+composite Financial Inclusion (FI) Index, which 
+holistically measures the extent of financial 
+inclusion in the country. The FI Index is a 
+comprehensive index having sub-indices for the 
+three dimensions of financial inclusion (access, 
+usage and quality) comprising parameters from 
+all the financial domain viz. banking, insurance, 
+pension, investment as well postal.
+4. The FI-Index has been published every year 
+since 2021, offering insights into the progress 
+made and helping to identify gaps in the FI space, 
+to be addressed by the concerned stakeholder. 
+Review of progress made under the FI-Index is 
+also a regular agenda item in the meetings of 
+the Technical Group of Financial Inclusion and 
+Financial Literacy (TGFIFL) under the Financial 
+Stability and Development Council – Sub 
+Committee (FSDC-SC).
+
+
+--- PAGE 68 ---
+68
+National Strategy for Financial Inclusion 2025-30
+Annex II – NSFI 2025-30 – ACTION POINTS, STAKEHOLDERS AND TIMELINE
+Sr Ref Action Points Anchor 
+Stakeholder*
+Timeline
+Action Points at Sr No. 1 - 44 are as per Chapter-IV
+Strategic Objective I - Improving the availability and use of Equitable, Responsible, and 
+Affordable Bouquet of Financial Services to achieve Financial Safety and Financial Security 
+for households and micro enterprises [13 Action Points].
+1. I.1 Improving equity, reach, consistency, and quality of last 
+mile access
+SLBCs/UTLBCs Dec 2030
+2. I.2 Incentive mechanism for BC agents from hilly and rural 
+areas
+RBI, NABARD Ongoing
+3. I.3 Strengthening the Remuneration Structure of BCs. IBA Dec 2026
+4. I.4 Expanding the scope of services and improve the sus-
+tenance of BC operations.
+FSPs Ongoing
+5. I.5 Strengthening of BC Registry. IBA Ongoing
+6. I.6(a) Reaching one billion users in digital payments RBI Dec 2029
+7. I.6(b) Expanding and Deepening Digital Payment Ecosystem 
+(EDDPE)  
+SLBCs/UTLBCs Mar 2027
+8. I.6(c) Programmable CBDC to Facilitate Targeted Credit 
+Flow and Expand Access 
+RBI Ongoing
+9. I.6(d) Unified Lending Interface (ULI) as a DPI RBI Ongoing
+10. I.6(e) Onboarding of all banks and insurance companies to 
+Jansuraksha Portal and improving coverage of APY
+FSPs, NABARD Ongoing
+11. I.6(f) Simpler Digital Interfaces FSPs Ongoing
+12. I.7 Micro Enterprises to receive focussed attention. FSPs Ongoing
+13. I.8 Promoting Responsible Innovation through Self- Regu-
+latory Organisations
+SROs Ongoing
+Strategic Objective II - Adopting Gender-Sensitive Approach for Women-led Financial Inclusion 
+and Differentiated Strategies for Improving Financial Resilience of Households, especially the 
+Underserved and Vulnerable Segments [6 Action Points].
+14. II.1 Increasing the share of women business correspon -
+dents.
+SLBCs/UTLBCs Dec 2028
+15. II.2 Identification of vulnerable and underserved Segments 
+for focused services
+Financial Sector 
+Regulators
+Dec 2026
+16. II.3(a) Differentiated suitable products and delivery channel 
+for underserved and vulnerable segments
+Financial Sector 
+Regulators
+Ongoing
+17. II.3(b) Development of suitable bundled products in invest-
+ment, pension, and insurance domain
+SEBI, IRDAI, 
+PFRDA
+Ongoing
+18. II.3(c) Suitable and fair credit products with easier documen -
+tation process and quick disbursals
+FSPs Ongoing
+19. II.3(d) Emergency Credit - Overdraft in BSBDAs FSPs Dec 2028
+
+
+--- PAGE 69 ---
+69
+Annex II – NSFI 2025-30 – ACTION POINTS, STAKEHOLDERS AND TIMELINE
+Strategic Objective III - Synergizing Livelihood, Skill Development and Support Ecosystem and 
+its linkages with Financial Inclusion [7 Action Points].
+20. III.1(a) Content Development and Delivery for Skill Training NSDC, NCFE Ongoing
+21. III.1(b) Adoption of NSQF by all skilling institutions and avail-
+ability of course content in all languages.
+NSDC Ongoing
+22. III.1(c) Synergise resources of all the skilling institutions with 
+focus on gender sensitive approach.
+NSDC Ongoing
+23. III.2 Data Sharing and Reporting on number and types of 
+skill training conducted
+NSDC Ongoing
+24. III.3 (a) Dissemination of Information on Skill Loan schemes of 
+NSDC, GOI, and State Govt.
+NSDC, FSPs Ongoing
+25. III.3 (b) Funding and Financial Support to Skill Trained Individ-
+uals through Potential Linked Plan of each district.
+SLBCs/ 
+UTLBCs, 
+NABARD, FSPs
+Ongoing
+26. III.4 Leveraging Local Community Organizations RBI, NABARD Ongoing
+Strategic Objective IV - Leveraging Financial Education as a Tool for Promoting Financial  
+Discipline [10 Action Points].
+27. IV.1 Sustaining and deepening financial literacy initiatives. NCFE,  
+NABARD, FSPs
+Ongoing
+28. IV.2 (a) Differentiated contents and focussed delivery channels NCFE Ongoing
+29. IV.2 (b) Setting up of Targeted Financial Literacy Units. RBI, NABARD Ongoing
+30. IV.3 Improving Digital Literacy NCFE Ongoing
+31. IV.4 
+(a) 
+Development and dissemination of contents – Sustain-
+able Indebtedness
+NCFE Ongoing
+32. IV.4 
+(b)
+Development and dissemination of contents – Realistic 
+goal setting, financial planning, etc.
+NCFE Ongoing
+33. IV.5(a) Periodic Assessment of the state of financial literacy. NCFE Dec 2027
+34. IV.5(b) Focused awareness initiatives for specific regions/ 
+groups.
+NCFE Ongoing
+35. IV.6 (a) Developing AI & ML-based public query systems on 
+common banking and finance-related aspects.
+FSPs Ongoing
+36. IV.6 (a) Conduct of suitably positioned social media campaigns 
+on consumer protection and grievance redressal mea-
+sures.
+FSPs Ongoing
+
+
+--- PAGE 70 ---
+70
+National Strategy for Financial Inclusion 2025-30
+Annex II – NSFI 2025-30 – ACTION POINTS, STAKEHOLDERS AND TIMELINE
+Strategic Objective V - Strengthening the Quality and Reliability of Customer Protection and 
+Grievance Redressal Measures [8 Action Points].
+37. V.1(a) Simpler and Less Burdensome Solutions FSPs Ongoing
+38. V.1(b) Streamlining and Onboarding of banks on Citizen Fi-
+nancial Cyber Frauds Reporting and Management 
+System
+FSPs Ongoing
+39. V.1(c) Board approved Customer Grievance Redress Policy FSPs Ongoing
+40. V.2(a) Digital Payments Intelligence Platform RBI Dec 2026
+41. V.2(b) Protection against dark patterns Financial Sector 
+Regulators
+Ongoing
+42. V.2(c) Guardrails against Tech Innovations Financial Sector 
+Regulators
+Ongoing
+43. V.2(d) Use of pre-intimated official phone numbers by banks FSPs Ongoing
+44. V.2(e) Conduct of regular customer awareness campaigns Financial Sec-
+tor Regulators, 
+FSPs
+Ongoing
+Monitoring and measurement mechanism for assessing progress in FI space  [3 Action Points].
+45. Ch-5 Data collection and dissemination by financial sector 
+regulators.
+Financial Sector 
+Regulators
+Ongoing
+46. Ch-5 Development of broader and disaggregated FI-Index. Financial Sector 
+Regulators
+June 2026
+47. Ch-5 Conduct of studies/surveys Financial Sector 
+Regulators
+Ongoing
+Note –
+* Financial Service Providers (FSPs) as anchor stakeholders, shown above, have been mapped to 
+their respective regulators as per Table IV.1.
+
+
+--- PAGE 71 ---
+71
+References
+• www.uidai.gov.in
+• www.npci.org.in
+• www.sebi.gov.in
+• https://investor.sebi.gov.in/. 
+• https://jansuraksha.gov.in
+• RBI guidelines on ‘Rationalisation of Branch 
+Authorisation Policy- Revision of Guidelines’ dated 
+May 18, 2017
+• RBI guidelines on ‘Financial Inclusion- Access to 
+Banking Services – Basic Savings Bank Deposit 
+Account (BSBDA)’ dated June 10, 2019
+• IRDAI discussion Paper on Tying/Bundling in 
+Insurance - https://intranet.irdai.gov.in/web/guest/
+document-detail?documentId=369570 
+• https: // www. rbi. org. in / Financial Education / 
+FLCs_CFLs_Details.aspx 
+• https://www.cersai.org.in/
+• https://i4c.mha.gov.in/ncrp.aspx
+• https://doca.gov.in/DarkPatternsBusterHackathon/
+about-us.php
+• Master Direction - Know Your Customer (KYC) 
+Direction, 2016 
+• https://www.rbi.org.in/scripts/FS_PressRelease.
+aspx?prid=50901&fn=9
+• Report of India’s G20 Task Force on Digital Public 
+Infrastructure - https://dea.gov.in/sites/default/files/
+Report%20of%20Indias%20G20%20Task%20
+Force%20On%20Digital%20Public%20Infrastruc-
+ture.pdf 
+• https: // www.nabard.org / demo /auth / writere-
+addata / File / FARMER %20PRODUCER%20
+ORGANISATIONS.pdf
+• https://www.rbi.org.in/scripts/BS_PressRelease-
+Display.aspx?prid=52068
+• https: // www. rbi. org. in / Financial Education / 
+FLCs_CFLs_Details.aspx 
+• https://www.rbi.org.in/FinancialEducation/con-
+tent/I%20Can%20Do_RBI.pdf 
+• https://fintech.rbi.org.in/
+• https://www.npci.org.in/what-we-do/imps/faqs
+• IBA instructions No. IBA/PSBT/L/2024/110 dated 
+December 5, 2024
+• https://www.iba.org.in/
+• RBI guidelines - DOR.SOG (LEG).
+REC/64/09.08.024/2023-24 dated January 1, 
+2024, on Inoperative Accounts /Unclaimed Depos-
+its in Banks- Revised Instructions
+• https://www.rbi.org.in/commonman/english/scripts/
+FAQs.aspx?Id=2812 
+• https://jss.gov.in/
+• RBI Master Direction FIDD. MSME & NFS. 12 / 
+06.02.31 / 2017-18 dated July 24, 2017 (last updat-
+ed on July 23, 2025) on Lending to Micro, Small & 
+Medium Enterprises (MSME) Sector
+• RBI Master Direction DoR. FIN. REC. 95 / 03.10.038 
+/ 2021-22 dated March 14, 2022 (last updated on 
+October 10, 2024) on Regulatory Framework for 
+Microfinance Loans
+• https://www.nabard.org/
+• https://ncfe.org.in/ 
+• https://cybercrime.gov.in/ 
+• https://www.pfrda.org.in/ 
+• Gazette Notification dated December 27, 2013 - 
+https://egazette.gov.in/ 
+• https://www.rbi.org.in/commonman/English/scripts/
+FAQs.aspx?Id=274 
+• https://www.niesbud.nic.in/ 
+• https://npscra.nsdl.co.in/ 
+• https://nrlm.gov.in/ 
+• https://nsdcindia.org/ 
+• https://www.msde.gov.in/ 
+• https://www.nabard.org/ 
+• https://jansuraksha.in/pmjjbyScheme 
+• https://fintech.rbi.org.in/FT_RegSandbox 
+• https://nirdpr.org.in/rseti/aboutus.aspx 
+• Omnibus Framework for recognising Self-Regula -
+tory Organisations (SROs) for Regulated Entities 
+(REs) of the Reserve Bank of India – dated March 
+21, 2024
+• https://www.sidbi.in/ 
+• https://www.skillindiadigital.gov.in/ 
+• RBI Master Circular on lead Bank Scheme - FIDD.
+CO.LBS.BC. No.03/02.01.001/2025-26 dated April 
+1, 2025 
+
+
+--- PAGE 72 ---
+72
+National Strategy for Financial Inclusion 2025-30
+References
+• https://www.undp.org/sustainable-develop-
+ment-goals 
+• RBI Master Direction DoR. FIN. REC. 95 / 
+03.10.038 / 2021-22 dated March 14, 2022 (last 
+updated on October 10, 2024) on Regulatory 
+Framework for Microfinance Loans
+• RBI guidelines on Section 23 of the Banking Reg-
+ulation Act, 1949 - Master Circular on Branch Au-
+thorisation - Census data 2011- DBR.No. BAPD.
+BC.12/22.01.001/2016-17 dated September 1, 
+2016
+• https://udyamassist.gov.in/ 
+
+
+--- PAGE 73 ---
+73
+
+
+--- PAGE 74 ---
+74
+National Strategy for Financial Inclusion 2025-30
