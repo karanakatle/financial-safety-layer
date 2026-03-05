@@ -1,0 +1,113 @@
+<resources>
+    <string name="app_name">अर्थमंत्री</string>
+    <string name="notification_listener_label">अर्थमंत्री लेन-देन श्रोता</string>
+    <string name="notif_channel_name">वित्तीय सुरक्षा चेतावनियां</string>
+    <string name="notif_channel_desc">USSD शैली हस्तक्षेप संदेश</string>
+
+    <string name="menu_open">मेनू खोलें</string>
+    <string name="nav_title">अर्थमंत्री मेनू</string>
+    <string name="nav_subtitle">मेनू खोलने के लिए बाएं किनारे से स्वाइप करें</string>
+    <string name="menu_manage_access">अनुमति प्रबंधन</string>
+    <string name="menu_manage_access_collapsed">अनुमति प्रबंधन</string>
+    <string name="menu_manage_access_expanded">अनुमति प्रबंधन</string>
+    <string name="menu_access_notifications">सूचना अनुमति</string>
+    <string name="menu_access_overlay">ओवरले अनुमति</string>
+    <string name="menu_access_usage">उपयोग-अनुमति</string>
+    <string name="menu_feedback">पायलट प्रतिक्रिया भेजें</string>
+    <string name="menu_help">सहायता और प्रारंभिक मार्गदर्शन</string>
+    <string name="menu_privacy_policy">गोपनीयता नीति</string>
+    <string name="cd_change_language">ऐप भाषा बदलें</string>
+    <string name="lang_badge_en">El</string>
+    <string name="lang_badge_hi">हिं</string>
+
+    <string name="home_title">अर्थमंत्री</string>
+    <string name="home_subtitle">अनुकूली वित्तीय साक्षरता और सुरक्षा संकेत</string>
+    <string name="pilot_banner_default">शोध पायलट: यह निवेश सलाह उत्पाद नहीं है।</string>
+    <string name="status_initial">स्थिति: प्रारंभिक प्रक्रिया पूरी करें, फिर निगरानी शुरू करें।</string>
+    <string name="status_usage_missing">उपयोग-अनुमति उपलब्ध नहीं है।</string>
+    <string name="status_overlay_missing">ओवरले अनुमति उपलब्ध नहीं है।</string>
+    <string name="status_monitoring_active">निगरानी सक्रिय है।</string>
+    <string name="status_monitoring_failed">निगरानी शुरू नहीं हो सकी।</string>
+    <string name="status_api_connected">सेवा सफलतापूर्वक जुड़ी है।</string>
+    <string name="status_api_disconnected">सेवा से संपर्क नहीं हो पाया।</string>
+
+    <string name="home_card_monitor_title">तत्काल अनुश्रवण</string>
+    <string name="home_card_monitor_desc">बैकग्राउंड में SMS/UPI गतिविधि देखकर जोखिम चेतावनी ट्रिगर करता है।</string>
+    <string name="action_start_monitor">निगरानी शुरू करें</string>
+    <string name="action_stop_monitor">निगरानी बंद करें</string>
+
+    <string name="home_card_info_title">यह कैसे काम करता है</string>
+    <string name="home_card_info_desc">सीमा पार होने से पहले चरण-1 चेतावनी और उसके बाद पहली UPI ओपन पर चरण-2 चेतावनी मिलती है।</string>
+
+    <string name="dialog_language_title">भाषा चुनें</string>
+    <string name="dialog_language_message">नीचे दी गई सूची से ऐप की भाषा चुनें।</string>
+    <string name="lang_english">English</string>
+    <string name="lang_hindi">हिंदी</string>
+
+    <string name="dialog_consent_title">शोध पायलट सहमति</string>
+    <string name="dialog_consent_message">• अर्थमंत्री एक शोध प्रोटोटाइप है।
+• यह निवेश सलाह नहीं है।
+• आगे बढ़कर आप निगरानी और पायलट डेटा संग्रह के लिए सहमति देते हैं।</string>
+    <string name="consent_accept">मैं सहमत हूं</string>
+    <string name="consent_exit">बंद करें</string>
+
+    <string name="dialog_perm_title">अनुमति सेटअप</string>
+    <string name="dialog_perm_message">ऐप उपयोग के लिए ये अनुमतियां दें:
+• SMS
+• उपयोग-अनुमति
+• ओवरले अनुमति
+
+सेटअप पूरा करने के लिए सिस्टम निर्देशों का पालन करें।</string>
+    <string name="perm_continue">जारी रखें</string>
+
+    <string name="help_title">सहायता और प्रारंभिक मार्गदर्शन</string>
+    <string name="help_subtitle">ऐप को सुरक्षित रूप से चालू करने के लिए ये सरल चरण अपनाएं।</string>
+    <string name="help_content">• ऐप इंस्टॉल के बाद भाषा चुनें।
+• सहमति स्वीकार करें।
+• रनटाइम अनुमतियां दें।
+• उपयोग-अनुमति चालू करें।
+• ओवरले अनुमति चालू करें।
+• निगरानी शुरू करें।</string>
+    <string name="help_step_1">ऐप इंस्टॉल के बाद भाषा चुनें।</string>
+    <string name="help_step_2">सहमति स्वीकार करें।</string>
+    <string name="help_step_3">रनटाइम अनुमतियां दें।</string>
+    <string name="help_step_4">उपयोग-अनुमति चालू करें।</string>
+    <string name="help_step_5">ओवरले अनुमति चालू करें।</string>
+    <string name="help_step_6">निगरानी शुरू करें।</string>
+    <string name="help_apply_language">भाषा लागू करें</string>
+    <string name="help_change_language">भाषा बदलें</string>
+    <string name="help_close">बंद करें</string>
+    <string name="icon_close">✕</string>
+    <string name="icon_check">✓</string>
+
+    <string name="feedback_title">पायलट प्रतिक्रिया भेजें</string>
+    <string name="feedback_rating_hint">रेटिंग 1-5</string>
+    <string name="feedback_comment_hint">टिप्पणी</string>
+    <string name="feedback_submit">सबमिट करें</string>
+    <string name="feedback_cancel">रद्द करें</string>
+
+    <string name="overlay_tag">सजीव सुरक्षा चेतावनी</string>
+    <string name="ussd_tag">USSD शैली चेतावनी</string>
+    <string name="alert_title_default">वित्तीय सुरक्षा चेतावनी</string>
+    <string name="alert_body_default">यह भुगतान आपकी दैनिक या साप्ताहिक योजना को प्रभावित कर सकता है।</string>
+    <string name="alert_ack_short">ठीक है</string>
+    <string name="alert_ack_long">ठीक है, मैं समझ गया</string>
+    <string name="service_notif_title">अर्थमंत्री सक्रिय है</string>
+    <string name="service_notif_text">UPI ऐप खुलने की घटनाओं की निगरानी हो रही है</string>
+    <string name="alert_payment_risk_title">भुगतान जोखिम चेतावनी</string>
+    <string name="alert_spending_threshold">आपका खर्च सुरक्षित सीमा को पार कर रहा है।</string>
+    <string name="alert_txn_risk">लेन-देन सूचना से खर्च जोखिम पाया गया।</string>
+
+    <string name="toast_monitor_started">UPI निगरानी शुरू हो गई।</string>
+    <string name="toast_monitor_stopped">UPI निगरानी बंद हो गई।</string>
+    <string name="toast_api_ok">सेवा सफलतापूर्वक जुड़ गई।</string>
+    <string name="toast_api_failed">सेवा स्थिति जांच असफल रही।</string>
+    <string name="toast_feedback_ok">प्रतिक्रिया भेज दी गई।</string>
+    <string name="toast_feedback_failed">प्रतिक्रिया भेजना असफल रहा।</string>
+    <string name="toast_usage_missing">कृपया उपयोग-अनुमति दें।</string>
+    <string name="toast_overlay_missing">कृपया ओवरले अनुमति दें।</string>
+    <string name="toast_monitor_failed">निगरानी शुरू नहीं हो सकी।</string>
+    <string name="toast_settings_open_failed">इस डिवाइस पर सेटिंग पेज नहीं खुल सका।</string>
+    <string name="toast_manage_access_expanded">अनुमति प्रबंधन विकल्प खुल गए।</string>
+    <string name="toast_manage_access_collapsed">अनुमति प्रबंधन विकल्प बंद हो गए।</string>
+</resources>
