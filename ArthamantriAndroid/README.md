@@ -67,6 +67,57 @@ Outputs:
 - AAB: `app/build/outputs/bundle/release/app-release.aab`
 - APK: `app/build/outputs/apk/release/app-release.apk`
 
+## Build profiles workflow (Debug + Release APK + Release AAB)
+
+Use three profiles:
+- `debug` for day-to-day development/testing (Android Studio + emulator/device)
+- `release APK` for sideload testing on real devices
+- `release AAB` for Play Console upload
+
+This is not restricted to Android Studio only. You can use Android Studio or CLI commands.
+
+### A) Keep only debug app installed during development
+
+```bash
+adb uninstall com.arthamantri.android
+adb uninstall com.arthamantri.android.dev
+cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
+./gradlew :app:assembleDebug -PAPI_BASE_URL=https://arthamantri-api.onrender.com/
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+Verify only debug package exists:
+
+```bash
+adb shell pm list packages | grep arthamantri
+```
+
+Expected:
+- `package:com.arthamantri.android.dev`
+
+Open debug app:
+
+```bash
+adb shell am start -n com.arthamantri.android.dev/com.arthamantri.android.MainActivity
+```
+
+### B) Build release artifacts (do not auto-install)
+
+```bash
+cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
+./gradlew :app:assembleRelease \
+  -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+  -PPRIVACY_POLICY_URL=https://arthamantri-api.onrender.com/privacy-policy.html
+
+./gradlew :app:bundleRelease \
+  -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+  -PPRIVACY_POLICY_URL=https://arthamantri-api.onrender.com/privacy-policy.html
+```
+
+Outputs:
+- APK: `app/build/outputs/apk/release/app-release.apk`
+- AAB: `app/build/outputs/bundle/release/app-release.aab`
+
 ## Project structure
 - `app/src/main/java/com/arthamantri/android/MainActivity.kt`
 - `.../sms/BankSmsReceiver.kt`

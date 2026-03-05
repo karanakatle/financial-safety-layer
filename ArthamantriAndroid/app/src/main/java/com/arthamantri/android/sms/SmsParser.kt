@@ -9,7 +9,9 @@ data class ParsedSmsExpense(
 )
 
 object SmsParser {
-    private val amountRegex = Regex(AppConstants.Parsing.AMOUNT_REGEX_PATTERN, RegexOption.IGNORE_CASE)
+    private val amountRegexes = AppConstants.Parsing.AMOUNT_REGEX_PATTERNS.map {
+        Regex(it, RegexOption.IGNORE_CASE)
+    }
 
     fun parseExpense(sender: String?, message: String): ParsedSmsExpense? {
         val body = message.lowercase()
@@ -20,12 +22,7 @@ object SmsParser {
             return null
         }
 
-        val match = amountRegex.find(message) ?: return null
-        val normalizedAmount = match.groupValues
-            .getOrNull(1)
-            ?.replace(",", "")
-            ?.trim()
-            ?: return null
+        val normalizedAmount = extractAmount(message) ?: return null
         val amount = normalizedAmount.toDoubleOrNull() ?: return null
 
         val category = when {
@@ -40,5 +37,19 @@ object SmsParser {
             category = category,
             note = "${AppConstants.Domain.NOTE_SMS_PREFIX} ${sender ?: AppConstants.Domain.NOTE_SMS_UNKNOWN_SENDER}",
         )
+    }
+
+    private fun extractAmount(message: String): String? {
+        for (regex in amountRegexes) {
+            val value = regex.find(message)
+                ?.groupValues
+                ?.getOrNull(1)
+                ?.replace(",", "")
+                ?.trim()
+            if (!value.isNullOrEmpty()) {
+                return value
+            }
+        }
+        return null
     }
 }
