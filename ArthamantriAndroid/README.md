@@ -9,6 +9,7 @@ Native Android companion app for the existing FastAPI backend in `Python-OOS-Pro
 - Monitors foreground app and detects UPI apps.
 - Sends UPI-open event to backend: `POST /api/literacy/upi-open`.
 - Shows USSD-like full-screen warning overlay plus high-priority notification.
+- Applies pause-and-confirm friction for very high-risk stage-2 alerts (`pause_seconds` from backend).
 - Enforces first-run research consent and supports pilot feedback submission.
 
 ## Backend compatibility
@@ -17,6 +18,11 @@ This app is plug-and-play with backend endpoints already added in:
   - `POST /api/literacy/sms-ingest`
   - `POST /api/literacy/upi-open`
   - `GET /api/literacy/status`
+  - `GET /api/literacy/policy`
+  - `POST /api/literacy/policy`
+  - `POST /api/literacy/reset`
+  - `POST /api/literacy/reset-hard`
+  - `POST /api/literacy/alert-feedback`
   - `GET /api/pilot/meta`
   - `POST /api/pilot/consent`
   - `POST /api/pilot/feedback`
@@ -24,6 +30,8 @@ This app is plug-and-play with backend endpoints already added in:
 Per-user literacy state:
 - Android sends a stable `participant_id` (device Android ID) with literacy events.
 - Backend tracks threshold/alert stages per participant to avoid cross-user state mixing.
+- `participant_id` is app-scoped on Android (can differ from `adb shell settings get secure android_id`
+  across debug/release package IDs and signing keys). Prefer the `participantId` shown in app logcat.
 
 ## Quick start
 1. Ensure backend is running and reachable from phone over HTTPS.
@@ -136,3 +144,17 @@ Outputs:
 - Base URL is configurable at build time using `-PAPI_BASE_URL`.
 - Privacy policy URL is configurable using `-PPRIVACY_POLICY_URL`.
 - `keystore.properties` is required for real release signing (see `PRODUCTION_SETUP.md`).
+
+## Literacy test reset commands
+Use the backend participant id for deterministic retesting:
+
+```bash
+curl -X POST "https://<your-service>.onrender.com/api/literacy/reset?participant_id=<participant_id>"
+```
+- Soft reset: clears only literacy runtime state.
+
+```bash
+curl -X POST "https://<your-service>.onrender.com/api/literacy/reset-hard?participant_id=<participant_id>"
+```
+- Hard reset: clears literacy state + participant policy + spend history + literacy events +
+  alert feedback + alert features.
