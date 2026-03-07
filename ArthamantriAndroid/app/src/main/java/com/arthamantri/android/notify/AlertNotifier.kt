@@ -37,17 +37,24 @@ object AlertNotifier {
         manager.createNotificationChannel(channel)
     }
 
-    fun show(context: Context, title: String, body: String) {
+    fun show(
+        context: Context,
+        title: String,
+        body: String,
+        alertId: String? = null,
+        pauseSeconds: Int = 0,
+    ) {
         ensureChannel(context)
 
         mainHandler.post {
+            val resolvedAlertId = alertId ?: java.util.UUID.randomUUID().toString()
             val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
             if (keyguardManager.isKeyguardLocked) {
                 return@post
             }
 
             val overlayShown = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)) {
-                OverlayAlertWindow.show(context, title, body)
+                OverlayAlertWindow.show(context, resolvedAlertId, title, body, pauseSeconds)
             } else {
                 false
             }
@@ -55,6 +62,8 @@ object AlertNotifier {
             val alertIntent = Intent(context, AlertDisplayActivity::class.java).apply {
                 putExtra(AlertDisplayActivity.EXTRA_TITLE, title)
                 putExtra(AlertDisplayActivity.EXTRA_MESSAGE, body)
+                putExtra(AlertDisplayActivity.EXTRA_ALERT_ID, resolvedAlertId)
+                putExtra(AlertDisplayActivity.EXTRA_PAUSE_SECONDS, pauseSeconds)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
 

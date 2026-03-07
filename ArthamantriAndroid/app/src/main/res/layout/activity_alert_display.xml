@@ -46,6 +46,16 @@
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/alertPauseHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+
         <Button
             android:id="@+id/dismissBtn"
             android:layout_width="match_parent"
@@ -55,5 +65,36 @@
             android:text="@string/alert_ack_long"
             android:textAllCaps="false"
             android:textColor="@color/btn_primary_text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/usefulBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_btn_secondary"
+                android:text="@string/alert_feedback_useful"
+                android:textAllCaps="false"
+                android:textColor="@color/btn_secondary_text" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <Button
+                android:id="@+id/notUsefulBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_btn_secondary"
+                android:text="@string/alert_feedback_not_useful"
+                android:textAllCaps="false"
+                android:textColor="@color/btn_secondary_text" />
+        </LinearLayout>
     </LinearLayout>
 </FrameLayout>

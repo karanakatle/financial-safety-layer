@@ -45,6 +45,17 @@
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
 
+        <TextView
+            android:id="@+id/overlayPauseHint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text=""
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
         <Button
             android:id="@+id/overlayDismissBtn"
             android:layout_width="match_parent"
@@ -54,6 +65,37 @@
             android:text="@string/alert_ack_short"
             android:textAllCaps="false"
             android:textColor="@color/btn_primary_text" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/overlayUsefulBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_btn_secondary"
+                android:text="@string/alert_feedback_useful"
+                android:textAllCaps="false"
+                android:textColor="@color/btn_secondary_text" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="1dp" />
+
+            <Button
+                android:id="@+id/overlayNotUsefulBtn"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:background="@drawable/bg_btn_secondary"
+                android:text="@string/alert_feedback_not_useful"
+                android:textAllCaps="false"
+                android:textColor="@color/btn_secondary_text" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>

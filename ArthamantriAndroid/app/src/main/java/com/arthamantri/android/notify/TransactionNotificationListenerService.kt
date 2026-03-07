@@ -47,7 +47,7 @@ class TransactionNotificationListenerService : NotificationListenerService() {
         }
 
         val parsed = SmsParser.parseExpense(pkg, payload) ?: return
-        val category = if (UpiPackages.isUpiPackage(pkg)) AppConstants.Domain.CATEGORY_UPI else parsed.category
+        val category = if (UpiPackages.isUpiPackage(this, pkg)) AppConstants.Domain.CATEGORY_UPI else parsed.category
 
         serviceScope.launch {
             try {
@@ -63,6 +63,8 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                         context = this@TransactionNotificationListenerService,
                         title = getString(R.string.alert_title_default),
                         body = alert.message ?: getString(R.string.alert_txn_risk),
+                        alertId = alert.alert_id,
+                        pauseSeconds = alert.pause_seconds ?: 0,
                     )
                 }
             } catch (e: Exception) {
@@ -76,7 +78,7 @@ class TransactionNotificationListenerService : NotificationListenerService() {
     }
 
     private fun shouldInspect(pkg: String, payload: String): Boolean {
-        if (UpiPackages.isUpiPackage(pkg)) {
+        if (UpiPackages.isUpiPackage(this, pkg)) {
             return true
         }
 

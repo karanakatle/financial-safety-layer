@@ -92,6 +92,9 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_body_default">This payment may disturb your daily or weekly planning.</string>
     <string name="alert_ack_short">Okay</string>
     <string name="alert_ack_long">Okay, I understand</string>
+    <string name="alert_feedback_useful">Useful</string>
+    <string name="alert_feedback_not_useful">Not useful</string>
+    <string name="alert_pause_countdown">Please wait %1$d seconds, then confirm.</string>
     <string name="service_notif_title">Arthamantri is running</string>
     <string name="service_notif_text">Monitoring UPI app open events</string>
     <string name="alert_payment_risk_title">Payment Risk Warning</string>

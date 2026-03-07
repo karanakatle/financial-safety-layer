@@ -178,15 +178,39 @@ This prototype now supports the first two-step financial safety nudges:
 1. Threshold nudge: when daily spending is about to exceed the safe amount.
 2. UPI nudge: first time user opens a UPI app after threshold risk is active.
 
+Policy is configurable via environment variables:
+- `LITERACY_DAILY_SAFE_LIMIT` (default: `1200`)
+- `LITERACY_WARNING_RATIO` (default: `0.9`)
+- `LITERACY_STAGE1_MESSAGE`
+- `LITERACY_STAGE2_OVER_LIMIT_TEMPLATE` (supports `{daily_overage}` and `{weekly_impact}`)
+- `LITERACY_STAGE2_CLOSE_LIMIT_MESSAGE`
+- `LITERACY_WARMUP_DAYS` (default: `3`)
+- `LITERACY_WARMUP_SEED_MULTIPLIER` (default: `1.2`)
+- `LITERACY_WARMUP_EXTREME_SPIKE_RATIO` (default: `0.4`)
+
+Per-user policy override APIs:
+- `GET /api/literacy/policy?participant_id=<id>`
+- `POST /api/literacy/policy` with body:
+  - `participant_id`
+  - `daily_safe_limit`
+  - `warning_ratio`
+- `POST /api/literacy/alert-feedback` to capture alert usefulness actions (`useful`, `not_useful`, `dismissed`)
+
+Adaptive behavior:
+- Backend stores daily spend history per participant and auto-recalibrates auto-managed policy using recent 7-day spend median.
+- Manual policy overrides are not replaced by auto recalibration.
+
 Local test sequence:
 ```bash
 curl -X POST http://localhost:8000/api/literacy/sms-ingest \
   -H "Content-Type: application/json" \
-  -d '{"amount":950,"category":"upi","note":"SMS detected payment"}'
+  -d '{"participant_id":"pilot-user-001","amount":950,"category":"upi","note":"SMS detected payment"}'
 
 curl -X POST http://localhost:8000/api/literacy/upi-open \
   -H "Content-Type: application/json" \
-  -d '{"app_name":"PhonePe","intent_amount":120}'
+  -d '{"participant_id":"pilot-user-001","app_name":"PhonePe","intent_amount":120}'
+
+curl "http://localhost:8000/api/literacy/status?participant_id=pilot-user-001"
 ```
 
 ## Research Pilot APIs

@@ -42,6 +42,8 @@ object AppConstants {
     object IntentExtras {
         const val ALERT_TITLE = "extra_title"
         const val ALERT_MESSAGE = "extra_message"
+        const val ALERT_ID = "extra_alert_id"
+        const val ALERT_PAUSE_SECONDS = "extra_alert_pause_seconds"
     }
 
     object NotificationExtras {
@@ -66,6 +68,9 @@ object AppConstants {
         const val NOTE_SMS_PREFIX = "SMS from"
         const val NOTE_NOTIFICATION_PREFIX = "Notification from"
         const val UNKNOWN_PARTICIPANT_ID = "unknown_participant"
+        const val ALERT_ACTION_USEFUL = "useful"
+        const val ALERT_ACTION_NOT_USEFUL = "not_useful"
+        const val ALERT_ACTION_DISMISSED = "dismissed"
     }
 
     object Parsing {
