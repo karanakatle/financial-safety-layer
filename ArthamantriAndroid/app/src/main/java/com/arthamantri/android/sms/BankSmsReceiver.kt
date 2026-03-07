@@ -49,7 +49,7 @@ class BankSmsReceiver : BroadcastReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val (alerts, _) = LiteracyRepository.sendSmsExpense(
+                val result = LiteracyRepository.sendSmsExpense(
                     context = context,
                     amount = parsed.amount,
                     category = parsed.category,
@@ -57,10 +57,10 @@ class BankSmsReceiver : BroadcastReceiver() {
                 )
                 Log.i(
                     AppConstants.LogTags.BANK_SMS_RECEIVER,
-                    "sms-ingest API success; alertsCount=${alerts.size}"
+                    "sms-ingest API success; participantId=${result.participantId}; alertsCount=${result.alerts.size}"
                 )
 
-                alerts.forEach { alert ->
+                result.alerts.forEach { alert ->
                     AlertNotifier.show(
                         context,
                         title = context.getString(R.string.alert_title_default),

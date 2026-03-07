@@ -51,14 +51,14 @@ class TransactionNotificationListenerService : NotificationListenerService() {
 
         serviceScope.launch {
             try {
-                val (alerts, _) = LiteracyRepository.sendSmsExpense(
+                val result = LiteracyRepository.sendSmsExpense(
                     context = this@TransactionNotificationListenerService,
                     amount = parsed.amount,
                     category = category,
                     note = "${AppConstants.Domain.NOTE_NOTIFICATION_PREFIX} $pkg",
                 )
 
-                alerts.forEach { alert ->
+                result.alerts.forEach { alert ->
                     AlertNotifier.show(
                         context = this@TransactionNotificationListenerService,
                         title = getString(R.string.alert_title_default),

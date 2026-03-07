@@ -15,12 +15,18 @@ import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.UpiOpenRequest
 
 object LiteracyRepository {
+    data class SmsSendResult(
+        val alerts: List<LiteracyAlert>,
+        val state: LiteracyState?,
+        val participantId: String?,
+    )
+
     suspend fun sendSmsExpense(
         context: Context,
         amount: Double,
         category: String,
         note: String,
-    ): Pair<List<LiteracyAlert>, LiteracyState?> {
+    ): SmsSendResult {
         val participantId = resolveParticipantId(context)
         val language = resolveLanguage(context)
         val api = ApiClient.literacyApi(context)
@@ -33,7 +39,11 @@ object LiteracyRepository {
                 note = note,
             )
         )
-        return response.literacy_alerts to response.literacy_state
+        return SmsSendResult(
+            alerts = response.literacy_alerts,
+            state = response.literacy_state,
+            participantId = response.participant_id ?: participantId,
+        )
     }
 
     suspend fun notifyUpiOpen(
