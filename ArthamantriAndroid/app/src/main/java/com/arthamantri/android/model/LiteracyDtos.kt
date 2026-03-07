@@ -51,6 +51,9 @@ data class LiteracyState(
 data class SmsIngestResponse(
     val literacy_alerts: List<LiteracyAlert> = emptyList(),
     val literacy_state: LiteracyState? = null,
+    val participant_id: String? = null,
+    val language: String? = null,
+    val policy_recalibrated: Boolean? = null,
 )
 
 data class UpiOpenResponse(
