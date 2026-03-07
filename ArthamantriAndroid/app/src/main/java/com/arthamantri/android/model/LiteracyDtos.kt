@@ -3,6 +3,8 @@ package com.arthamantri.android.model
 import com.arthamantri.android.core.AppConstants
 
 data class SmsIngestRequest(
+    val participant_id: String,
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
     val amount: Double,
     val category: String = AppConstants.Domain.CATEGORY_BANK_SMS,
     val note: String = AppConstants.Domain.NOTE_ANDROID_SMS_LISTENER,
@@ -10,12 +12,15 @@ data class SmsIngestRequest(
 )
 
 data class UpiOpenRequest(
+    val participant_id: String,
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
     val app_name: String,
     val intent_amount: Double = 0.0,
     val timestamp: String? = null,
 )
 
 data class LiteracyAlert(
+    val alert_id: String? = null,
     val type: String? = null,
     val priority: String? = null,
     val reason: String? = null,
@@ -25,6 +30,11 @@ data class LiteracyAlert(
     val message: String? = null,
     val projected_daily_spend: Double? = null,
     val daily_safe_limit: Double? = null,
+    val risk_score: Double? = null,
+    val confidence_score: Double? = null,
+    val tone_selected: String? = null,
+    val frequency_bucket: String? = null,
+    val pause_seconds: Int? = null,
 )
 
 data class LiteracyState(
@@ -87,5 +97,19 @@ data class PilotAppLogRequest(
 )
 
 data class PilotAppLogResponse(
+    val ok: Boolean = false,
+)
+
+data class LiteracyAlertFeedbackRequest(
+    val alert_id: String,
+    val participant_id: String,
+    val action: String,
+    val channel: String,
+    val title: String,
+    val message: String,
+    val timestamp: String? = null,
+)
+
+data class LiteracyAlertFeedbackResponse(
     val ok: Boolean = false,
 )

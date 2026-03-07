@@ -21,6 +21,10 @@ This app is plug-and-play with backend endpoints already added in:
   - `POST /api/pilot/consent`
   - `POST /api/pilot/feedback`
 
+Per-user literacy state:
+- Android sends a stable `participant_id` (device Android ID) with literacy events.
+- Backend tracks threshold/alert stages per participant to avoid cross-user state mixing.
+
 ## Quick start
 1. Ensure backend is running and reachable from phone over HTTPS.
    - Recommended for live testing: deploy backend using Render Blueprint (`render.yaml`).

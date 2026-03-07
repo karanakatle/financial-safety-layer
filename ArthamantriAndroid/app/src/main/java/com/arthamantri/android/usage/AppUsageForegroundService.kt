@@ -53,7 +53,7 @@ class AppUsageForegroundService : Service() {
                     val pkg = foregroundPackageName()
                     if (pkg != null && pkg != lastForegroundPackage) {
                         lastForegroundPackage = pkg
-                        if (UpiPackages.isUpiPackage(pkg)) {
+                        if (UpiPackages.isUpiPackage(this@AppUsageForegroundService, pkg)) {
                             maybeSignalUpiOpen(pkg)
                         }
                     }
@@ -77,7 +77,7 @@ class AppUsageForegroundService : Service() {
         lastUpiSignalAtMs = now
 
         try {
-            val appName = UpiPackages.displayName(packageName)
+            val appName = UpiPackages.displayName(this, packageName)
             val alert = LiteracyRepository.notifyUpiOpen(
                 context = this,
                 appName = appName,
@@ -89,6 +89,8 @@ class AppUsageForegroundService : Service() {
                     this,
                     title = getString(R.string.alert_payment_risk_title),
                     body = alert.message ?: getString(R.string.alert_body_default),
+                    alertId = alert.alert_id,
+                    pauseSeconds = alert.pause_seconds ?: 0,
                 )
             }
         } catch (e: Exception) {

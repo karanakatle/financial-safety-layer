@@ -92,6 +92,9 @@
     <string name="alert_body_default">यह भुगतान आपकी दैनिक या साप्ताहिक योजना को प्रभावित कर सकता है।</string>
     <string name="alert_ack_short">ठीक है</string>
     <string name="alert_ack_long">ठीक है, मैं समझ गया</string>
+    <string name="alert_feedback_useful">उपयोगी</string>
+    <string name="alert_feedback_not_useful">उपयोगी नहीं</string>
+    <string name="alert_pause_countdown">कृपया %1$d सेकंड रुकें, फिर पुष्टि करें।</string>
     <string name="service_notif_title">अर्थमंत्री सक्रिय है</string>
     <string name="service_notif_text">UPI ऐप खुलने की घटनाओं की निगरानी हो रही है</string>
     <string name="alert_payment_risk_title">भुगतान जोखिम चेतावनी</string>
