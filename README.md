@@ -166,6 +166,11 @@ If you are shipping the native Android app from `ArthamantriAndroid`:
 - `POST /api/literacy/sms-ingest` (simulate bank SMS expense feed)
 - `POST /api/literacy/upi-open` (simulate UPI app open trigger)
 - `GET /api/literacy/status`
+- `GET /api/literacy/policy` (per-user effective policy)
+- `POST /api/literacy/policy` (manual per-user policy override)
+- `POST /api/literacy/reset` (soft reset: state only)
+- `POST /api/literacy/reset-hard` (hard reset: state + policy/history/feedback/features)
+- `POST /api/literacy/alert-feedback` (capture alert action: useful/not_useful/dismissed)
 - `GET /api/pilot/meta` (research-pilot disclaimer and alert policy)
 - `POST /api/pilot/consent` (store participant consent)
 - `POST /api/pilot/feedback` (collect pilot feedback)
@@ -173,10 +178,13 @@ If you are shipping the native Android app from `ArthamantriAndroid`:
 - `GET /api/pilot/summary` (pilot aggregate metrics)
 - `GET /api/pilot/analytics` (event and stage analytics for research)
 
-## Financial Literacy Safety Flow (v1)
-This prototype now supports the first two-step financial safety nudges:
-1. Threshold nudge: when daily spending is about to exceed the safe amount.
-2. UPI nudge: first time user opens a UPI app after threshold risk is active.
+## Financial Literacy Safety Flow (current)
+Current logic supports:
+1. Stage-1 threshold nudge when projected daily spend nears/exceeds limit.
+2. Stage-2 UPI-open nudge on first UPI-open after risk becomes active.
+3. Catastrophic override for high-impact transactions (including warm-up days).
+4. Context-aware alert intensity and suppression.
+5. Continuous policy adaptation for auto-managed users.
 
 Policy is configurable via environment variables:
 - `LITERACY_DAILY_SAFE_LIMIT` (default: `1200`)
@@ -187,6 +195,9 @@ Policy is configurable via environment variables:
 - `LITERACY_WARMUP_DAYS` (default: `3`)
 - `LITERACY_WARMUP_SEED_MULTIPLIER` (default: `1.2`)
 - `LITERACY_WARMUP_EXTREME_SPIKE_RATIO` (default: `0.4`)
+- `LITERACY_CATASTROPHIC_ABSOLUTE` (default: `5000`)
+- `LITERACY_CATASTROPHIC_MULTIPLIER` (default: `2.5`)
+- `LITERACY_CATASTROPHIC_PROJECTED_CAP` (default: `1.8`)
 
 Per-user policy override APIs:
 - `GET /api/literacy/policy?participant_id=<id>`
@@ -195,10 +206,86 @@ Per-user policy override APIs:
   - `daily_safe_limit`
   - `warning_ratio`
 - `POST /api/literacy/alert-feedback` to capture alert usefulness actions (`useful`, `not_useful`, `dismissed`)
+- `POST /api/literacy/reset` to clear only current literacy state for the participant
+- `POST /api/literacy/reset-hard` to clear state + policy + history + feedback + alert features
 
 Adaptive behavior:
 - Backend stores daily spend history per participant and auto-recalibrates auto-managed policy using recent 7-day spend median.
+- Auto-managed `warning_ratio` is refined using contextual outcomes (risk/confidence/hard-rate/suppressed-rate/dismissals).
 - Manual policy overrides are not replaced by auto recalibration.
+
+Contextual scoring and logging:
+- On each emitted alert, backend computes and stores:
+  - `alert_id, participant_id, timestamp`
+  - `amount, projected_spend, daily_safe_limit, spend_ratio`
+  - `txn_anomaly_score, hour_of_day, rapid_txn_flag, upi_open_flag`
+  - `recent_dismissals_24h, risk_score, confidence_score`
+  - `tone_selected, frequency_bucket`
+- For very high-risk UPI-open alerts, backend returns `pause_seconds=5` (used by Android app for pause-and-confirm friction).
+
+Deterministic scored model (current approach before ML):
+- Risk-context score (0-100 style, implemented as normalized risk score internally) is derived from:
+  - spend vs limit (`projected_spend / daily_safe_limit`)
+  - transaction size anomaly (`amount` vs recent median behavior)
+  - time/context (`hour_of_day`)
+  - rapid consecutive spend flag
+  - UPI-open context after stage-1
+  - recent dismissals (fatigue-aware dampening/suppression path)
+- Confidence is action confidence (signal alignment strength), not truth certainty.
+- Tone selection maps contextual risk to intervention style:
+  - low risk -> supportive
+  - medium risk -> caution
+  - high risk -> strong intervention
+- Frequency control:
+  - `hard/soft/suppressed` bucket selection per alert
+  - suppression path reduces repetitive popup fatigue
+  - stage-gating remains active (stage-1 once per day, stage-2 once on first UPI-open after stage-1)
+- Purpose:
+  - fewer false-positive hard alerts
+  - better trust retention for volatile spenders
+  - cleaner supervision data for future ML weight/tone optimization
+
+### Scoring specification (research baseline)
+Use a simple deterministic scored model first (no ML), then learn weights/timing later from logs.
+
+Risk-context score (0-100 style points):
+- Spend vs limit:
+  - `projected/limit > 1.2` -> `+30`
+  - `projected/limit > 1.0` -> `+20`
+  - `projected/limit > 0.9` -> `+10`
+- Transaction size anomaly:
+  - `amount > 1.8 * 7-day median txn` -> `+20`
+- Time/context:
+  - late night spend -> `+10`
+  - rapid consecutive spends -> `+10`
+  - UPI-open after stage1 -> `+15`
+- Recent dismissals:
+  - many dismissals -> reduce hard score by `-10` (fatigue control)
+
+Confidence (action confidence, not truth confidence):
+- one weak signal -> low confidence
+- multiple aligned signals (for example SMS + app-open + recency) -> high confidence
+
+Tone mapping:
+- Low -> supportive info (`Aaj ka spend high hai, dhyaan rakhein`)
+- Medium -> caution (`Aap safe limit ke kareeb hain`)
+- High -> strong intervention (`Pause karein, payment verify karein`)
+
+Frequency control:
+- hard cap target: `max hard alerts/day = 1` (optionally `2`)
+- cooldown target between hard alerts: `2 hours`
+- if cap reached: soft-only cards, no hard popup
+
+Why this helps:
+- reduces false-positive irritation
+- preserves trust for volatile users
+- keeps alerts rarer and more meaningful
+- creates clean supervision data for later ML tuning
+
+Implementation status:
+- Implemented now: contextual scoring, confidence estimate, tone selection, `hard/soft/suppressed`,
+  UPI high-risk pause friction, persistence of alert features and feedback.
+- Planned next hardening: exact point-table/cap/cooldown as explicit configurable policy constants.
 
 Local test sequence:
 ```bash
@@ -211,6 +298,8 @@ curl -X POST http://localhost:8000/api/literacy/upi-open \
   -d '{"participant_id":"pilot-user-001","app_name":"PhonePe","intent_amount":120}'
 
 curl "http://localhost:8000/api/literacy/status?participant_id=pilot-user-001"
+
+curl "http://localhost:8000/api/literacy/policy?participant_id=pilot-user-001"
 ```
 
 ## Research Pilot APIs
