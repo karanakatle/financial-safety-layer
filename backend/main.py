@@ -770,6 +770,13 @@ def literacy_reset(participant_id: str = "global_user") -> dict:
     return {"ok": True, "participant_id": participant_id, "literacy_state": monitor.status()}
 
 
+@app.post("/api/literacy/reset-hard")
+def literacy_reset_hard(participant_id: str = "global_user") -> dict:
+    pilot_storage.reset_literacy_profile(participant_id)
+    monitor = _build_literacy_monitor(participant_id)
+    return {"ok": True, "participant_id": participant_id, "literacy_state": monitor.status(), "mode": "hard"}
+
+
 @app.post("/api/literacy/alert-feedback")
 def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"

@@ -377,6 +377,15 @@ class PilotStorage:
                 (participant_id,),
             )
 
+    def reset_literacy_profile(self, participant_id: str) -> None:
+        with self._connect() as conn:
+            conn.execute("DELETE FROM literacy_state WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM participant_policy WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM daily_spend_history WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM literacy_events WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM alert_feedback WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM alert_features WHERE participant_id=?", (participant_id,))
+
     def get_participant_policy(self, participant_id: str) -> dict | None:
         with self._connect() as conn:
             row = conn.execute(
