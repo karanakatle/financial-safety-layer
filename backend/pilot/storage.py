@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -117,6 +118,76 @@ class PilotStorage:
                     confidence_score REAL,
                     tone_selected TEXT NOT NULL,
                     frequency_bucket TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS essential_goal_profile (
+                    participant_id TEXT PRIMARY KEY,
+                    cohort TEXT NOT NULL,
+                    essential_goals TEXT NOT NULL,
+                    language TEXT NOT NULL,
+                    setup_skipped INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS experiment_assignment (
+                    participant_id TEXT NOT NULL,
+                    experiment_name TEXT NOT NULL,
+                    variant TEXT NOT NULL,
+                    assigned_at TEXT NOT NULL,
+                    PRIMARY KEY (participant_id, experiment_name)
+                );
+
+                CREATE TABLE IF NOT EXISTS experiment_events (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    participant_id TEXT NOT NULL,
+                    experiment_name TEXT NOT NULL,
+                    variant TEXT NOT NULL,
+                    event_type TEXT NOT NULL,
+                    payload_json TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS grievances (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    participant_id TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    details TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS goal_memory (
+                    participant_id TEXT NOT NULL,
+                    merchant_key TEXT NOT NULL,
+                    goal TEXT NOT NULL,
+                    positive_count INTEGER NOT NULL DEFAULT 0,
+                    negative_count INTEGER NOT NULL DEFAULT 0,
+                    updated_at TEXT NOT NULL,
+                    PRIMARY KEY (participant_id, merchant_key, goal)
+                );
+
+                CREATE TABLE IF NOT EXISTS goal_feedback (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    participant_id TEXT NOT NULL,
+                    alert_id TEXT NOT NULL,
+                    merchant_key TEXT NOT NULL,
+                    selected_goal TEXT NOT NULL,
+                    is_essential INTEGER NOT NULL,
+                    source_confidence REAL NOT NULL,
+                    timestamp TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS alert_goal_context (
+                    alert_id TEXT PRIMARY KEY,
+                    participant_id TEXT NOT NULL,
+                    merchant_key TEXT NOT NULL,
+                    inferred_goal TEXT NOT NULL,
+                    confidence REAL NOT NULL,
+                    gate_passed INTEGER NOT NULL,
+                    source TEXT NOT NULL,
+                    timestamp TEXT NOT NULL
                 );
                 """
             )
@@ -385,6 +456,12 @@ class PilotStorage:
             conn.execute("DELETE FROM literacy_events WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM alert_feedback WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM alert_features WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM essential_goal_profile WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM experiment_assignment WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM experiment_events WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM goal_memory WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM goal_feedback WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM alert_goal_context WHERE participant_id=?", (participant_id,))
 
     def get_participant_policy(self, participant_id: str) -> dict | None:
         with self._connect() as conn:
@@ -639,3 +716,403 @@ class PilotStorage:
             "hard_count": int(row["hard_count"] or 0),
             "suppressed_count": int(row["suppressed_count"] or 0),
         }
+
+    def get_essential_goal_profile(self, participant_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT participant_id, cohort, essential_goals, language, setup_skipped, created_at, updated_at
+                FROM essential_goal_profile
+                WHERE participant_id=?
+                """,
+                (participant_id,),
+            ).fetchone()
+            if not row:
+                return None
+            data = dict(row)
+            goals = data.get("essential_goals") or "[]"
+            data["essential_goals"] = json.loads(goals)
+            data["setup_skipped"] = bool(data.get("setup_skipped", 0))
+            return data
+
+    def upsert_essential_goal_profile(
+        self,
+        participant_id: str,
+        cohort: str,
+        essential_goals: list[str],
+        language: str,
+        setup_skipped: bool,
+        timestamp: str,
+    ) -> None:
+        goals_json = json.dumps(essential_goals, ensure_ascii=True)
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO essential_goal_profile (
+                    participant_id, cohort, essential_goals, language, setup_skipped, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(participant_id)
+                DO UPDATE SET
+                    cohort=excluded.cohort,
+                    essential_goals=excluded.essential_goals,
+                    language=excluded.language,
+                    setup_skipped=excluded.setup_skipped,
+                    updated_at=excluded.updated_at
+                """,
+                (
+                    participant_id,
+                    cohort,
+                    goals_json,
+                    language,
+                    1 if setup_skipped else 0,
+                    timestamp,
+                    timestamp,
+                ),
+            )
+
+    def get_experiment_assignment(self, participant_id: str, experiment_name: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT participant_id, experiment_name, variant, assigned_at
+                FROM experiment_assignment
+                WHERE participant_id=? AND experiment_name=?
+                """,
+                (participant_id, experiment_name),
+            ).fetchone()
+            return dict(row) if row else None
+
+    def upsert_experiment_assignment(
+        self,
+        participant_id: str,
+        experiment_name: str,
+        variant: str,
+        assigned_at: str,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO experiment_assignment (participant_id, experiment_name, variant, assigned_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(participant_id, experiment_name)
+                DO UPDATE SET
+                    variant=excluded.variant,
+                    assigned_at=excluded.assigned_at
+                """,
+                (participant_id, experiment_name, variant, assigned_at),
+            )
+
+    def add_experiment_event(
+        self,
+        participant_id: str,
+        experiment_name: str,
+        variant: str,
+        event_type: str,
+        payload: dict,
+        timestamp: str,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO experiment_events (
+                    participant_id, experiment_name, variant, event_type, payload_json, timestamp
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    participant_id,
+                    experiment_name,
+                    variant,
+                    event_type,
+                    json.dumps(payload, ensure_ascii=True),
+                    timestamp,
+                ),
+            )
+
+    def list_experiment_events(
+        self,
+        participant_id: str | None = None,
+        experiment_name: str | None = None,
+        limit: int = 200,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        if experiment_name:
+            clauses.append("experiment_name=?")
+            params.append(experiment_name)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT participant_id, experiment_name, variant, event_type, payload_json, timestamp
+                FROM experiment_events
+                {where_sql}
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        events: list[dict] = []
+        for row in rows:
+            data = dict(row)
+            data["payload"] = json.loads(data.pop("payload_json") or "{}")
+            events.append(data)
+        return events
+
+    def recent_literacy_events(self, participant_id: str, limit: int = 25) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT event_type, source, amount, app_name, reason, stage, daily_spend, daily_safe_limit, timestamp
+                FROM literacy_events
+                WHERE participant_id=?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def recent_alert_features(self, participant_id: str, limit: int = 25) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT alert_id, timestamp, amount, projected_spend, daily_safe_limit, spend_ratio,
+                       txn_anomaly_score, hour_of_day, rapid_txn_flag, upi_open_flag,
+                       recent_dismissals_24h, risk_score, confidence_score, tone_selected, frequency_bucket
+                FROM alert_features
+                WHERE participant_id=?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        records: list[dict] = []
+        for row in rows:
+            data = dict(row)
+            data["rapid_txn_flag"] = bool(data["rapid_txn_flag"])
+            data["upi_open_flag"] = bool(data["upi_open_flag"])
+            records.append(data)
+        return records
+
+    def recent_alert_feedback(self, participant_id: str, limit: int = 25) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT alert_id, action, channel, title, message, timestamp
+                FROM alert_feedback
+                WHERE participant_id=?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def create_grievance(
+        self,
+        participant_id: str,
+        category: str,
+        details: str,
+        timestamp: str,
+    ) -> int:
+        with self._connect() as conn:
+            cur = conn.execute(
+                """
+                INSERT INTO grievances (participant_id, category, details, status, created_at, updated_at)
+                VALUES (?, ?, ?, 'open', ?, ?)
+                """,
+                (participant_id, category, details, timestamp, timestamp),
+            )
+            return int(cur.lastrowid)
+
+    def update_grievance_status(self, grievance_id: int, status: str, timestamp: str) -> bool:
+        with self._connect() as conn:
+            cur = conn.execute(
+                """
+                UPDATE grievances
+                SET status=?, updated_at=?
+                WHERE id=?
+                """,
+                (status, timestamp, grievance_id),
+            )
+            return cur.rowcount > 0
+
+    def list_grievances(self, participant_id: str | None = None, limit: int = 100) -> list[dict]:
+        with self._connect() as conn:
+            if participant_id:
+                rows = conn.execute(
+                    """
+                    SELECT id, participant_id, category, details, status, created_at, updated_at
+                    FROM grievances
+                    WHERE participant_id=?
+                    ORDER BY id DESC
+                    LIMIT ?
+                    """,
+                    (participant_id, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT id, participant_id, category, details, status, created_at, updated_at
+                    FROM grievances
+                    ORDER BY id DESC
+                    LIMIT ?
+                    """,
+                    (limit,),
+                ).fetchall()
+        return [dict(row) for row in rows]
+
+    def goal_memory_rows(self, participant_id: str, merchant_key: str) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT goal, positive_count, negative_count, updated_at
+                FROM goal_memory
+                WHERE participant_id=? AND merchant_key=?
+                ORDER BY updated_at DESC
+                """,
+                (participant_id, merchant_key),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def upsert_goal_memory(
+        self,
+        participant_id: str,
+        merchant_key: str,
+        goal: str,
+        delta_positive: int,
+        delta_negative: int,
+        timestamp: str,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO goal_memory (
+                    participant_id, merchant_key, goal, positive_count, negative_count, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(participant_id, merchant_key, goal)
+                DO UPDATE SET
+                    positive_count=MAX(0, goal_memory.positive_count + excluded.positive_count),
+                    negative_count=MAX(0, goal_memory.negative_count + excluded.negative_count),
+                    updated_at=excluded.updated_at
+                """,
+                (
+                    participant_id,
+                    merchant_key,
+                    goal,
+                    delta_positive,
+                    delta_negative,
+                    timestamp,
+                ),
+            )
+
+    def add_goal_feedback(
+        self,
+        participant_id: str,
+        alert_id: str,
+        merchant_key: str,
+        selected_goal: str,
+        is_essential: bool,
+        source_confidence: float,
+        timestamp: str,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO goal_feedback (
+                    participant_id, alert_id, merchant_key, selected_goal, is_essential, source_confidence, timestamp
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    participant_id,
+                    alert_id,
+                    merchant_key,
+                    selected_goal,
+                    1 if is_essential else 0,
+                    source_confidence,
+                    timestamp,
+                ),
+            )
+
+    def upsert_alert_goal_context(
+        self,
+        alert_id: str,
+        participant_id: str,
+        merchant_key: str,
+        inferred_goal: str,
+        confidence: float,
+        gate_passed: bool,
+        source: str,
+        timestamp: str,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO alert_goal_context (
+                    alert_id, participant_id, merchant_key, inferred_goal, confidence, gate_passed, source, timestamp
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(alert_id)
+                DO UPDATE SET
+                    merchant_key=excluded.merchant_key,
+                    inferred_goal=excluded.inferred_goal,
+                    confidence=excluded.confidence,
+                    gate_passed=excluded.gate_passed,
+                    source=excluded.source,
+                    timestamp=excluded.timestamp
+                """,
+                (
+                    alert_id,
+                    participant_id,
+                    merchant_key,
+                    inferred_goal,
+                    confidence,
+                    1 if gate_passed else 0,
+                    source,
+                    timestamp,
+                ),
+            )
+
+    def get_alert_goal_context(self, alert_id: str, participant_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT alert_id, participant_id, merchant_key, inferred_goal, confidence, gate_passed, source, timestamp
+                FROM alert_goal_context
+                WHERE alert_id=? AND participant_id=?
+                """,
+                (alert_id, participant_id),
+            ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        data["gate_passed"] = bool(data["gate_passed"])
+        return data
+
+    def recent_goal_feedback(self, participant_id: str, limit: int = 25) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT alert_id, merchant_key, selected_goal, is_essential, source_confidence, timestamp
+                FROM goal_feedback
+                WHERE participant_id=?
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        records: list[dict] = []
+        for row in rows:
+            item = dict(row)
+            item["is_essential"] = bool(item["is_essential"])
+            records.append(item)
+        return records

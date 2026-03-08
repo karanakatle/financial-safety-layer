@@ -10,7 +10,9 @@ Native Android companion app for the existing FastAPI backend in `Python-OOS-Pro
 - Sends UPI-open event to backend: `POST /api/literacy/upi-open`.
 - Shows USSD-like full-screen warning overlay plus high-priority notification.
 - Applies pause-and-confirm friction for very high-risk stage-2 alerts (`pause_seconds` from backend).
+- Shows explainable alerts (risk level, why-this-alert, next-safe-action, essential-goal impact) via backend message payload.
 - Enforces first-run research consent and supports pilot feedback submission.
+- Includes **Facilitator Setup Pack** (2-minute assisted onboarding checklist with one-tap actions).
 
 ## Backend compatibility
 This app is plug-and-play with backend endpoints already added in:
@@ -20,12 +22,20 @@ This app is plug-and-play with backend endpoints already added in:
   - `GET /api/literacy/status`
   - `GET /api/literacy/policy`
   - `POST /api/literacy/policy`
+  - `GET /api/literacy/essential-goals`
+  - `POST /api/literacy/essential-goals`
   - `POST /api/literacy/reset`
   - `POST /api/literacy/reset-hard`
   - `POST /api/literacy/alert-feedback`
+  - `GET /api/literacy/debug-trace`
   - `GET /api/pilot/meta`
   - `POST /api/pilot/consent`
   - `POST /api/pilot/feedback`
+  - `POST /api/pilot/grievance`
+  - `GET /api/pilot/grievance`
+  - `POST /api/pilot/grievance/status`
+  - `POST /api/research/assignment`
+  - `POST /api/research/event`
 
 Per-user literacy state:
 - Android sends a stable `participant_id` (device Android ID) with literacy events.
@@ -42,9 +52,11 @@ Per-user literacy state:
 4. Run app on physical Android phone.
 5. In app:
    - On first launch, select language and accept pilot consent.
-   - App prompts permission onboarding flow (runtime + usage + overlay).
+   - App prompts **Money Setup Lite** (cohort + up to 2 essential goals, skip optional).
+   - App then prompts permission onboarding flow (runtime + usage + overlay).
    - Start monitoring from the home dashboard.
-   - Use left-swipe menu for Manage Access, feedback, help, and privacy policy.
+   - Use left-swipe menu for Manage Access, feedback, Money Setup Lite, Facilitator Setup Pack, help, and privacy policy.
+   - Use **Facilitator Setup Pack** from menu/help for assisted onboarding in field pilots.
 6. Trigger events:
    - Receive/simulate bank debit SMS.
    - Open PhonePe/GPay/Paytm/BHIM.
@@ -138,12 +150,25 @@ Outputs:
 - `.../api/LiteracyApi.kt`
 - `.../repo/LiteracyRepository.kt`
 - `.../notify/AlertNotifier.kt`
+- `app/src/main/res/layout/dialog_money_setup.xml`
+- `app/src/main/res/layout/dialog_facilitator_pack.xml`
+- `app/src/main/res/layout/dialog_help_setup.xml`
+
+## Facilitator assets
+- Printable assisted onboarding card:
+  - `docs/FACILITATOR_ONBOARDING_CARD.md`
 
 ## Important notes
 - Play Store has strict policies around SMS and usage-access permissions.
 - Base URL is configurable at build time using `-PAPI_BASE_URL`.
 - Privacy policy URL is configurable using `-PPRIVACY_POLICY_URL`.
 - `keystore.properties` is required for real release signing (see `PRODUCTION_SETUP.md`).
+- Onboarding state is persisted locally (for example: language/consent/money-setup/permission completion).
+- Local onboarding flag keys include:
+  - `KEY_LANGUAGE_SELECTED`
+  - `KEY_CONSENT_ACCEPTED`
+  - `KEY_MONEY_SETUP_DONE`
+  - `KEY_PERMISSION_ONBOARDING_DONE`
 
 ## Literacy test reset commands
 Use the backend participant id for deterministic retesting:

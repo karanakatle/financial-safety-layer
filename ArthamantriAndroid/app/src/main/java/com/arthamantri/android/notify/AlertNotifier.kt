@@ -20,6 +20,16 @@ import com.arthamantri.android.core.AppConstants
 
 object AlertNotifier {
     private val mainHandler = Handler(Looper.getMainLooper())
+    private val explainabilityMarkers = listOf(
+        "\nRisk level:",
+        "\nWhy this alert:",
+        "\nNext safe action:",
+        "\nEssential-goal impact:",
+        "\nजोखिम स्तर:",
+        "\nक्यों दिखा:",
+        "\nअगला सुरक्षित कदम:",
+        "\nआवश्यक लक्ष्य प्रभाव:",
+    )
 
     fun ensureChannel(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
@@ -43,8 +53,14 @@ object AlertNotifier {
         body: String,
         alertId: String? = null,
         pauseSeconds: Int = 0,
+        nextSafeAction: String? = null,
+        essentialGoalImpact: String? = null,
     ) {
         ensureChannel(context)
+        val primaryBody = sanitizeBody(
+            body = body,
+            hasExplainabilitySections = !nextSafeAction.isNullOrBlank() || !essentialGoalImpact.isNullOrBlank(),
+        )
 
         mainHandler.post {
             val resolvedAlertId = alertId ?: java.util.UUID.randomUUID().toString()
@@ -54,16 +70,26 @@ object AlertNotifier {
             }
 
             val overlayShown = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)) {
-                OverlayAlertWindow.show(context, resolvedAlertId, title, body, pauseSeconds)
+                OverlayAlertWindow.show(
+                    context = context,
+                    alertId = resolvedAlertId,
+                    title = title,
+                    message = primaryBody,
+                    pauseSeconds = pauseSeconds,
+                    nextSafeAction = nextSafeAction,
+                    essentialGoalImpact = essentialGoalImpact,
+                )
             } else {
                 false
             }
 
             val alertIntent = Intent(context, AlertDisplayActivity::class.java).apply {
                 putExtra(AlertDisplayActivity.EXTRA_TITLE, title)
-                putExtra(AlertDisplayActivity.EXTRA_MESSAGE, body)
+                putExtra(AlertDisplayActivity.EXTRA_MESSAGE, primaryBody)
                 putExtra(AlertDisplayActivity.EXTRA_ALERT_ID, resolvedAlertId)
                 putExtra(AlertDisplayActivity.EXTRA_PAUSE_SECONDS, pauseSeconds)
+                putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
+                putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
 
@@ -95,8 +121,8 @@ object AlertNotifier {
             val notification = NotificationCompat.Builder(context, AppConstants.Notifications.SAFETY_CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_dialog_alert)
                 .setContentTitle(title)
-                .setContentText(body)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setContentText(primaryBody)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(primaryBody))
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
@@ -106,5 +132,19 @@ object AlertNotifier {
 
             NotificationManagerCompat.from(context).notify(id, notification)
         }
+    }
+
+    private fun sanitizeBody(body: String, hasExplainabilitySections: Boolean): String {
+        if (!hasExplainabilitySections) {
+            return body
+        }
+        var minIndex = -1
+        for (marker in explainabilityMarkers) {
+            val idx = body.indexOf(marker)
+            if (idx >= 0 && (minIndex == -1 || idx < minIndex)) {
+                minIndex = idx
+            }
+        }
+        return if (minIndex > 0) body.substring(0, minIndex).trim() else body
     }
 }

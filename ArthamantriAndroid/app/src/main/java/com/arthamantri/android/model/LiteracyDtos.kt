@@ -32,9 +32,31 @@ data class LiteracyAlert(
     val daily_safe_limit: Double? = null,
     val risk_score: Double? = null,
     val confidence_score: Double? = null,
+    val risk_level: String? = null,
     val tone_selected: String? = null,
     val frequency_bucket: String? = null,
     val pause_seconds: Int? = null,
+    val why_this_alert: String? = null,
+    val next_best_action: String? = null,
+    val essential_goal_impact: String? = null,
+    val essential_goals: List<String>? = null,
+    val goal_reserve_ratio: Double? = null,
+    val goal_protected_limit: Double? = null,
+)
+
+data class EssentialGoalProfileDto(
+    val cohort: String? = null,
+    val essential_goals: List<String> = emptyList(),
+    val language: String? = null,
+    val setup_skipped: Boolean? = null,
+)
+
+data class EssentialGoalEnvelopeDto(
+    val cohort: String? = null,
+    val essential_goals: List<String> = emptyList(),
+    val reserve_ratio: Double? = null,
+    val reserve_amount: Double? = null,
+    val protected_limit: Double? = null,
 )
 
 data class LiteracyState(
@@ -51,14 +73,22 @@ data class LiteracyState(
 data class SmsIngestResponse(
     val literacy_alerts: List<LiteracyAlert> = emptyList(),
     val literacy_state: LiteracyState? = null,
+    val essential_goal_profile: EssentialGoalProfileDto? = null,
+    val essential_goal_envelope: EssentialGoalEnvelopeDto? = null,
     val participant_id: String? = null,
     val language: String? = null,
+    val experiment_variant: String? = null,
     val policy_recalibrated: Boolean? = null,
 )
 
 data class UpiOpenResponse(
     val alert: LiteracyAlert? = null,
     val literacy_state: LiteracyState? = null,
+    val essential_goal_profile: EssentialGoalProfileDto? = null,
+    val essential_goal_envelope: EssentialGoalEnvelopeDto? = null,
+    val participant_id: String? = null,
+    val language: String? = null,
+    val experiment_variant: String? = null,
 )
 
 data class PilotMetaResponse(
@@ -115,4 +145,32 @@ data class LiteracyAlertFeedbackRequest(
 
 data class LiteracyAlertFeedbackResponse(
     val ok: Boolean = false,
+)
+
+data class EssentialGoalProfileRequest(
+    val participant_id: String,
+    val cohort: String,
+    val essential_goals: List<String> = emptyList(),
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
+    val setup_skipped: Boolean = false,
+)
+
+data class EssentialGoalProfileResponse(
+    val ok: Boolean? = null,
+    val participant_id: String? = null,
+    val profile: EssentialGoalProfileDto? = null,
+    val envelope: EssentialGoalEnvelopeDto? = null,
+)
+
+data class ExperimentAssignmentRequest(
+    val participant_id: String,
+    val experiment_name: String = "adaptive_alerts_v1",
+    val preferred_variant: String? = null,
+)
+
+data class ExperimentAssignmentResponse(
+    val ok: Boolean = false,
+    val participant_id: String? = null,
+    val experiment_name: String? = null,
+    val variant: String? = null,
 )

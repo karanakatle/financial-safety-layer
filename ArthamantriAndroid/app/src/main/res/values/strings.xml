@@ -14,6 +14,8 @@
     <string name="menu_access_overlay">Overlay Access</string>
     <string name="menu_access_usage">Usage Access</string>
     <string name="menu_feedback">Submit Pilot Feedback</string>
+    <string name="menu_money_setup">Money Setup Lite</string>
+    <string name="menu_facilitator_pack">Facilitator Setup Pack</string>
     <string name="menu_help">Help &amp; Onboarding</string>
     <string name="menu_privacy_policy">Privacy Policy</string>
     <string name="cd_change_language">Change app language</string>
@@ -51,6 +53,46 @@
     <string name="consent_accept">I Agree</string>
     <string name="consent_exit">Exit</string>
 
+    <string name="dialog_money_setup_title">Money Setup Lite</string>
+    <string name="dialog_money_setup_message">Pick your profile and up to 2 essential goals. You can skip for now.</string>
+    <string name="money_setup_cohort_label">Profile</string>
+    <string name="money_setup_goal1_label">Essential Goal 1</string>
+    <string name="money_setup_goal2_label">Essential Goal 2 (optional)</string>
+    <string name="money_setup_none">None</string>
+    <string name="money_setup_save_continue">Save and Continue</string>
+    <string name="money_setup_skip">Skip for now</string>
+    <string name="cohort_women_led_household">Women-led household</string>
+    <string name="cohort_daily_cashflow_worker">Daily-cashflow worker</string>
+    <string name="goal_ration">Ration</string>
+    <string name="goal_school">School</string>
+    <string name="goal_fuel">Fuel</string>
+    <string name="goal_medicine">Medicine</string>
+    <string name="goal_rent">Rent</string>
+    <string name="goal_mobile_recharge">Mobile Recharge</string>
+    <string name="goal_loan_repayment">Loan Repayment</string>
+    <string name="money_setup_pending">Money setup: pending</string>
+    <string name="money_setup_skipped">Money setup: skipped</string>
+    <string name="money_setup_summary">Money setup: %1$s • Goals: %2$s • Reserve: %3$d%% • Protected limit: ₹%4$d</string>
+    <string name="toast_money_setup_saved">Money setup saved.</string>
+    <string name="toast_money_setup_failed">Money setup could not be synced. Continuing with defaults.</string>
+    <string name="facilitator_title">Facilitator Setup Pack</string>
+    <string name="facilitator_subtitle">2-minute assisted setup for field helper, family helper, or BC.</string>
+    <string name="facilitator_step_language">Step 1: Select language</string>
+    <string name="facilitator_step_consent">Step 2: Record consent</string>
+    <string name="facilitator_step_money_setup">Step 3: Money Setup Lite</string>
+    <string name="facilitator_step_permissions">Step 4: Enable permissions</string>
+    <string name="facilitator_step_monitoring">Step 5: Start monitoring</string>
+    <string name="facilitator_action_select_language">Select language</string>
+    <string name="facilitator_action_record_consent">Record consent</string>
+    <string name="facilitator_action_money_setup">Open money setup</string>
+    <string name="facilitator_action_permissions">Enable permissions</string>
+    <string name="facilitator_action_start_monitor">Start monitoring</string>
+    <string name="facilitator_action_refresh">Refresh status</string>
+    <string name="facilitator_status_done">Status: Done</string>
+    <string name="facilitator_status_pending">Status: Pending</string>
+    <string name="facilitator_status_permissions">SMS: %1$s • Usage: %2$s • Overlay: %3$s • Notifications: %4$s</string>
+    <string name="facilitator_status_monitoring_ready">Ready to monitor: %1$s</string>
+
     <string name="dialog_perm_title">Permission Setup</string>
     <string name="dialog_perm_message">To use the app, allow these permissions:
 • SMS
@@ -76,6 +118,8 @@ Follow the system prompts to complete setup.</string>
     <string name="help_step_6">Start Monitoring.</string>
     <string name="help_apply_language">Apply Language</string>
     <string name="help_change_language">Change Language</string>
+    <string name="help_edit_money_setup">Edit Money Setup</string>
+    <string name="help_open_facilitator_pack">Open Facilitator Pack</string>
     <string name="help_close">Close</string>
     <string name="icon_close">✕</string>
     <string name="icon_check">✓</string>
@@ -94,6 +138,8 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_ack_long">Okay, I understand</string>
     <string name="alert_feedback_useful">Useful</string>
     <string name="alert_feedback_not_useful">Not useful</string>
+    <string name="alert_next_safe_action_label">Next Safe Action</string>
+    <string name="alert_essential_goal_impact_label">Essential Goal Impact</string>
     <string name="alert_pause_countdown">Please wait %1$d seconds, then confirm.</string>
     <string name="service_notif_title">Arthamantri is running</string>
     <string name="service_notif_text">Monitoring UPI app open events</string>

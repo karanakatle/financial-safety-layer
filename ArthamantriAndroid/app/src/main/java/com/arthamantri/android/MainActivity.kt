@@ -42,6 +42,8 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.core.os.LocaleListCompat
 import com.arthamantri.android.BuildConfig
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.model.EssentialGoalEnvelopeDto
+import com.arthamantri.android.model.EssentialGoalProfileDto
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.usage.AppUsageForegroundService
 import com.google.android.material.navigation.NavigationView
@@ -63,6 +65,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var navigationView: NavigationView
     private lateinit var statusLine: TextView
+    private lateinit var moneySetupLine: TextView
     private lateinit var pilotBanner: TextView
     private lateinit var languageChip: TextView
     private lateinit var summaryCard: View
@@ -75,6 +78,8 @@ class MainActivity : AppCompatActivity() {
     private var helpStepsView: TextView? = null
     private var helpLanguageLabelView: TextView? = null
     private var helpLanguageSpinner: Spinner? = null
+    private var helpMoneySetupButton: Button? = null
+    private var helpFacilitatorPackButton: Button? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applySavedLanguage()
@@ -87,6 +92,7 @@ class MainActivity : AppCompatActivity() {
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
         statusLine = findViewById(R.id.statusLine)
+        moneySetupLine = findViewById(R.id.moneySetupLine)
         pilotBanner = findViewById(R.id.pilotBanner)
         languageChip = findViewById(R.id.languageChip)
         summaryCard = findViewById(R.id.summaryCard)
@@ -141,6 +147,18 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
 
+                R.id.nav_money_setup -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showMoneySetupDialog()
+                    true
+                }
+
+                R.id.nav_facilitator_pack -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showFacilitatorSetupPackDialog()
+                    true
+                }
+
                 R.id.nav_help -> {
                     drawerLayout.closeDrawer(GravityCompat.START)
                     showHelpDialog()
@@ -179,6 +197,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         loadPilotMeta()
+        loadEssentialGoalSummary()
         animateDashboardCards()
         continueOnboardingFlow()
         maybeRestoreHelpDialogAfterLanguageSwitch()
@@ -240,12 +259,18 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        if (!prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false)) {
+            showMoneySetupDialog()
+            return
+        }
+
         if (!prefs.getBoolean(AppConstants.Prefs.KEY_PERMISSION_ONBOARDING_DONE, false)) {
             showPermissionSetupDialog()
             return
         }
 
         setStatus(getString(R.string.status_initial))
+        loadEssentialGoalSummary()
     }
 
     private fun showLanguageSelectionDialog(force: Boolean) {
@@ -287,7 +312,7 @@ class MainActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun showConsentDialog() {
+    private fun showConsentDialog(allowExit: Boolean = true) {
         AlertDialog.Builder(this)
             .setTitle(getString(R.string.dialog_consent_title))
             .setMessage(getString(R.string.dialog_consent_message))
@@ -308,8 +333,308 @@ class MainActivity : AppCompatActivity() {
                 sendAppLog("info", "consent_accepted")
                 continueOnboardingFlow()
             }
-            .setNegativeButton(getString(R.string.consent_exit)) { _, _ -> finish() }
+            .setNegativeButton(if (allowExit) getString(R.string.consent_exit) else getString(R.string.help_close)) { dialog, _ ->
+                if (allowExit) finish() else dialog.dismiss()
+            }
             .show()
+    }
+
+    private fun showMoneySetupDialog() {
+        val cohortCodes = listOf("women_led_household", "daily_cashflow_worker")
+        val cohortLabels = cohortCodes.map { cohortDisplayName(it) }
+        val goalCodes = listOf(
+            "",
+            "ration",
+            "school",
+            "fuel",
+            "medicine",
+            "rent",
+            "mobile_recharge",
+            "loan_repayment",
+        )
+        val goalLabels = listOf(getString(R.string.money_setup_none)) + goalCodes.drop(1).map { goalDisplayName(it) }
+
+        val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_money_setup, null)
+        val cohortSpinner = contentView.findViewById<Spinner>(R.id.moneySetupCohortSpinner)
+        val goalOneSpinner = contentView.findViewById<Spinner>(R.id.moneySetupGoalOneSpinner)
+        val goalTwoSpinner = contentView.findViewById<Spinner>(R.id.moneySetupGoalTwoSpinner)
+
+        cohortSpinner.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            cohortLabels,
+        ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        goalOneSpinner.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            goalLabels,
+        ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        goalTwoSpinner.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            goalLabels,
+        ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(getString(R.string.dialog_money_setup_title))
+            .setMessage(getString(R.string.dialog_money_setup_message))
+            .setView(contentView)
+            .setCancelable(false)
+            .setPositiveButton(getString(R.string.money_setup_save_continue), null)
+            .setNegativeButton(getString(R.string.money_setup_skip), null)
+            .create()
+
+        dialog.setOnShowListener {
+            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val skipButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+            val setButtonsEnabled = { enabled: Boolean ->
+                saveButton.isEnabled = enabled
+                skipButton.isEnabled = enabled
+            }
+
+            saveButton.setOnClickListener {
+                setButtonsEnabled(false)
+                val cohort = cohortCodes.getOrNull(cohortSpinner.selectedItemPosition) ?: "daily_cashflow_worker"
+                val selectedGoals = listOf(
+                    goalCodes.getOrNull(goalOneSpinner.selectedItemPosition).orEmpty(),
+                    goalCodes.getOrNull(goalTwoSpinner.selectedItemPosition).orEmpty(),
+                ).filter { it.isNotBlank() }.distinct().take(2)
+                persistMoneySetup(
+                    cohort = cohort,
+                    goals = selectedGoals,
+                    setupSkipped = selectedGoals.isEmpty(),
+                    dialog = dialog,
+                )
+            }
+
+            skipButton.setOnClickListener {
+                setButtonsEnabled(false)
+                persistMoneySetup(
+                    cohort = "daily_cashflow_worker",
+                    goals = emptyList(),
+                    setupSkipped = true,
+                    dialog = dialog,
+                )
+            }
+        }
+        dialog.show()
+    }
+
+    private fun showFacilitatorSetupPackDialog() {
+        val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_facilitator_pack, null)
+        val languageStatus = contentView.findViewById<TextView>(R.id.facilitatorStepLanguageStatus)
+        val consentStatus = contentView.findViewById<TextView>(R.id.facilitatorStepConsentStatus)
+        val moneySetupStatus = contentView.findViewById<TextView>(R.id.facilitatorStepMoneySetupStatus)
+        val permissionsStatus = contentView.findViewById<TextView>(R.id.facilitatorStepPermissionsStatus)
+        val monitoringStatus = contentView.findViewById<TextView>(R.id.facilitatorStepMonitoringStatus)
+        val languageButton = contentView.findViewById<Button>(R.id.facilitatorLanguageButton)
+        val consentButton = contentView.findViewById<Button>(R.id.facilitatorConsentButton)
+        val moneySetupButton = contentView.findViewById<Button>(R.id.facilitatorMoneySetupButton)
+        val permissionsButton = contentView.findViewById<Button>(R.id.facilitatorPermissionsButton)
+        val startMonitoringButton = contentView.findViewById<Button>(R.id.facilitatorStartMonitoringButton)
+        val refreshButton = contentView.findViewById<Button>(R.id.facilitatorRefreshButton)
+        val closeButton = contentView.findViewById<Button>(R.id.facilitatorCloseButton)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(contentView)
+            .create()
+
+        val refresh = {
+            refreshFacilitatorStatus(
+                languageStatus = languageStatus,
+                consentStatus = consentStatus,
+                moneySetupStatus = moneySetupStatus,
+                permissionsStatus = permissionsStatus,
+                monitoringStatus = monitoringStatus,
+            )
+        }
+
+        dialog.setOnShowListener {
+            refresh()
+
+            languageButton.setOnClickListener {
+                showLanguageSelectionDialog(force = true)
+                refresh()
+            }
+            consentButton.setOnClickListener {
+                showConsentDialog(allowExit = false)
+                refresh()
+            }
+            moneySetupButton.setOnClickListener {
+                showMoneySetupDialog()
+                refresh()
+            }
+            permissionsButton.setOnClickListener {
+                showPermissionSetupDialog()
+                refresh()
+            }
+            startMonitoringButton.setOnClickListener {
+                startMonitoringWithChecks()
+                refresh()
+            }
+            refreshButton.setOnClickListener { refresh() }
+            closeButton.setOnClickListener { dialog.dismiss() }
+        }
+
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    }
+
+    private fun refreshFacilitatorStatus(
+        languageStatus: TextView,
+        consentStatus: TextView,
+        moneySetupStatus: TextView,
+        permissionsStatus: TextView,
+        monitoringStatus: TextView,
+    ) {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+
+        val languageDone = prefs.getBoolean(AppConstants.Prefs.KEY_LANGUAGE_SELECTED, false)
+        val consentDone = prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, false)
+        val moneySetupDone = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false)
+        val smsRuntimeDone = hasSmsRuntimePermissions()
+        val usageDone = hasUsageStatsPermission()
+        val overlayDone = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(this) else true
+        val notificationDone = hasNotificationListenerPermission()
+        val monitoringReady = smsRuntimeDone && usageDone && overlayDone
+
+        languageStatus.text = facilitatorStatusText(languageDone)
+        consentStatus.text = facilitatorStatusText(consentDone)
+        moneySetupStatus.text = facilitatorStatusText(moneySetupDone)
+        permissionsStatus.text = getString(
+            R.string.facilitator_status_permissions,
+            yesNoShort(smsRuntimeDone),
+            yesNoShort(usageDone),
+            yesNoShort(overlayDone),
+            yesNoShort(notificationDone),
+        )
+        monitoringStatus.text = getString(R.string.facilitator_status_monitoring_ready, yesNoShort(monitoringReady))
+    }
+
+    private fun facilitatorStatusText(done: Boolean): String {
+        return if (done) getString(R.string.facilitator_status_done) else getString(R.string.facilitator_status_pending)
+    }
+
+    private fun yesNoShort(done: Boolean): String {
+        return if (done) getString(R.string.icon_check) else getString(R.string.icon_close)
+    }
+
+    private fun hasSmsRuntimePermissions(): Boolean {
+        val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
+        val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+        val notifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+        return smsReceive && smsRead && notifications
+    }
+
+    private fun persistMoneySetup(
+        cohort: String,
+        goals: List<String>,
+        setupSkipped: Boolean,
+        dialog: AlertDialog,
+    ) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val response = runCatching {
+                LiteracyRepository.saveEssentialGoals(
+                    context = this@MainActivity,
+                    cohort = cohort,
+                    essentialGoals = goals,
+                    setupSkipped = setupSkipped,
+                )
+            }
+            runOnUiThread {
+                val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+                prefs.edit().putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, true).apply()
+
+                response.onSuccess { saved ->
+                    updateMoneySetupSummary(saved.profile, saved.envelope)
+                    if (!setupSkipped) {
+                        toast(getString(R.string.toast_money_setup_saved))
+                    }
+                    sendAppLog("info", "money_setup_saved:$cohort:${goals.joinToString("|")}")
+                }.onFailure { error ->
+                    if (setupSkipped) {
+                        moneySetupLine.text = getString(R.string.money_setup_skipped)
+                    } else {
+                        moneySetupLine.text = getString(R.string.money_setup_pending)
+                    }
+                    toast(getString(R.string.toast_money_setup_failed))
+                    sendAppLog("error", "money_setup_save_failed:${error.message}")
+                }
+
+                dialog.dismiss()
+                continueOnboardingFlow()
+            }
+        }
+    }
+
+    private fun loadEssentialGoalSummary() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val response = runCatching { LiteracyRepository.getEssentialGoals(this@MainActivity) }
+            runOnUiThread {
+                response.onSuccess { profileResponse ->
+                    updateMoneySetupSummary(profileResponse.profile, profileResponse.envelope)
+                }.onFailure {
+                    if (moneySetupLine.text.isNullOrBlank()) {
+                        moneySetupLine.text = getString(R.string.money_setup_pending)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateMoneySetupSummary(
+        profile: EssentialGoalProfileDto?,
+        envelope: EssentialGoalEnvelopeDto?,
+    ) {
+        if (profile == null) {
+            moneySetupLine.text = getString(R.string.money_setup_pending)
+            return
+        }
+        val goals = profile.essential_goals.filter { it.isNotBlank() }
+        if (profile.setup_skipped == true) {
+            moneySetupLine.text = getString(R.string.money_setup_skipped)
+            return
+        }
+        if (goals.isEmpty()) {
+            moneySetupLine.text = getString(R.string.money_setup_pending)
+            return
+        }
+        val reservePercent = (((envelope?.reserve_ratio ?: 0.0) * 100.0).toInt()).coerceAtLeast(0)
+        val protectedLimit = ((envelope?.protected_limit ?: 0.0).toInt()).coerceAtLeast(0)
+        val goalText = goals.joinToString(", ") { goalDisplayName(it) }
+        val cohortText = cohortDisplayName(profile.cohort ?: "daily_cashflow_worker")
+        moneySetupLine.text = getString(
+            R.string.money_setup_summary,
+            cohortText,
+            goalText,
+            reservePercent,
+            protectedLimit,
+        )
+    }
+
+    private fun cohortDisplayName(cohortCode: String): String {
+        return when (cohortCode) {
+            "women_led_household" -> getString(R.string.cohort_women_led_household)
+            "daily_cashflow_worker" -> getString(R.string.cohort_daily_cashflow_worker)
+            else -> getString(R.string.cohort_daily_cashflow_worker)
+        }
+    }
+
+    private fun goalDisplayName(goalCode: String): String {
+        return when (goalCode) {
+            "ration" -> getString(R.string.goal_ration)
+            "school" -> getString(R.string.goal_school)
+            "fuel" -> getString(R.string.goal_fuel)
+            "medicine" -> getString(R.string.goal_medicine)
+            "rent" -> getString(R.string.goal_rent)
+            "mobile_recharge" -> getString(R.string.goal_mobile_recharge)
+            "loan_repayment" -> getString(R.string.goal_loan_repayment)
+            else -> goalCode
+        }
     }
 
     private fun showPermissionSetupDialog() {
@@ -619,6 +944,8 @@ class MainActivity : AppCompatActivity() {
         val helpText = contentView.findViewById<TextView>(R.id.helpDialogSteps)
         val languageLabel = contentView.findViewById<TextView>(R.id.helpLanguageLabel)
         val spinner = contentView.findViewById<Spinner>(R.id.helpLanguageSpinner)
+        val moneySetupButton = contentView.findViewById<Button>(R.id.helpMoneySetupButton)
+        val facilitatorPackButton = contentView.findViewById<Button>(R.id.helpFacilitatorPackButton)
         val closeButton = contentView.findViewById<ImageButton>(R.id.helpCloseButton)
         val applyButton = contentView.findViewById<ImageButton>(R.id.helpApplyButton)
 
@@ -626,6 +953,8 @@ class MainActivity : AppCompatActivity() {
         subtitle.text = getString(R.string.help_subtitle)
         helpText.text = helpStepsText()
         languageLabel.text = getString(R.string.help_change_language)
+        moneySetupButton.text = getString(R.string.help_edit_money_setup)
+        facilitatorPackButton.text = getString(R.string.help_open_facilitator_pack)
         spinner.adapter = ArrayAdapter(
             this@MainActivity,
             android.R.layout.simple_spinner_item,
@@ -640,6 +969,14 @@ class MainActivity : AppCompatActivity() {
         dialog.setOnShowListener {
             closeButton.setOnClickListener {
                 dialog.dismiss()
+            }
+            moneySetupButton.setOnClickListener {
+                dialog.dismiss()
+                showMoneySetupDialog()
+            }
+            facilitatorPackButton.setOnClickListener {
+                dialog.dismiss()
+                showFacilitatorSetupPackDialog()
             }
             applyButton.setOnClickListener {
                 val langCode = languageOptions.getOrNull(spinner.selectedItemPosition)?.code ?: currentLangCode()
@@ -656,6 +993,8 @@ class MainActivity : AppCompatActivity() {
         helpStepsView = helpText
         helpLanguageLabelView = languageLabel
         helpLanguageSpinner = spinner
+        helpMoneySetupButton = moneySetupButton
+        helpFacilitatorPackButton = facilitatorPackButton
     }
 
     private fun helpStepsText(): String {
@@ -701,6 +1040,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.startServiceBtn).text = getString(R.string.action_start_monitor)
         findViewById<Button>(R.id.stopServiceBtn).text = getString(R.string.action_stop_monitor)
         findViewById<TextView>(R.id.statusLine).text = getString(R.string.status_initial)
+        moneySetupLine.text = getString(R.string.money_setup_pending)
 
         val header = navigationView.getHeaderView(0)
         header.findViewById<TextView>(R.id.navHeaderTitle)?.text = getString(R.string.nav_title)
@@ -709,6 +1049,7 @@ class MainActivity : AppCompatActivity() {
         applyDrawerMenuState()
 
         updateLanguageChip()
+        loadEssentialGoalSummary()
     }
 
     private fun refreshHelpDialogTextsInPlace() {
@@ -716,6 +1057,8 @@ class MainActivity : AppCompatActivity() {
         helpSubtitleView?.text = getString(R.string.help_subtitle)
         helpStepsView?.text = helpStepsText()
         helpLanguageLabelView?.text = getString(R.string.help_change_language)
+        helpMoneySetupButton?.text = getString(R.string.help_edit_money_setup)
+        helpFacilitatorPackButton?.text = getString(R.string.help_open_facilitator_pack)
 
         val spinner = helpLanguageSpinner ?: return
         val options = supportedLanguages().map { it.displayName }

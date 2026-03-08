@@ -1,9 +1,12 @@
 from dotenv import load_dotenv
 import os
+import hashlib
+import re
 
 from backend.utils import intent
 load_dotenv()
 from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -110,6 +113,50 @@ class PilotAppLogIn(BaseModel):
     language: str = "en"
     timestamp: Optional[str] = None
 
+
+class EssentialGoalProfileUpsertIn(BaseModel):
+    participant_id: str
+    cohort: str = "daily_cashflow_worker"
+    essential_goals: list[str] = Field(default_factory=list)
+    language: str = "en"
+    setup_skipped: bool = False
+
+
+class ExperimentAssignIn(BaseModel):
+    participant_id: str
+    experiment_name: str = "adaptive_alerts_v1"
+    preferred_variant: Optional[str] = None
+
+
+class ExperimentEventIn(BaseModel):
+    participant_id: str
+    experiment_name: str = "adaptive_alerts_v1"
+    variant: str
+    event_type: str
+    payload: dict = Field(default_factory=dict)
+    timestamp: Optional[str] = None
+
+
+class PilotGrievanceIn(BaseModel):
+    participant_id: str
+    category: str = "other"
+    details: str
+    timestamp: Optional[str] = None
+
+
+class PilotGrievanceStatusIn(BaseModel):
+    grievance_id: int
+    status: Literal["open", "in_review", "resolved", "rejected"]
+    timestamp: Optional[str] = None
+
+
+class EssentialTxnFeedbackIn(BaseModel):
+    alert_id: str
+    participant_id: str
+    is_essential: bool
+    selected_goal: Optional[str] = None
+    timestamp: Optional[str] = None
+
 app = FastAPI(title="Arthamantri Prototype", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
@@ -123,13 +170,51 @@ agent = FinancialAgent(initial_balance=2000.0)
 LITERACY_POLICY = load_literacy_policy()
 
 voice = get_voice_provider()
-pilot_storage = PilotStorage()
+pilot_storage = PilotStorage(os.getenv("PILOT_DB_PATH", "data/pilot_research.db"))
 
 PILOT_DISCLAIMER = (
     "Arthamantri is a research prototype for financial literacy and safety nudges. "
     "It is not investment advice, not a regulated advisory service, and may make mistakes. "
     "Use your judgement before making payments."
 )
+
+SUPPORTED_COHORTS = {"women_led_household", "daily_cashflow_worker"}
+SUPPORTED_ESSENTIAL_GOALS = {
+    "ration",
+    "school",
+    "fuel",
+    "medicine",
+    "rent",
+    "mobile_recharge",
+    "loan_repayment",
+}
+GOAL_NON_ESSENTIAL = "non_essential"
+SUPPORTED_GOAL_FEEDBACK_VALUES = SUPPORTED_ESSENTIAL_GOALS | {GOAL_NON_ESSENTIAL}
+GOAL_CONFIDENCE_GATE = 0.72
+MERCHANT_KEYWORD_MAP = {
+    "fuel": {"petrol", "diesel", "hpcl", "indianoil", "bharat", "bpcl", "ioc"},
+    "ration": {"kirana", "grocery", "supermarket", "ration", "mart", "provision"},
+    "school": {"school", "tuition", "fees", "education", "uniform", "books"},
+    "medicine": {"medical", "pharmacy", "chemist", "hospital", "clinic", "med"},
+    "rent": {"rent", "landlord", "house rent", "room rent"},
+    "mobile_recharge": {"recharge", "topup", "prepaid", "postpaid", "airtel", "jio", "vi"},
+    "loan_repayment": {"loan", "emi", "repayment", "nbfc", "finance"},
+}
+NON_ESSENTIAL_KEYWORDS = {
+    "liquor",
+    "alcohol",
+    "beer",
+    "wine",
+    "cigarette",
+    "tobacco",
+    "smoke",
+    "hookah",
+    "junk",
+    "snack",
+    "gaming",
+    "bet",
+    "gamble",
+}
 
 
 def _policy_for_participant(participant_id: str) -> tuple[float, float]:
@@ -142,6 +227,202 @@ def _policy_for_participant(participant_id: str) -> tuple[float, float]:
 def _normalized_language(language: str | None) -> str:
     value = (language or "en").strip().lower()
     return "hi" if value.startswith("hi") else "en"
+
+
+def _normalized_cohort(cohort: str | None) -> str:
+    value = (cohort or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if value in SUPPORTED_COHORTS:
+        return value
+    return "daily_cashflow_worker"
+
+
+def _normalized_goals(goals: list[str] | None) -> list[str]:
+    if not goals:
+        return []
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for goal in goals:
+        value = (goal or "").strip().lower().replace("-", "_").replace(" ", "_")
+        if value in SUPPORTED_ESSENTIAL_GOALS and value not in seen:
+            seen.add(value)
+            normalized.append(value)
+    return normalized[:2]
+
+
+def _normalized_goal_feedback_value(value: str | None) -> str:
+    raw = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if raw in SUPPORTED_GOAL_FEEDBACK_VALUES:
+        return raw
+    return "unknown"
+
+
+def _merchant_key_from_note(note: str, source: str, category: str) -> str:
+    base = f"{note} {source} {category}".lower()
+    cleaned = re.sub(r"[^a-z0-9 ]+", " ", base)
+    cleaned = re.sub(r"\b\d{3,}\b", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if not cleaned:
+        cleaned = f"{source}:{category}"
+    digest = hashlib.sha256(cleaned.encode("utf-8")).hexdigest()
+    return digest[:24]
+
+
+def _goal_from_keywords(text: str) -> tuple[str, float, str]:
+    lower = text.lower()
+    if any(token in lower for token in NON_ESSENTIAL_KEYWORDS):
+        return GOAL_NON_ESSENTIAL, 0.78, "keyword_non_essential"
+    for goal, words in MERCHANT_KEYWORD_MAP.items():
+        if any(word in lower for word in words):
+            return goal, 0.58, "keyword_essential"
+    return "unknown", 0.0, "none"
+
+
+def _goal_from_memory(participant_id: str, merchant_key: str) -> tuple[str, float, str]:
+    rows = pilot_storage.goal_memory_rows(participant_id, merchant_key)
+    if not rows:
+        return "unknown", 0.0, "none"
+
+    best_goal = "unknown"
+    best_score = 0.0
+    best_count = 0
+    for row in rows:
+        pos = int(row.get("positive_count") or 0)
+        neg = int(row.get("negative_count") or 0)
+        total = pos + neg
+        if total <= 0:
+            continue
+        # Bayesian-smoothed success estimate.
+        score = (pos + 1.0) / (total + 2.0)
+        if score > best_score:
+            best_score = score
+            best_goal = str(row.get("goal") or "unknown")
+            best_count = total
+
+    if best_goal == "unknown":
+        return "unknown", 0.0, "none"
+
+    memory_conf = min(0.55, 0.22 + (best_count * 0.06))
+    return best_goal, memory_conf, "memory"
+
+
+def _infer_goal_context(
+    participant_id: str,
+    note: str,
+    source: str,
+    category: str,
+    profile: dict | None,
+) -> dict:
+    profile_goals = set((_effective_goal_profile(profile).get("essential_goals") or []))
+    merchant_key = _merchant_key_from_note(note=note, source=source, category=category)
+    keyword_goal, keyword_conf, keyword_source = _goal_from_keywords(note)
+    memory_goal, memory_conf, _ = _goal_from_memory(participant_id, merchant_key)
+
+    inferred_goal = "unknown"
+    confidence = 0.0
+    confidence_source = "none"
+
+    if keyword_conf > 0 or memory_conf > 0:
+        if keyword_goal == memory_goal and keyword_goal != "unknown":
+            inferred_goal = keyword_goal
+            confidence = min(0.95, keyword_conf + memory_conf + 0.12)
+            confidence_source = "keyword+memory"
+        elif memory_conf >= keyword_conf and memory_goal != "unknown":
+            inferred_goal = memory_goal
+            confidence = memory_conf
+            confidence_source = "memory"
+        elif keyword_goal != "unknown":
+            inferred_goal = keyword_goal
+            confidence = keyword_conf
+            confidence_source = keyword_source
+
+    # Bias guard: low-evidence memory cannot force essential classification.
+    if inferred_goal in SUPPORTED_ESSENTIAL_GOALS and confidence_source == "memory":
+        confidence = min(confidence, 0.7)
+
+    # Confidence gate: only accept essential goal when confidence is high and goal matches profile.
+    gate_passed = (
+        confidence >= GOAL_CONFIDENCE_GATE
+        and (
+            inferred_goal == GOAL_NON_ESSENTIAL
+            or inferred_goal in profile_goals
+        )
+    )
+    gated_goal = inferred_goal if gate_passed else "unknown"
+
+    return {
+        "merchant_key": merchant_key,
+        "raw_goal": inferred_goal,
+        "gated_goal": gated_goal,
+        "confidence": round(confidence, 4),
+        "gate_passed": gate_passed,
+        "source": confidence_source,
+        "profile_goals": sorted(profile_goals),
+    }
+
+
+def _effective_goal_profile(profile: dict | None) -> dict:
+    if profile:
+        return profile
+    return {
+        "cohort": "daily_cashflow_worker",
+        "essential_goals": [],
+        "language": "en",
+        "setup_skipped": True,
+    }
+
+
+def _essential_goal_envelope(profile: dict | None, daily_safe_limit: float) -> dict:
+    active = _effective_goal_profile(profile)
+    goals = list(active.get("essential_goals") or [])
+    cohort = _normalized_cohort(active.get("cohort"))
+
+    base_ratio = 0.18 if cohort == "women_led_household" else 0.22
+    ratio = _clamp(base_ratio + (0.05 * min(len(goals), 2)), 0.15, 0.35)
+    reserve_amount = round(daily_safe_limit * ratio, 2)
+    protected_limit = round(max(daily_safe_limit - reserve_amount, daily_safe_limit * 0.55), 2)
+    return {
+        "cohort": cohort,
+        "essential_goals": goals,
+        "reserve_ratio": round(ratio, 3),
+        "reserve_amount": reserve_amount,
+        "protected_limit": protected_limit,
+    }
+
+
+def _risk_level_from_score(risk_score: float) -> str:
+    if risk_score >= 0.85:
+        return "critical"
+    if risk_score >= 0.65:
+        return "high"
+    if risk_score >= 0.45:
+        return "medium"
+    return "low"
+
+
+def _localized_label(language: str, key: str) -> str:
+    if language == "hi":
+        labels = {
+            "risk": "जोखिम स्तर",
+            "why": "क्यों दिखा",
+            "next": "अगला सुरक्षित कदम",
+            "goal_impact": "आवश्यक लक्ष्य प्रभाव",
+            "low": "कम",
+            "medium": "मध्यम",
+            "high": "उच्च",
+            "critical": "अत्यधिक",
+        }
+        return labels.get(key, key)
+    labels = {
+        "risk": "Risk level",
+        "why": "Why this alert",
+        "next": "Next safe action",
+        "goal_impact": "Essential-goal impact",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical",
+    }
+    return labels.get(key, key)
 
 
 def _localized_stage1_message(language: str) -> str:
@@ -191,6 +472,137 @@ def _localize_alert(alert: dict, language: str) -> dict:
     return localized
 
 
+def _goal_impact_text(language: str, envelope: dict, projected_spend: float) -> str:
+    protected_limit = float(envelope.get("protected_limit") or 0.0)
+    if protected_limit <= 0:
+        return ""
+    delta = round(projected_spend - protected_limit, 2)
+    if delta <= 0:
+        return ""
+    goals = list(envelope.get("essential_goals") or [])
+    goal_names = ", ".join(goals) if goals else ("daily essentials" if language == "en" else "दैनिक आवश्यकताएं")
+    if language == "hi":
+        return f"₹{delta} का अतिरिक्त खर्च आपके {goal_names} बजट पर दबाव डाल सकता है।"
+    return f"An extra ₹{delta} spend can pressure your {goal_names} budget."
+
+
+def _why_text(
+    language: str,
+    reason: str,
+    risk_level: str,
+    spend_ratio: float,
+    txn_anomaly_score: float,
+    upi_open_flag: bool,
+) -> str:
+    if language == "hi":
+        base = (
+            f"खर्च अनुपात {round(spend_ratio, 2)} और जोखिम स्तर "
+            f"{_localized_label(language, risk_level)} पाया गया।"
+        )
+        if reason == "catastrophic_risk_override":
+            return f"{base} भुगतान राशि असामान्य रूप से अधिक थी।"
+        if upi_open_flag:
+            return f"{base} UPI ऐप खुलने पर जोखिम सक्रिय मिला।"
+        if txn_anomaly_score >= 0.7:
+            return f"{base} लेन-देन सामान्य से बड़ा है।"
+        return base
+
+    base = f"Spend ratio {round(spend_ratio, 2)} with {_localized_label(language, risk_level)} risk."
+    if reason == "catastrophic_risk_override":
+        return f"{base} Transaction amount is unusually high."
+    if upi_open_flag:
+        return f"{base} Risk remained active when UPI app opened."
+    if txn_anomaly_score >= 0.7:
+        return f"{base} This transaction is larger than recent pattern."
+    return base
+
+
+def _next_action_text(language: str, risk_level: str, reason: str) -> str:
+    if language == "hi":
+        if risk_level in {"high", "critical"}:
+            return "भुगतान से पहले 5 सेकंड रुकें, प्राप्तकर्ता सत्यापित करें और राशि कम करें।"
+        if reason == "upi_open_after_threshold_warning":
+            return "जरूरत होने पर ही भुगतान करें, अन्यथा इसे बाद में करें।"
+        return "आज अनावश्यक खर्च रोकें और आवश्यक लक्ष्य खर्च सुरक्षित रखें।"
+    if risk_level in {"high", "critical"}:
+        return "Pause 5 seconds, verify recipient, and reduce amount before paying."
+    if reason == "upi_open_after_threshold_warning":
+        return "Proceed only if essential; otherwise defer this payment."
+    return "Stop non-essential spending today and protect essential-goal budget."
+
+
+def _resolve_experiment_variant(participant_id: str, experiment_name: str) -> str:
+    existing = pilot_storage.get_experiment_assignment(participant_id, experiment_name)
+    if existing:
+        return str(existing.get("variant") or "adaptive")
+
+    digest = hashlib.sha256(f"{participant_id}:{experiment_name}".encode("utf-8")).hexdigest()
+    variant = "adaptive" if int(digest[:8], 16) % 2 == 0 else "static_baseline"
+    pilot_storage.upsert_experiment_assignment(
+        participant_id=participant_id,
+        experiment_name=experiment_name,
+        variant=variant,
+        assigned_at=datetime.utcnow().isoformat(),
+    )
+    return variant
+
+
+def _apply_goal_feedback_learning(
+    participant_id: str,
+    alert_id: str,
+    is_essential: bool,
+    selected_goal: str | None,
+    timestamp: str,
+) -> dict:
+    context = pilot_storage.get_alert_goal_context(alert_id, participant_id)
+    if not context:
+        raise HTTPException(status_code=404, detail="Alert context not found for participant")
+
+    chosen = _normalized_goal_feedback_value(selected_goal)
+    if chosen == "unknown":
+        inferred_goal = str(context.get("inferred_goal") or "unknown")
+        chosen = inferred_goal if inferred_goal in SUPPORTED_GOAL_FEEDBACK_VALUES else GOAL_NON_ESSENTIAL
+
+    source_confidence = float(context.get("confidence") or 0.0)
+    merchant_key = str(context.get("merchant_key") or "")
+    if not merchant_key:
+        raise HTTPException(status_code=400, detail="Invalid merchant context")
+
+    # Bias guard: user essential feedback updates are lighter than non-essential feedback.
+    if is_essential:
+        if chosen not in SUPPORTED_ESSENTIAL_GOALS:
+            raise HTTPException(status_code=400, detail="Essential feedback requires a supported essential goal")
+        positive_delta = 1
+        negative_delta = 0
+    else:
+        positive_delta = 1 if chosen == GOAL_NON_ESSENTIAL else 0
+        negative_delta = 1 if chosen in SUPPORTED_ESSENTIAL_GOALS else 0
+
+    pilot_storage.upsert_goal_memory(
+        participant_id=participant_id,
+        merchant_key=merchant_key,
+        goal=chosen,
+        delta_positive=positive_delta,
+        delta_negative=negative_delta,
+        timestamp=timestamp,
+    )
+    pilot_storage.add_goal_feedback(
+        participant_id=participant_id,
+        alert_id=alert_id,
+        merchant_key=merchant_key,
+        selected_goal=chosen,
+        is_essential=is_essential,
+        source_confidence=source_confidence,
+        timestamp=timestamp,
+    )
+    return {
+        "merchant_key": merchant_key,
+        "selected_goal": chosen,
+        "is_essential": is_essential,
+        "source_confidence": source_confidence,
+    }
+
+
 def _clamp(value: float, low: float = 0.0, high: float = 1.0) -> float:
     return max(low, min(high, value))
 
@@ -221,6 +633,8 @@ def _compute_contextual_scores(
     timestamp: str,
     upi_open_flag: bool,
     warmup_active: bool,
+    goal_protection_ratio: float = 0.0,
+    non_essential_confidence: float = 0.0,
 ) -> dict:
     now_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     since_10m = (now_dt - timedelta(minutes=10)).isoformat()
@@ -232,12 +646,18 @@ def _compute_contextual_scores(
     recent_dismissals_24h = pilot_storage.count_recent_dismissals(participant_id, since_24h)
 
     spend_ratio = (projected_spend / daily_safe_limit) if daily_safe_limit > 0 else 0.0
+    protected_limit = daily_safe_limit * (1.0 - goal_protection_ratio) if daily_safe_limit > 0 else 0.0
+    goal_pressure_score = 0.0
+    if protected_limit > 0:
+        goal_pressure_score = _clamp((projected_spend - protected_limit) / max(daily_safe_limit * 0.35, 1.0))
     risk_score = _clamp(
         (0.45 * _clamp(spend_ratio / 1.6))
         + (0.25 * txn_anomaly_score)
         + (0.15 * (1.0 if rapid_txn_flag else 0.0))
         + (0.10 * _clamp(recent_dismissals_24h / 4.0))
         + (0.05 * (1.0 if upi_open_flag else 0.0))
+        + (0.10 * goal_pressure_score)
+        + (0.10 * _clamp(non_essential_confidence))
     )
 
     confidence_score = _clamp(
@@ -273,6 +693,8 @@ def _compute_contextual_scores(
         "recent_dismissals_24h": recent_dismissals_24h,
         "risk_score": round(risk_score, 4),
         "confidence_score": round(confidence_score, 4),
+        "goal_pressure_score": round(goal_pressure_score, 4),
+        "non_essential_confidence": round(non_essential_confidence, 4),
         "tone_selected": tone_selected,
         "frequency_bucket": frequency_bucket,
         "pause_seconds": pause_seconds,
@@ -283,12 +705,31 @@ def _apply_contextual_alert_intensity(
     participant_id: str,
     alert: dict,
     amount: float,
+    note: str,
+    source: str,
+    category: str,
     timestamp: str,
     upi_open_flag: bool,
     warmup_active: bool,
+    language: str,
+    essential_profile: dict | None,
 ) -> dict | None:
-    projected_spend = float(alert.get("projected_daily_spend") or 0.0)
-    daily_safe_limit = float(alert.get("daily_safe_limit") or 0.0)
+    localized_alert = _localize_alert(alert, language)
+    projected_spend = float(localized_alert.get("projected_daily_spend") or 0.0)
+    daily_safe_limit = float(localized_alert.get("daily_safe_limit") or 0.0)
+    envelope = _essential_goal_envelope(essential_profile, daily_safe_limit)
+    goal_context = _infer_goal_context(
+        participant_id=participant_id,
+        note=note,
+        source=source,
+        category=category,
+        profile=essential_profile,
+    )
+    non_essential_confidence = (
+        float(goal_context["confidence"])
+        if goal_context["gated_goal"] == GOAL_NON_ESSENTIAL
+        else 0.0
+    )
     features = _compute_contextual_scores(
         participant_id=participant_id,
         amount=float(amount),
@@ -297,6 +738,8 @@ def _apply_contextual_alert_intensity(
         timestamp=timestamp,
         upi_open_flag=upi_open_flag,
         warmup_active=warmup_active,
+        goal_protection_ratio=float(envelope.get("reserve_ratio") or 0.0),
+        non_essential_confidence=non_essential_confidence,
     )
 
     alert_id = str(uuid4())
@@ -318,17 +761,60 @@ def _apply_contextual_alert_intensity(
         tone_selected=features["tone_selected"],
         frequency_bucket=features["frequency_bucket"],
     )
+    pilot_storage.upsert_alert_goal_context(
+        alert_id=alert_id,
+        participant_id=participant_id,
+        merchant_key=goal_context["merchant_key"],
+        inferred_goal=goal_context["gated_goal"],
+        confidence=float(goal_context["confidence"]),
+        gate_passed=bool(goal_context["gate_passed"]),
+        source=goal_context["source"],
+        timestamp=timestamp,
+    )
 
     if features["frequency_bucket"] == "suppressed":
         return None
 
-    contextual_alert = dict(alert)
+    risk_level = _risk_level_from_score(float(features["risk_score"]))
+    goal_impact = _goal_impact_text(language, envelope, projected_spend)
+    reason = str(localized_alert.get("reason") or "")
+    why_this = _why_text(
+        language=language,
+        reason=reason,
+        risk_level=risk_level,
+        spend_ratio=float(features["spend_ratio"]),
+        txn_anomaly_score=float(features["txn_anomaly_score"]),
+        upi_open_flag=upi_open_flag,
+    )
+    next_action = _next_action_text(language=language, risk_level=risk_level, reason=reason)
+
+    contextual_alert = dict(localized_alert)
     contextual_alert["alert_id"] = alert_id
     contextual_alert["risk_score"] = features["risk_score"]
     contextual_alert["confidence_score"] = features["confidence_score"]
+    contextual_alert["risk_level"] = risk_level
     contextual_alert["tone_selected"] = features["tone_selected"]
     contextual_alert["frequency_bucket"] = features["frequency_bucket"]
     contextual_alert["pause_seconds"] = features["pause_seconds"]
+    contextual_alert["why_this_alert"] = why_this
+    contextual_alert["next_best_action"] = next_action
+    contextual_alert["essential_goal_impact"] = goal_impact
+    contextual_alert["essential_goals"] = envelope.get("essential_goals", [])
+    contextual_alert["goal_reserve_ratio"] = envelope.get("reserve_ratio")
+    contextual_alert["goal_protected_limit"] = envelope.get("protected_limit")
+    contextual_alert["txn_goal_inferred"] = goal_context["gated_goal"]
+    contextual_alert["txn_goal_confidence"] = goal_context["confidence"]
+    contextual_alert["txn_goal_confidence_gate_passed"] = goal_context["gate_passed"]
+    contextual_alert["txn_goal_inference_source"] = goal_context["source"]
+    message = contextual_alert.get("message") or ""
+    appended_lines = [
+        f"{_localized_label(language, 'risk')}: {_localized_label(language, risk_level)}",
+        f"{_localized_label(language, 'why')}: {why_this}",
+        f"{_localized_label(language, 'next')}: {next_action}",
+    ]
+    if goal_impact:
+        appended_lines.append(f"{_localized_label(language, 'goal_impact')}: {goal_impact}")
+    contextual_alert["message"] = "\n".join([message, *appended_lines]).strip()
     contextual_alert["priority"] = (
         "critical" if features["frequency_bucket"] == "hard" else contextual_alert.get("priority", "high")
     )
@@ -464,6 +950,12 @@ def pilot_meta() -> dict:
     return {
         "pilot_mode": True,
         "target_cohort_size": 60,
+        "frozen_cohorts": ["women_led_household", "daily_cashflow_worker"],
+        "frozen_use_cases": [
+            "overspending_prevention",
+            "fraud_prevention",
+            "essential_goal_savings_behavior",
+        ],
         "disclaimer": PILOT_DISCLAIMER,
         "alert_policy": {
             "income": "informational_only",
@@ -535,6 +1027,37 @@ def pilot_app_log(payload: PilotAppLogIn) -> dict:
     return {"ok": True}
 
 
+@app.post("/api/pilot/grievance")
+def pilot_grievance_create(payload: PilotGrievanceIn) -> dict:
+    event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    participant_id = payload.participant_id.strip() or "global_user"
+    grievance_id = pilot_storage.create_grievance(
+        participant_id=participant_id,
+        category=(payload.category or "other").strip().lower(),
+        details=payload.details.strip(),
+        timestamp=event_timestamp,
+    )
+    return {"ok": True, "grievance_id": grievance_id}
+
+
+@app.get("/api/pilot/grievance")
+def pilot_grievance_list(participant_id: Optional[str] = None, limit: int = 100) -> dict:
+    safe_limit = max(1, min(limit, 500))
+    records = pilot_storage.list_grievances(participant_id=participant_id, limit=safe_limit)
+    return {"count": len(records), "grievances": records}
+
+
+@app.post("/api/pilot/grievance/status")
+def pilot_grievance_status(payload: PilotGrievanceStatusIn) -> dict:
+    event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    changed = pilot_storage.update_grievance_status(
+        grievance_id=payload.grievance_id,
+        status=payload.status,
+        timestamp=event_timestamp,
+    )
+    return {"ok": changed}
+
+
 @app.get("/api/state")
 def get_state() -> dict:
     return agent.state_snapshot()
@@ -557,7 +1080,9 @@ def add_transaction(payload: TransactionIn) -> dict:
     result = agent.process_event(event)
     literacy_alerts = []
     if payload.type == "expense":
+        language = "en"
         monitor = _build_literacy_monitor("global_user")
+        profile = pilot_storage.get_essential_goal_profile("global_user")
         pilot_storage.add_literacy_event(
             participant_id="global_user",
             event_type="manual_txn_event",
@@ -582,9 +1107,14 @@ def add_transaction(payload: TransactionIn) -> dict:
                     participant_id="global_user",
                     alert=alert,
                     amount=payload.amount,
+                    note=payload.note,
+                    source="manual_ui",
+                    category=payload.category,
                     timestamp=event["timestamp"],
                     upi_open_flag=False,
                     warmup_active=monitor.warmup_active,
+                    language=language,
+                    essential_profile=profile,
                 )
             )
         ]
@@ -600,6 +1130,7 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
     event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
     participant_id = (payload.participant_id or "global_user").strip() or "global_user"
     language = _normalized_language(payload.language)
+    variant = _resolve_experiment_variant(participant_id, "adaptive_alerts_v1")
     event = {
         "timestamp": event_timestamp,
         "type": "expense",
@@ -610,6 +1141,7 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
     transaction_result = agent.process_event(event)
 
     monitor = _build_literacy_monitor(participant_id)
+    profile = pilot_storage.get_essential_goal_profile(participant_id)
     pilot_storage.add_literacy_event(
         participant_id=participant_id,
         event_type="sms_ingest_event",
@@ -634,15 +1166,32 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
                 participant_id=participant_id,
                 alert=alert,
                 amount=payload.amount,
+                note=payload.note or "bank_sms",
+                source="bank_sms",
+                category=payload.category,
                 timestamp=event_timestamp,
                 upi_open_flag=False,
                 warmup_active=monitor.warmup_active,
+                language=language,
+                essential_profile=profile,
             )
         )
     ]
-    literacy_alerts = [_localize_alert(alert, language) for alert in literacy_alerts]
     _persist_literacy_monitor(participant_id, monitor)
     policy_recalibrated = _auto_recalibrate_policy(participant_id)
+    pilot_storage.add_experiment_event(
+        participant_id=participant_id,
+        experiment_name="adaptive_alerts_v1",
+        variant=variant,
+        event_type="sms_ingest",
+        payload={
+            "amount": payload.amount,
+            "category": payload.category,
+            "alerts_count": len(literacy_alerts),
+            "warmup_active": monitor.warmup_active,
+        },
+        timestamp=event_timestamp,
+    )
     agent.alerts.extend(literacy_alerts)
     for alert in literacy_alerts:
         pilot_storage.add_literacy_event(
@@ -661,8 +1210,11 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
         "transaction_result": transaction_result,
         "literacy_alerts": literacy_alerts,
         "literacy_state": monitor.status(),
+        "essential_goal_profile": _effective_goal_profile(profile),
+        "essential_goal_envelope": _essential_goal_envelope(profile, monitor.status().get("daily_safe_limit", 0.0)),
         "participant_id": participant_id,
         "language": language,
+        "experiment_variant": variant,
         "policy_recalibrated": policy_recalibrated,
     }
 
@@ -671,7 +1223,9 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
 def literacy_upi_open(payload: UPIOpenIn) -> dict:
     participant_id = (payload.participant_id or "global_user").strip() or "global_user"
     language = _normalized_language(payload.language)
+    variant = _resolve_experiment_variant(participant_id, "adaptive_alerts_v1")
     monitor = _build_literacy_monitor(participant_id)
+    profile = pilot_storage.get_essential_goal_profile(participant_id)
     event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
     pilot_storage.add_literacy_event(
         participant_id=participant_id,
@@ -695,12 +1249,15 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
             participant_id=participant_id,
             alert=alert,
             amount=payload.intent_amount,
+            note=payload.app_name,
+            source="upi_open",
+            category="upi_open",
             timestamp=event_timestamp,
             upi_open_flag=True,
             warmup_active=monitor.warmup_active,
+            language=language,
+            essential_profile=profile,
         )
-    if alert:
-        alert = _localize_alert(alert, language)
     _persist_literacy_monitor(participant_id, monitor)
     if alert:
         agent.alerts.append(alert)
@@ -716,12 +1273,28 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
             daily_safe_limit=alert.get("daily_safe_limit"),
             timestamp=event_timestamp,
         )
+    pilot_storage.add_experiment_event(
+        participant_id=participant_id,
+        experiment_name="adaptive_alerts_v1",
+        variant=variant,
+        event_type="upi_open",
+        payload={
+            "app_name": payload.app_name,
+            "intent_amount": payload.intent_amount,
+            "alert_emitted": bool(alert),
+            "pause_seconds": int((alert or {}).get("pause_seconds") or 0),
+        },
+        timestamp=event_timestamp,
+    )
 
     return {
         "alert": alert,
         "literacy_state": monitor.status(),
+        "essential_goal_profile": _effective_goal_profile(profile),
+        "essential_goal_envelope": _essential_goal_envelope(profile, monitor.status().get("daily_safe_limit", 0.0)),
         "participant_id": participant_id,
         "language": language,
+        "experiment_variant": variant,
     }
 
 
@@ -763,6 +1336,87 @@ def literacy_policy_upsert(payload: LiteracyPolicyUpsertIn) -> dict:
     }
 
 
+@app.get("/api/literacy/essential-goals")
+def literacy_essential_goals_get(participant_id: str = "global_user") -> dict:
+    profile = pilot_storage.get_essential_goal_profile(participant_id)
+    daily_safe_limit, _ = _policy_for_participant(participant_id)
+    return {
+        "participant_id": participant_id,
+        "profile": _effective_goal_profile(profile),
+        "envelope": _essential_goal_envelope(profile, daily_safe_limit),
+        "supported_cohorts": sorted(SUPPORTED_COHORTS),
+        "supported_essential_goals": sorted(SUPPORTED_ESSENTIAL_GOALS),
+    }
+
+
+@app.post("/api/literacy/essential-goals")
+def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    language = _normalized_language(payload.language)
+    cohort = _normalized_cohort(payload.cohort)
+    goals = _normalized_goals(payload.essential_goals)
+    setup_skipped = bool(payload.setup_skipped)
+    now_iso = datetime.utcnow().isoformat()
+    pilot_storage.upsert_essential_goal_profile(
+        participant_id=participant_id,
+        cohort=cohort,
+        essential_goals=goals,
+        language=language,
+        setup_skipped=setup_skipped,
+        timestamp=now_iso,
+    )
+    daily_safe_limit, _ = _policy_for_participant(participant_id)
+    return {
+        "ok": True,
+        "participant_id": participant_id,
+        "profile": _effective_goal_profile(pilot_storage.get_essential_goal_profile(participant_id)),
+        "envelope": _essential_goal_envelope(
+            pilot_storage.get_essential_goal_profile(participant_id),
+            daily_safe_limit,
+        ),
+    }
+
+
+@app.get("/api/literacy/debug-trace")
+def literacy_debug_trace(participant_id: str = "global_user", limit: int = 20) -> dict:
+    safe_limit = max(1, min(limit, 200))
+    profile = pilot_storage.get_essential_goal_profile(participant_id)
+    policy = pilot_storage.get_participant_policy(participant_id)
+    assignment = pilot_storage.get_experiment_assignment(participant_id, "adaptive_alerts_v1")
+    return {
+        "participant_id": participant_id,
+        "status": literacy_status(participant_id),
+        "policy": policy
+        or {
+            "participant_id": participant_id,
+            "daily_safe_limit": LITERACY_POLICY.daily_safe_limit,
+            "warning_ratio": LITERACY_POLICY.warning_ratio,
+            "source": "default",
+        },
+        "essential_goal_profile": _effective_goal_profile(profile),
+        "essential_goal_envelope": _essential_goal_envelope(
+            profile,
+            float((policy or {}).get("daily_safe_limit") or LITERACY_POLICY.daily_safe_limit),
+        ),
+        "experiment_assignment": assignment,
+        "recent_literacy_events": pilot_storage.recent_literacy_events(participant_id, safe_limit),
+        "recent_alert_features": pilot_storage.recent_alert_features(participant_id, safe_limit),
+        "recent_alert_feedback": pilot_storage.recent_alert_feedback(participant_id, safe_limit),
+        "recent_goal_feedback": pilot_storage.recent_goal_feedback(participant_id, safe_limit),
+    }
+
+
+@app.get("/api/literacy/storage-health")
+def literacy_storage_health() -> dict:
+    db_path = str(pilot_storage.db_path)
+    return {
+        "ok": True,
+        "db_path": db_path,
+        "db_exists": os.path.exists(db_path),
+        "storage_mode": "file",
+    }
+
+
 @app.post("/api/literacy/reset")
 def literacy_reset(participant_id: str = "global_user") -> dict:
     pilot_storage.reset_literacy_state(participant_id)
@@ -781,6 +1435,7 @@ def literacy_reset_hard(participant_id: str = "global_user") -> dict:
 def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"
     event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    variant = _resolve_experiment_variant(participant_id, "adaptive_alerts_v1")
     pilot_storage.add_alert_feedback(
         alert_id=payload.alert_id.strip(),
         participant_id=participant_id,
@@ -790,7 +1445,97 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
         message=payload.message.strip(),
         timestamp=event_timestamp,
     )
+    pilot_storage.add_experiment_event(
+        participant_id=participant_id,
+        experiment_name="adaptive_alerts_v1",
+        variant=variant,
+        event_type=f"alert_feedback_{payload.action.strip().lower()}",
+        payload={
+            "alert_id": payload.alert_id.strip(),
+            "channel": payload.channel.strip().lower() or "overlay",
+            "title": payload.title.strip(),
+        },
+        timestamp=event_timestamp,
+    )
     return {"ok": True}
+
+
+@app.post("/api/literacy/essential-feedback")
+def literacy_essential_feedback(payload: EssentialTxnFeedbackIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    learned = _apply_goal_feedback_learning(
+        participant_id=participant_id,
+        alert_id=payload.alert_id.strip(),
+        is_essential=payload.is_essential,
+        selected_goal=payload.selected_goal,
+        timestamp=event_timestamp,
+    )
+    return {"ok": True, "participant_id": participant_id, "learned": learned}
+
+
+@app.post("/api/research/assignment")
+def research_assignment(payload: ExperimentAssignIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    experiment_name = (payload.experiment_name or "adaptive_alerts_v1").strip() or "adaptive_alerts_v1"
+    preferred = (payload.preferred_variant or "").strip().lower()
+    if preferred in {"adaptive", "static_baseline"}:
+        variant = preferred
+        pilot_storage.upsert_experiment_assignment(
+            participant_id=participant_id,
+            experiment_name=experiment_name,
+            variant=variant,
+            assigned_at=datetime.utcnow().isoformat(),
+        )
+    else:
+        variant = _resolve_experiment_variant(participant_id, experiment_name)
+    assignment = pilot_storage.get_experiment_assignment(participant_id, experiment_name)
+    return {
+        "ok": True,
+        "participant_id": participant_id,
+        "experiment_name": experiment_name,
+        "variant": variant,
+        "assignment": assignment,
+    }
+
+
+@app.post("/api/research/event")
+def research_event(payload: ExperimentEventIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    experiment_name = (payload.experiment_name or "adaptive_alerts_v1").strip() or "adaptive_alerts_v1"
+    variant = (payload.variant or "adaptive").strip().lower()
+    event_type = (payload.event_type or "unknown_event").strip().lower()
+    event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    pilot_storage.add_experiment_event(
+        participant_id=participant_id,
+        experiment_name=experiment_name,
+        variant=variant,
+        event_type=event_type,
+        payload=payload.payload,
+        timestamp=event_timestamp,
+    )
+    return {"ok": True}
+
+
+@app.get("/api/research/export/experiment-events")
+def research_export_experiment_events(
+    participant_id: Optional[str] = None,
+    experiment_name: Optional[str] = None,
+    limit: int = 200,
+) -> dict:
+    safe_limit = max(1, min(limit, 5000))
+    events = pilot_storage.list_experiment_events(
+        participant_id=participant_id,
+        experiment_name=experiment_name,
+        limit=safe_limit,
+    )
+    return {
+        "count": len(events),
+        "limit": safe_limit,
+        "participant_id": participant_id,
+        "experiment_name": experiment_name,
+        "events": events,
+    }
 
 
 @app.post("/api/voice-query")

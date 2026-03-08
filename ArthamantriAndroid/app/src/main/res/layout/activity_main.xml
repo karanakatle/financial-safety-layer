@@ -103,6 +103,15 @@
                     android:text="@string/status_initial"
                     android:textColor="@color/text_secondary"
                     android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/moneySetupLine"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/money_setup_pending"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
             </LinearLayout>
 
             <LinearLayout

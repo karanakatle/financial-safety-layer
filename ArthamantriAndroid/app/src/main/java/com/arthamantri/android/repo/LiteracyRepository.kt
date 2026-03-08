@@ -11,6 +11,9 @@ import com.arthamantri.android.model.PilotAppLogRequest
 import com.arthamantri.android.model.PilotConsentRequest
 import com.arthamantri.android.model.PilotFeedbackRequest
 import com.arthamantri.android.model.PilotMetaResponse
+import com.arthamantri.android.model.EssentialGoalProfileRequest
+import com.arthamantri.android.model.EssentialGoalProfileResponse
+import com.arthamantri.android.model.ExperimentAssignmentRequest
 import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.UpiOpenRequest
 
@@ -140,6 +143,43 @@ object LiteracyRepository {
                 message = message,
             )
         ).ok
+    }
+
+    suspend fun getEssentialGoals(context: Context): EssentialGoalProfileResponse {
+        val participantId = resolveParticipantId(context)
+        return ApiClient.literacyApi(context).essentialGoals(participantId)
+    }
+
+    suspend fun saveEssentialGoals(
+        context: Context,
+        cohort: String,
+        essentialGoals: List<String>,
+        setupSkipped: Boolean,
+    ): EssentialGoalProfileResponse {
+        val participantId = resolveParticipantId(context)
+        val language = resolveLanguage(context)
+        return ApiClient.literacyApi(context).upsertEssentialGoals(
+            EssentialGoalProfileRequest(
+                participant_id = participantId,
+                cohort = cohort,
+                essential_goals = essentialGoals,
+                language = language,
+                setup_skipped = setupSkipped,
+            )
+        )
+    }
+
+    suspend fun ensureExperimentAssignment(
+        context: Context,
+        experimentName: String = "adaptive_alerts_v1",
+    ): String {
+        val participantId = resolveParticipantId(context)
+        return ApiClient.literacyApi(context).assignVariant(
+            ExperimentAssignmentRequest(
+                participant_id = participantId,
+                experiment_name = experimentName,
+            )
+        ).variant ?: "adaptive"
     }
 
     private fun resolveParticipantId(context: Context): String {

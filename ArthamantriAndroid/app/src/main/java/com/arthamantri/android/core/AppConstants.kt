@@ -11,6 +11,7 @@ object AppConstants {
         const val KEY_APP_LANGUAGE = "app_lang"
         const val KEY_LANGUAGE_SELECTED = "language_selected"
         const val KEY_CONSENT_ACCEPTED = "consent_accepted"
+        const val KEY_MONEY_SETUP_DONE = "money_setup_done"
         const val KEY_PERMISSION_ONBOARDING_DONE = "permission_onboarding_done"
         const val KEY_REOPEN_HELP_AFTER_LOCALE_SWITCH = "reopen_help_after_locale_switch"
         const val KEY_MANAGE_ACCESS_EXPANDED = "manage_access_expanded"
@@ -44,6 +45,8 @@ object AppConstants {
         const val ALERT_MESSAGE = "extra_message"
         const val ALERT_ID = "extra_alert_id"
         const val ALERT_PAUSE_SECONDS = "extra_alert_pause_seconds"
+        const val ALERT_NEXT_SAFE_ACTION = "extra_next_safe_action"
+        const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
     }
 
     object NotificationExtras {

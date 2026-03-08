@@ -2,6 +2,7 @@ package com.arthamantri.android.notify
 
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -21,9 +22,12 @@ class AlertDisplayActivity : AppCompatActivity() {
         val message = intent.getStringExtra(EXTRA_MESSAGE)
             ?: getString(R.string.alert_body_default)
         val pauseSeconds = intent.getIntExtra(EXTRA_PAUSE_SECONDS, 0)
+        val nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
+        val essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
 
         findViewById<TextView>(R.id.alertTitle).text = title
         findViewById<TextView>(R.id.alertMessage).text = message
+        bindExplainability(nextSafeAction, essentialGoalImpact)
         val dismissBtn = findViewById<Button>(R.id.dismissBtn)
         val usefulBtn = findViewById<Button>(R.id.usefulBtn)
         val notUsefulBtn = findViewById<Button>(R.id.notUsefulBtn)
@@ -44,7 +48,9 @@ class AlertDisplayActivity : AppCompatActivity() {
                 action = AppConstants.Domain.ALERT_ACTION_USEFUL,
                 channel = "fullscreen_activity",
                 title = title,
-                message = message,
+                message = listOf(message, nextSafeAction, essentialGoalImpact)
+                    .filter { it.isNotBlank() }
+                    .joinToString("\n"),
             )
             finish()
         }
@@ -55,7 +61,9 @@ class AlertDisplayActivity : AppCompatActivity() {
                 action = AppConstants.Domain.ALERT_ACTION_NOT_USEFUL,
                 channel = "fullscreen_activity",
                 title = title,
-                message = message,
+                message = listOf(message, nextSafeAction, essentialGoalImpact)
+                    .filter { it.isNotBlank() }
+                    .joinToString("\n"),
             )
             finish()
         }
@@ -66,7 +74,9 @@ class AlertDisplayActivity : AppCompatActivity() {
                 action = AppConstants.Domain.ALERT_ACTION_DISMISSED,
                 channel = "fullscreen_activity",
                 title = title,
-                message = message,
+                message = listOf(message, nextSafeAction, essentialGoalImpact)
+                    .filter { it.isNotBlank() }
+                    .joinToString("\n"),
             )
             finish()
         }
@@ -115,10 +125,39 @@ class AlertDisplayActivity : AppCompatActivity() {
         }.start()
     }
 
+    private fun bindExplainability(nextSafeAction: String, essentialGoalImpact: String) {
+        val nextActionHeading = findViewById<TextView>(R.id.alertNextActionHeading)
+        val nextActionBody = findViewById<TextView>(R.id.alertNextActionBody)
+        val goalImpactHeading = findViewById<TextView>(R.id.alertGoalImpactHeading)
+        val goalImpactBody = findViewById<TextView>(R.id.alertGoalImpactBody)
+
+        if (nextSafeAction.isNotBlank()) {
+            nextActionHeading.text = getString(R.string.alert_next_safe_action_label)
+            nextActionHeading.visibility = View.VISIBLE
+            nextActionBody.text = nextSafeAction
+            nextActionBody.visibility = View.VISIBLE
+        } else {
+            nextActionHeading.visibility = View.GONE
+            nextActionBody.visibility = View.GONE
+        }
+
+        if (essentialGoalImpact.isNotBlank()) {
+            goalImpactHeading.text = getString(R.string.alert_essential_goal_impact_label)
+            goalImpactHeading.visibility = View.VISIBLE
+            goalImpactBody.text = essentialGoalImpact
+            goalImpactBody.visibility = View.VISIBLE
+        } else {
+            goalImpactHeading.visibility = View.GONE
+            goalImpactBody.visibility = View.GONE
+        }
+    }
+
     companion object {
         const val EXTRA_TITLE = AppConstants.IntentExtras.ALERT_TITLE
         const val EXTRA_MESSAGE = AppConstants.IntentExtras.ALERT_MESSAGE
         const val EXTRA_ALERT_ID = AppConstants.IntentExtras.ALERT_ID
         const val EXTRA_PAUSE_SECONDS = AppConstants.IntentExtras.ALERT_PAUSE_SECONDS
+        const val EXTRA_NEXT_SAFE_ACTION = AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION
+        const val EXTRA_ESSENTIAL_GOAL_IMPACT = AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT
     }
 }
