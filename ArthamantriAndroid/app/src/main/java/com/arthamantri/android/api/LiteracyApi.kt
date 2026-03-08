@@ -10,6 +10,10 @@ import com.arthamantri.android.model.PilotFeedbackResponse
 import com.arthamantri.android.model.PilotMetaResponse
 import com.arthamantri.android.model.LiteracyAlertFeedbackRequest
 import com.arthamantri.android.model.LiteracyAlertFeedbackResponse
+import com.arthamantri.android.model.EssentialGoalProfileRequest
+import com.arthamantri.android.model.EssentialGoalProfileResponse
+import com.arthamantri.android.model.ExperimentAssignmentRequest
+import com.arthamantri.android.model.ExperimentAssignmentResponse
 import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.SmsIngestResponse
 import com.arthamantri.android.model.UpiOpenRequest
@@ -43,4 +47,13 @@ interface LiteracyApi {
 
     @POST("api/literacy/alert-feedback")
     suspend fun alertFeedback(@Body body: LiteracyAlertFeedbackRequest): LiteracyAlertFeedbackResponse
+
+    @GET("api/literacy/essential-goals")
+    suspend fun essentialGoals(@Query("participant_id") participantId: String): EssentialGoalProfileResponse
+
+    @POST("api/literacy/essential-goals")
+    suspend fun upsertEssentialGoals(@Body body: EssentialGoalProfileRequest): EssentialGoalProfileResponse
+
+    @POST("api/research/assignment")
+    suspend fun assignVariant(@Body body: ExperimentAssignmentRequest): ExperimentAssignmentResponse
 }
