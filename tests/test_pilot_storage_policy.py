@@ -101,3 +101,124 @@ def test_recent_alert_feature_summary(tmp_path):
     assert summary["sample_size"] == 2
     assert summary["hard_count"] == 1
     assert summary["suppressed_count"] == 1
+
+
+def test_essential_goal_profile_upsert_and_get(tmp_path):
+    db = tmp_path / "pilot_goals.db"
+    storage = PilotStorage(str(db))
+
+    storage.upsert_essential_goal_profile(
+        participant_id="p1",
+        cohort="daily_cashflow_worker",
+        essential_goals=["fuel", "ration"],
+        language="en",
+        setup_skipped=False,
+        timestamp="2026-03-08T00:00:00",
+    )
+
+    profile = storage.get_essential_goal_profile("p1")
+    assert profile is not None
+    assert profile["cohort"] == "daily_cashflow_worker"
+    assert profile["essential_goals"] == ["fuel", "ration"]
+    assert profile["setup_skipped"] is False
+
+
+def test_experiment_assignment_and_event_export(tmp_path):
+    db = tmp_path / "pilot_research_events.db"
+    storage = PilotStorage(str(db))
+
+    storage.upsert_experiment_assignment(
+        participant_id="p1",
+        experiment_name="adaptive_alerts_v1",
+        variant="adaptive",
+        assigned_at="2026-03-08T00:00:00",
+    )
+    assignment = storage.get_experiment_assignment("p1", "adaptive_alerts_v1")
+    assert assignment is not None
+    assert assignment["variant"] == "adaptive"
+
+    storage.add_experiment_event(
+        participant_id="p1",
+        experiment_name="adaptive_alerts_v1",
+        variant="adaptive",
+        event_type="sms_ingest",
+        payload={"amount": 1200, "alerts_count": 1},
+        timestamp="2026-03-08T00:01:00",
+    )
+    events = storage.list_experiment_events(participant_id="p1", experiment_name="adaptive_alerts_v1", limit=20)
+    assert len(events) == 1
+    assert events[0]["event_type"] == "sms_ingest"
+    assert events[0]["payload"]["alerts_count"] == 1
+
+
+def test_grievance_create_update_list(tmp_path):
+    db = tmp_path / "pilot_grievance.db"
+    storage = PilotStorage(str(db))
+
+    grievance_id = storage.create_grievance(
+        participant_id="p1",
+        category="trust",
+        details="Alert was unclear",
+        timestamp="2026-03-08T01:00:00",
+    )
+    assert grievance_id > 0
+
+    listed = storage.list_grievances(participant_id="p1", limit=20)
+    assert len(listed) == 1
+    assert listed[0]["status"] == "open"
+
+    changed = storage.update_grievance_status(
+        grievance_id=grievance_id,
+        status="resolved",
+        timestamp="2026-03-08T02:00:00",
+    )
+    assert changed is True
+    listed_after = storage.list_grievances(participant_id="p1", limit=20)
+    assert listed_after[0]["status"] == "resolved"
+
+
+def test_goal_memory_and_feedback_storage(tmp_path):
+    db = tmp_path / "pilot_goal_memory.db"
+    storage = PilotStorage(str(db))
+
+    storage.upsert_goal_memory(
+        participant_id="p1",
+        merchant_key="m1",
+        goal="fuel",
+        delta_positive=1,
+        delta_negative=0,
+        timestamp="2026-03-08T03:00:00",
+    )
+    rows = storage.goal_memory_rows("p1", "m1")
+    assert len(rows) == 1
+    assert rows[0]["goal"] == "fuel"
+    assert rows[0]["positive_count"] == 1
+
+    storage.upsert_alert_goal_context(
+        alert_id="a1",
+        participant_id="p1",
+        merchant_key="m1",
+        inferred_goal="fuel",
+        confidence=0.8,
+        gate_passed=True,
+        source="keyword",
+        timestamp="2026-03-08T03:05:00",
+    )
+    context = storage.get_alert_goal_context("a1", "p1")
+    assert context is not None
+    assert context["merchant_key"] == "m1"
+    assert context["gate_passed"] is True
+
+    storage.add_goal_feedback(
+        participant_id="p1",
+        alert_id="a1",
+        merchant_key="m1",
+        selected_goal="fuel",
+        is_essential=True,
+        source_confidence=0.8,
+        timestamp="2026-03-08T03:06:00",
+    )
+    feedback = storage.recent_goal_feedback("p1", 10)
+    assert len(feedback) == 1
+    assert feedback[0]["selected_goal"] == "fuel"
+    assert feedback[0]["is_essential"] is True
