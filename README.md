@@ -168,15 +168,26 @@ If you are shipping the native Android app from `ArthamantriAndroid`:
 - `GET /api/literacy/status`
 - `GET /api/literacy/policy` (per-user effective policy)
 - `POST /api/literacy/policy` (manual per-user policy override)
+- `GET /api/literacy/essential-goals` (Money Setup Lite profile + envelope)
+- `POST /api/literacy/essential-goals` (save cohort + essential goals with skip option)
+- `POST /api/literacy/essential-feedback` (mark alert txn as essential/non-essential for learning)
 - `POST /api/literacy/reset` (soft reset: state only)
 - `POST /api/literacy/reset-hard` (hard reset: state + policy/history/feedback/features)
 - `POST /api/literacy/alert-feedback` (capture alert action: useful/not_useful/dismissed)
+- `GET /api/literacy/debug-trace` (participant-level observability: status + events + features + feedback)
+- `GET /api/literacy/storage-health` (active DB path + storage check)
 - `GET /api/pilot/meta` (research-pilot disclaimer and alert policy)
 - `POST /api/pilot/consent` (store participant consent)
 - `POST /api/pilot/feedback` (collect pilot feedback)
 - `POST /api/pilot/app-log` (store app-side activity logs in backend)
+- `POST /api/pilot/grievance` (submit customer-protection/grievance issue)
+- `GET /api/pilot/grievance` (list grievances for participant or all)
+- `POST /api/pilot/grievance/status` (mark grievance state for closure workflow)
 - `GET /api/pilot/summary` (pilot aggregate metrics)
 - `GET /api/pilot/analytics` (event and stage analytics for research)
+- `POST /api/research/assignment` (A/B assignment: adaptive vs static_baseline)
+- `POST /api/research/event` (structured experiment event ingestion)
+- `GET /api/research/export/experiment-events` (event export for analysis)
 
 ## Financial Literacy Safety Flow (current)
 Current logic supports:
@@ -185,6 +196,11 @@ Current logic supports:
 3. Catastrophic override for high-impact transactions (including warm-up days).
 4. Context-aware alert intensity and suppression.
 5. Continuous policy adaptation for auto-managed users.
+6. Money Setup Lite support (cohort + up to 2 essential goals, with skip option).
+7. Explainable alert payloads (risk level, why-this-alert, next-safe-action, essential-goal impact).
+8. Confidence-gated transaction-to-goal inference (`unknown` fallback if confidence is low).
+9. Bias-guarded feedback learning with merchant memory (essential/non-essential).
+10. Facilitator-assisted onboarding assets for field pilots (`docs/FACILITATOR_ONBOARDING_CARD.md`).
 
 Policy is configurable via environment variables:
 - `LITERACY_DAILY_SAFE_LIMIT` (default: `1200`)
@@ -198,6 +214,7 @@ Policy is configurable via environment variables:
 - `LITERACY_CATASTROPHIC_ABSOLUTE` (default: `5000`)
 - `LITERACY_CATASTROPHIC_MULTIPLIER` (default: `2.5`)
 - `LITERACY_CATASTROPHIC_PROJECTED_CAP` (default: `1.8`)
+- `PILOT_DB_PATH` (default: `data/pilot_research.db`; set durable path in deployed environments)
 
 Per-user policy override APIs:
 - `GET /api/literacy/policy?participant_id=<id>`
@@ -222,6 +239,25 @@ Contextual scoring and logging:
   - `recent_dismissals_24h, risk_score, confidence_score`
   - `tone_selected, frequency_bucket`
 - For very high-risk UPI-open alerts, backend returns `pause_seconds=5` (used by Android app for pause-and-confirm friction).
+- Alert goal context is persisted per alert:
+  - `txn_goal_inferred, txn_goal_confidence, txn_goal_confidence_gate_passed, txn_goal_inference_source`
+
+Essential-goal confidence gate and anti-bias learning:
+- Goal inference is from deterministic signals:
+  - keyword hints (for example fuel/medicine/ration patterns)
+  - participant-specific merchant memory
+- Confidence gate:
+  - essential label is accepted only when confidence is high enough and consistent with participant goal profile
+  - otherwise the label falls back to `unknown` (no forced essential assumption)
+- Bias guard:
+  - memory-only essential inference is confidence-capped
+  - user feedback is stored but applied with guarded weight updates
+- Feedback API:
+  - `POST /api/literacy/essential-feedback` with:
+    - `alert_id`
+    - `participant_id`
+    - `is_essential` (`true/false`)
+    - optional `selected_goal` (`ration|school|fuel|medicine|rent|mobile_recharge|loan_repayment|non_essential`)
 
 Deterministic scored model (current approach before ML):
 - Risk-context score (0-100 style, implemented as normalized risk score internally) is derived from:
@@ -286,6 +322,19 @@ Implementation status:
 - Implemented now: contextual scoring, confidence estimate, tone selection, `hard/soft/suppressed`,
   UPI high-risk pause friction, persistence of alert features and feedback.
 - Planned next hardening: exact point-table/cap/cooldown as explicit configurable policy constants.
+
+### Research-first scope freeze (current)
+- Cohorts:
+  - `women_led_household`
+  - `daily_cashflow_worker`
+- Use cases:
+  - overspending prevention
+  - fraud prevention
+  - essential-goal savings behavior
+
+See detailed pilot protocol and publication/patent readiness docs:
+- `research/protocol_v1.md`
+- `research/paper_patent_readiness.md`
 
 Local test sequence:
 ```bash
