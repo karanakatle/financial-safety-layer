@@ -1,5 +1,10 @@
 from __future__ import annotations
 
+from backend.literacy.messages import (
+    DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE,
+    literacy_message,
+)
+
 
 def effective_goal_profile(profile: dict | None) -> dict:
     if profile:
@@ -41,37 +46,12 @@ def risk_level_from_score(risk_score: float) -> str:
 
 
 def localized_label(language: str, key: str) -> str:
-    if language == "hi":
-        labels = {
-            "risk": "जोखिम स्तर",
-            "why": "क्यों दिखा",
-            "next": "अगला सुरक्षित कदम",
-            "goal_impact": "आवश्यक लक्ष्य प्रभाव",
-            "low": "कम",
-            "medium": "मध्यम",
-            "high": "उच्च",
-            "critical": "अत्यधिक",
-        }
-        return labels.get(key, key)
-    labels = {
-        "risk": "Risk level",
-        "why": "Why this alert",
-        "next": "Next safe action",
-        "goal_impact": "Essential-goal impact",
-        "low": "Low",
-        "medium": "Medium",
-        "high": "High",
-        "critical": "Critical",
-    }
-    return labels.get(key, key)
+    return literacy_message(language, f"labels.{key}")
 
 
 def localized_stage1_message(language: str, stage1_message: str) -> str:
     if language == "hi":
-        return (
-            "आपका दैनिक सुरक्षित खर्च सीमा के करीब है। "
-            "सीमा पार करने से आपकी वित्तीय योजना प्रभावित हो सकती है।"
-        )
+        return literacy_message(language, "stage1_message")
     return stage1_message
 
 
@@ -86,9 +66,11 @@ def localized_stage2_message(
     weekly_impact = round(daily_overage * 7, 2)
     if daily_overage > 0:
         if language == "hi":
-            return (
-                f"अभी भुगतान करने पर आपकी दैनिक सुरक्षित सीमा लगभग ₹{round(daily_overage, 2)} "
-                f"से पार हो सकती है और साप्ताहिक योजना पर लगभग ₹{weekly_impact} का असर पड़ सकता है।"
+            return literacy_message(
+                language,
+                "stage2_over_limit_template",
+                daily_overage=round(daily_overage, 2),
+                weekly_impact=weekly_impact,
             )
         try:
             return stage2_over_limit_template.format(
@@ -96,12 +78,12 @@ def localized_stage2_message(
                 weekly_impact=weekly_impact,
             )
         except (KeyError, ValueError):
-            return (
-                f"Paying now may exceed your daily safe amount by Rs {round(daily_overage, 2)} "
-                f"and disturb your weekly planning by around Rs {weekly_impact}."
+            return DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE.format(
+                daily_overage=round(daily_overage, 2),
+                weekly_impact=weekly_impact,
             )
     if language == "hi":
-        return "आप दैनिक सीमा के करीब हैं। अभी भुगतान करने से आज या सप्ताह की योजना प्रभावित हो सकती है।"
+        return literacy_message(language, "stage2_close_limit_message")
     return stage2_close_limit_message
 
 
@@ -139,10 +121,8 @@ def goal_impact_text(language: str, envelope: dict, projected_spend: float) -> s
     if delta <= 0:
         return ""
     goals = list(envelope.get("essential_goals") or [])
-    goal_names = ", ".join(goals) if goals else ("daily essentials" if language == "en" else "दैनिक आवश्यकताएं")
-    if language == "hi":
-        return f"₹{delta} का अतिरिक्त खर्च आपके {goal_names} बजट पर दबाव डाल सकता है।"
-    return f"An extra ₹{delta} spend can pressure your {goal_names} budget."
+    goal_names = ", ".join(goals) if goals else literacy_message(language, "daily_essentials")
+    return literacy_message(language, "goal_impact_template", delta=delta, goal_names=goal_names)
 
 
 def why_text(
@@ -153,38 +133,24 @@ def why_text(
     txn_anomaly_score: float,
     upi_open_flag: bool,
 ) -> str:
-    if language == "hi":
-        base = (
-            f"खर्च अनुपात {round(spend_ratio, 2)} और जोखिम स्तर "
-            f"{localized_label(language, risk_level)} पाया गया।"
-        )
-        if reason == "catastrophic_risk_override":
-            return f"{base} भुगतान राशि असामान्य रूप से अधिक थी।"
-        if upi_open_flag:
-            return f"{base} UPI ऐप खुलने पर जोखिम सक्रिय मिला।"
-        if txn_anomaly_score >= 0.7:
-            return f"{base} लेन-देन सामान्य से बड़ा है।"
-        return base
-
-    base = f"Spend ratio {round(spend_ratio, 2)} with {localized_label(language, risk_level)} risk."
+    base = literacy_message(
+        language,
+        "why_base_template",
+        spend_ratio=round(spend_ratio, 2),
+        risk_level=localized_label(language, risk_level),
+    )
     if reason == "catastrophic_risk_override":
-        return f"{base} Transaction amount is unusually high."
+        return f"{base} {literacy_message(language, 'why_suffix_catastrophic')}"
     if upi_open_flag:
-        return f"{base} Risk remained active when UPI app opened."
+        return f"{base} {literacy_message(language, 'why_suffix_upi_open')}"
     if txn_anomaly_score >= 0.7:
-        return f"{base} This transaction is larger than recent pattern."
+        return f"{base} {literacy_message(language, 'why_suffix_anomaly')}"
     return base
 
 
 def next_action_text(language: str, risk_level: str, reason: str) -> str:
-    if language == "hi":
-        if risk_level in {"high", "critical"}:
-            return "भुगतान से पहले 5 सेकंड रुकें, प्राप्तकर्ता सत्यापित करें और राशि कम करें।"
-        if reason == "upi_open_after_threshold_warning":
-            return "जरूरत होने पर ही भुगतान करें, अन्यथा इसे बाद में करें।"
-        return "आज अनावश्यक खर्च रोकें और आवश्यक लक्ष्य खर्च सुरक्षित रखें।"
     if risk_level in {"high", "critical"}:
-        return "Pause 5 seconds, verify recipient, and reduce amount before paying."
+        return literacy_message(language, "next_high_risk")
     if reason == "upi_open_after_threshold_warning":
-        return "Proceed only if essential; otherwise defer this payment."
-    return "Stop non-essential spending today and protect essential-goal budget."
+        return literacy_message(language, "next_upi_open")
+    return literacy_message(language, "next_default")

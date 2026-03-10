@@ -40,6 +40,7 @@ from backend.literacy import (
     risk_level_from_score,
     why_text,
 )
+from backend.literacy.messages import DEFAULT_PILOT_DISCLAIMER
 from backend.pilot import PilotStorage
 from backend.config import load_literacy_policy
 from backend.nlp.pipeline import process_text
@@ -56,11 +57,7 @@ LITERACY_POLICY = load_literacy_policy()
 voice = get_voice_provider()
 pilot_storage = PilotStorage(os.getenv("PILOT_DB_PATH", "data/pilot_research.db"))
 
-PILOT_DISCLAIMER = (
-    "Arthamantri is a research prototype for financial literacy and safety nudges. "
-    "It is not investment advice, not a regulated advisory service, and may make mistakes. "
-    "Use your judgement before making payments."
-)
+PILOT_DISCLAIMER = DEFAULT_PILOT_DISCLAIMER
 
 SUPPORTED_COHORTS = {"women_led_household", "daily_cashflow_worker"}
 SUPPORTED_ESSENTIAL_GOALS = {

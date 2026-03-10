@@ -47,6 +47,7 @@ Backend layout:
 - `backend/literacy/context.py`: contextual scoring helpers for alert intensity/frequency
 - `backend/literacy/decisioning.py`: pure goal-envelope and explainability helpers
 - `backend/literacy/goals.py`: merchant-goal inference and feedback-learning helpers
+- `backend/literacy/messages.py`: centralized literacy-facing message catalog and localized text defaults
 - `backend/literacy/policy.py`: per-participant policy resolution, experiment assignment, and auto-recalibration helpers
 - `backend/literacy/runtime.py`: monitor build/persist helpers around literacy state
 - `backend/pilot/storage.py`: SQLite persistence for pilot/literacy state
