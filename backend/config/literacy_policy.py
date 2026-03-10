@@ -3,23 +3,20 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+from backend.literacy.messages import (
+    DEFAULT_STAGE1_MESSAGE,
+    DEFAULT_STAGE2_CLOSE_LIMIT_MESSAGE,
+    DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE,
+)
+
 
 @dataclass(frozen=True)
 class LiteracyPolicyConfig:
     daily_safe_limit: float = 1200.0
     warning_ratio: float = 0.9
-    stage1_message: str = (
-        "Daily safe spend is about to be exceeded. "
-        "Exceeding amount can disturb your financial planning."
-    )
-    stage2_over_limit_template: str = (
-        "Paying now may exceed your daily safe amount by Rs {daily_overage} "
-        "and disturb your weekly planning by around Rs {weekly_impact}."
-    )
-    stage2_close_limit_message: str = (
-        "You are close to your daily limit. Paying now can disturb your financial "
-        "planning for today or the week."
-    )
+    stage1_message: str = DEFAULT_STAGE1_MESSAGE
+    stage2_over_limit_template: str = DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE
+    stage2_close_limit_message: str = DEFAULT_STAGE2_CLOSE_LIMIT_MESSAGE
     warmup_days: int = 3
     warmup_seed_multiplier: float = 1.2
     warmup_extreme_spike_ratio: float = 0.4

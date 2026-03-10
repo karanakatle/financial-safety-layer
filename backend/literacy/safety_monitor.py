@@ -3,23 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date, datetime
 
+from backend.literacy.messages import (
+    DEFAULT_STAGE1_MESSAGE,
+    DEFAULT_STAGE2_CLOSE_LIMIT_MESSAGE,
+    DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE,
+)
+
 
 @dataclass
 class FinancialLiteracySafetyMonitor:
     daily_safe_limit: float = 1000.0
     warning_ratio: float = 0.9
-    stage1_message: str = (
-        "Daily safe spend is about to be exceeded. "
-        "Exceeding amount can disturb your financial planning."
-    )
-    stage2_over_limit_template: str = (
-        "Paying now may exceed your daily safe amount by Rs {daily_overage} "
-        "and disturb your weekly planning by around Rs {weekly_impact}."
-    )
-    stage2_close_limit_message: str = (
-        "You are close to your daily limit. Paying now can disturb your financial "
-        "planning for today or the week."
-    )
+    stage1_message: str = DEFAULT_STAGE1_MESSAGE
+    stage2_over_limit_template: str = DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE
+    stage2_close_limit_message: str = DEFAULT_STAGE2_CLOSE_LIMIT_MESSAGE
     warmup_days: int = 0
     warmup_seed_multiplier: float = 1.2
     warmup_extreme_spike_ratio: float = 0.4
@@ -151,9 +148,9 @@ class FinancialLiteracySafetyMonitor:
                     weekly_impact=weekly_impact,
                 )
             except (KeyError, ValueError):
-                message = (
-                    f"Paying now may exceed your daily safe amount by Rs {round(daily_overage, 2)} "
-                    f"and disturb your weekly planning by around Rs {weekly_impact}."
+                message = DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE.format(
+                    daily_overage=round(daily_overage, 2),
+                    weekly_impact=weekly_impact,
                 )
         else:
             message = self.stage2_close_limit_message
