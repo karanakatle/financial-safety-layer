@@ -15,6 +15,8 @@ This is intentionally a **research-oriented prototype** (not a production fintec
 - Explainable alerts with priorities
 - Voice query endpoint + browser speech interface
 - Alert history for behavior analysis
+- Participant-scoped legacy web state (`participant_id` support on `/api/state|alerts|transaction|voice-query|chat|confirm-savings`)
+- Durable SQLite-backed literacy/pilot storage with configurable DB path (`PILOT_DB_PATH`)
 
 ## Architecture
 ```
@@ -36,6 +38,18 @@ User Feedback Capture
 (action taken / ignored)
 
 ```
+
+Backend layout:
+- `backend/main.py`: app bootstrap + literacy decisioning flow
+- `backend/api_models.py`: shared FastAPI/Pydantic request models
+- `backend/routes/pilot.py`: pilot/research/support endpoints
+- `backend/routes/legacy.py`: legacy web/manual-agent endpoints
+- `backend/literacy/context.py`: contextual scoring helpers for alert intensity/frequency
+- `backend/literacy/decisioning.py`: pure goal-envelope and explainability helpers
+- `backend/literacy/goals.py`: merchant-goal inference and feedback-learning helpers
+- `backend/literacy/policy.py`: per-participant policy resolution, experiment assignment, and auto-recalibration helpers
+- `backend/literacy/runtime.py`: monitor build/persist helpers around literacy state
+- `backend/pilot/storage.py`: SQLite persistence for pilot/literacy state
 
 ## Run locally
 ```bash
@@ -153,16 +167,19 @@ If you are shipping the native Android app from `ArthamantriAndroid`:
    - `ArthamantriAndroid/app/build/outputs/apk/release/app-release.apk`
 
 ### Production checklist
-- Restrict CORS to your app domain (replace `allow_origins=["*"]`).
+- Set `CORS_ALLOWED_ORIGINS` to a comma-separated allowlist for any cross-origin web clients.
+- Set `PILOT_DB_PATH` to a persistent/durable path in deployed environments (for example `/var/data/pilot_research.db` on Render with a persistent disk).
 - Use HTTPS for voice/microphone features.
-- Add persistence (database) if you need user/account continuity.
+- Verify `GET /api/literacy/storage-health` after deploy to confirm the live DB path and file existence.
 - Add auth before handling real financial data.
 
 ## Example API
-- `GET /api/state`
-- `POST /api/transaction`
-- `GET /api/alerts`
-- `POST /api/voice-query`
+- `GET /api/state?participant_id=<id>` (legacy agent state; browser frontend auto-generates a stable local participant id)
+- `POST /api/transaction` (`participant_id` optional; defaults to `global_user`)
+- `GET /api/alerts?participant_id=<id>`
+- `POST /api/voice-query` (`participant_id` optional)
+- `POST /api/chat` (`participant_id` optional)
+- `POST /api/confirm-savings` (`participant_id` optional)
 - `POST /api/literacy/sms-ingest` (simulate bank SMS expense feed)
 - `POST /api/literacy/upi-open` (simulate UPI app open trigger)
 - `GET /api/literacy/status`
@@ -203,6 +220,7 @@ Current logic supports:
 10. Facilitator-assisted onboarding assets for field pilots (`docs/FACILITATOR_ONBOARDING_CARD.md`).
 
 Policy is configurable via environment variables:
+- `CORS_ALLOWED_ORIGINS` (optional comma-separated list; if unset, backend allows `*` without credentials for research/dev)
 - `LITERACY_DAILY_SAFE_LIMIT` (default: `1200`)
 - `LITERACY_WARNING_RATIO` (default: `0.9`)
 - `LITERACY_STAGE1_MESSAGE`
@@ -215,6 +233,10 @@ Policy is configurable via environment variables:
 - `LITERACY_CATASTROPHIC_MULTIPLIER` (default: `2.5`)
 - `LITERACY_CATASTROPHIC_PROJECTED_CAP` (default: `1.8`)
 - `PILOT_DB_PATH` (default: `data/pilot_research.db`; set durable path in deployed environments)
+
+Storage/runtime notes:
+- SQLite connections run with `WAL` journal mode, `busy_timeout`, and `foreign_keys=ON` to reduce write contention during pilot traffic.
+- The mounted frontend path is resolved from `backend/main.py`, so app startup does not depend on the current working directory.
 
 Per-user policy override APIs:
 - `GET /api/literacy/policy?participant_id=<id>`

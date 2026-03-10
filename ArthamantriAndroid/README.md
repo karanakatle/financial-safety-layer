@@ -56,6 +56,7 @@ Per-user literacy state:
    - App then prompts permission onboarding flow (runtime + usage + overlay).
    - Start monitoring from the home dashboard.
    - Use left-swipe menu for Manage Access, feedback, Money Setup Lite, Facilitator Setup Pack, help, and privacy policy.
+   - Money Setup Lite can be reopened later from the menu or Help dialog for profile/goal edits without reinstalling.
    - Use **Facilitator Setup Pack** from menu/help for assisted onboarding in field pilots.
 6. Trigger events:
    - Receive/simulate bank debit SMS.
@@ -164,6 +165,8 @@ Outputs:
 - Privacy policy URL is configurable using `-PPRIVACY_POLICY_URL`.
 - `keystore.properties` is required for real release signing (see `PRODUCTION_SETUP.md`).
 - Onboarding state is persisted locally (for example: language/consent/money-setup/permission completion).
+- The Android app uses a stable per-install `participant_id` (Android ID). Backend longitudinal state only remains stable across deploys/restarts if backend `PILOT_DB_PATH` points to durable storage.
+- Retrofit/OkHttp clients are reused per active base URL to avoid rebuilding the network stack on every repository call.
 - Local onboarding flag keys include:
   - `KEY_LANGUAGE_SELECTED`
   - `KEY_CONSENT_ACCEPTED`
