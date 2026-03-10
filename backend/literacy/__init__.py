@@ -1,3 +1,50 @@
 from .safety_monitor import FinancialLiteracySafetyMonitor
+from .decisioning import (
+    effective_goal_profile,
+    essential_goal_envelope,
+    goal_impact_text,
+    localized_label,
+    localized_stage1_message,
+    localized_stage2_message,
+    localize_alert,
+    next_action_text,
+    risk_level_from_score,
+    why_text,
+)
+from .context import clamp, compute_contextual_scores, compute_txn_anomaly_score
+from .goals import (
+    apply_goal_feedback_learning,
+    goal_from_keywords,
+    goal_from_memory,
+    infer_goal_context,
+    merchant_key_from_note,
+)
+from .policy import auto_recalibrate_policy, policy_for_participant, resolve_experiment_variant
+from .runtime import build_literacy_monitor, persist_literacy_monitor
 
-__all__ = ["FinancialLiteracySafetyMonitor"]
+__all__ = [
+    "apply_goal_feedback_learning",
+    "auto_recalibrate_policy",
+    "FinancialLiteracySafetyMonitor",
+    "build_literacy_monitor",
+    "clamp",
+    "compute_contextual_scores",
+    "compute_txn_anomaly_score",
+    "effective_goal_profile",
+    "essential_goal_envelope",
+    "goal_from_keywords",
+    "goal_from_memory",
+    "goal_impact_text",
+    "infer_goal_context",
+    "localized_label",
+    "localized_stage1_message",
+    "localized_stage2_message",
+    "localize_alert",
+    "merchant_key_from_note",
+    "next_action_text",
+    "policy_for_participant",
+    "persist_literacy_monitor",
+    "resolve_experiment_variant",
+    "risk_level_from_score",
+    "why_text",
+]
