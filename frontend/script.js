@@ -6,6 +6,24 @@ async function fetchJSON(url, options = {}) {
   return res.json();
 }
 
+function getParticipantId() {
+  const key = 'arthamantriParticipantId';
+  let participantId = localStorage.getItem(key);
+  if (!participantId) {
+    participantId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `web_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, participantId);
+  }
+  return participantId;
+}
+
+function withParticipant(url) {
+  const resolved = new URL(url, window.location.origin);
+  resolved.searchParams.set('participant_id', getParticipantId());
+  return `${resolved.pathname}${resolved.search}`;
+}
+
 function renderState(state) {
   const stateEl = document.getElementById('state');
   stateEl.innerHTML = `
@@ -43,7 +61,7 @@ async function confirmSavings(choice) {
   const res = await fetch("/api/confirm-savings", {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({ accept: choice })
+    body: JSON.stringify({ accept: choice, participant_id: getParticipantId() })
   });
 
   const data = await res.json();
@@ -113,7 +131,7 @@ async function sendAudioToBackend() {
     const res = await fetch("/api/voice-audio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ audio: base64Audio })
+      body: JSON.stringify({ audio: base64Audio, participant_id: getParticipantId() })
     });
 
     const data = await res.json();
@@ -142,8 +160,8 @@ document.getElementById("mic-btn").addEventListener("click", () => {
 
 async function refresh() {
   const [state, alerts] = await Promise.all([
-    fetchJSON('/api/state'),
-    fetchJSON('/api/alerts'),
+    fetchJSON(withParticipant('/api/state')),
+    fetchJSON(withParticipant('/api/alerts')),
   ]);
   renderState(state);
   renderAlerts(alerts);
@@ -152,7 +170,7 @@ async function refresh() {
 async function askQuery(q) {
   const data = await fetchJSON('/api/voice-query', {
     method: 'POST',
-    body: JSON.stringify({ query: q }),
+    body: JSON.stringify({ query: q, participant_id: getParticipantId() }),
   });
   const responseText = data.response;
   document.getElementById('voice-response').textContent = responseText;
@@ -169,6 +187,7 @@ document.getElementById('tx-form').addEventListener('submit', async (e) => {
   await fetchJSON('/api/transaction', {
     method: 'POST',
     body: JSON.stringify({
+      participant_id: getParticipantId(),
       type: form.get('type'),
       amount: Number(form.get('amount')),
       category: form.get('category'),
