@@ -11,6 +11,10 @@ Native Android companion app for the existing FastAPI backend in `Python-OOS-Pro
 - Shows USSD-like full-screen warning overlay plus high-priority notification.
 - Applies pause-and-confirm friction for very high-risk stage-2 alerts (`pause_seconds` from backend).
 - Shows explainable alerts (risk level, why-this-alert, next-safe-action, essential-goal impact) via backend message payload.
+- Renders severity-aware alerts from backend payload:
+  - `soft`: calmer advisory styling
+  - `medium`: caution styling
+  - `hard`: high-risk styling with strongest urgency
 - Enforces first-run research consent and supports pilot feedback submission.
 - Includes **Facilitator Setup Pack** (2-minute assisted onboarding checklist with one-tap actions).
 
@@ -186,3 +190,73 @@ curl -X POST "https://<your-service>.onrender.com/api/literacy/reset-hard?partic
 ```
 - Hard reset: clears literacy state + participant policy + spend history + literacy events +
   alert feedback + alert features.
+
+## Emulator severity verification checklist
+Use this when validating that Android visual behavior matches backend `severity`.
+
+1. Start backend and install the debug app on emulator/device.
+2. Grant:
+   - SMS access
+   - Usage access
+   - Overlay access
+   - Notification access
+3. Capture your active `participant_id` from logcat after a successful `sms-ingest`.
+4. Hard reset before each isolated test:
+
+```bash
+curl -X POST "https://<your-service>.onrender.com/api/literacy/reset-hard?participant_id=<participant_id>"
+```
+
+### A) Soft alert check
+Goal: verify calmer advisory styling.
+
+1. Send a modest near-threshold SMS, for example:
+```bash
+adb emu sms send 12345 "INR 900 debited via UPI to shop"
+```
+2. Expected:
+   - badge/tag shows soft advisory copy
+   - calmer badge/text/scrim colors
+   - no pause countdown
+   - backend alert payload has `severity=soft`
+
+### B) Medium alert check
+Goal: verify caution styling without high-risk pause.
+
+1. Reset hard.
+2. Send a stronger threshold-crossing SMS, for example:
+```bash
+adb emu sms send 12345 "INR 1400 debited via UPI to merchant"
+```
+3. Expected:
+   - caution alert tag/styling
+   - no pause countdown
+   - backend alert payload has `severity=medium`
+
+### C) Hard alert check
+Goal: verify strongest styling for catastrophic or stage-2 risk.
+
+1. Reset hard.
+2. Send a catastrophic SMS, for example:
+```bash
+adb emu sms send 12345 "INR 6000 debited via UPI to merchant"
+```
+3. Expected:
+   - high-risk tag/styling
+   - strongest badge/title color
+   - backend alert payload has `severity=hard`
+
+### D) Hard UPI-open pause check
+Goal: verify high-risk stage-2 friction.
+
+1. Trigger stage-1 first with a qualifying spend.
+2. Open a tracked UPI app while monitoring is active.
+3. Expected:
+   - stage-2 alert shown
+   - if backend returns `pause_seconds=5`, buttons remain disabled until countdown finishes
+   - payload should include `severity=hard` and `pause_seconds=5`
+
+### Debug tip
+If visual severity looks wrong, inspect:
+- Android logcat for parsed alert payload
+- backend `/api/literacy/debug-trace?participant_id=<participant_id>`

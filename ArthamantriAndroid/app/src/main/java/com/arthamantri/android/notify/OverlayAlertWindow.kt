@@ -1,6 +1,7 @@
 package com.arthamantri.android.notify
 
 import android.content.Context
+import android.content.res.ColorStateList
 import android.os.CountDownTimer
 import android.graphics.PixelFormat
 import android.os.Build
@@ -11,6 +12,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import java.util.UUID
@@ -29,6 +31,7 @@ object OverlayAlertWindow {
         alertId: String,
         title: String,
         message: String,
+        severity: String = "medium",
         pauseSeconds: Int = 0,
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
@@ -45,6 +48,7 @@ object OverlayAlertWindow {
                 alertId = alertId,
                 title = title,
                 message = message,
+                severity = severity,
                 pauseSeconds = pauseSeconds,
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
@@ -55,6 +59,7 @@ object OverlayAlertWindow {
         val view = LayoutInflater.from(appContext).inflate(R.layout.view_overlay_alert, null, false)
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
         view.findViewById<TextView>(R.id.overlayAlertMessage).text = message
+        applySeverityStyle(view, severity)
         bindExplainability(
             view = view,
             nextSafeAction = nextSafeAction,
@@ -123,6 +128,7 @@ object OverlayAlertWindow {
         alertId: String,
         title: String,
         message: String,
+        severity: String,
         pauseSeconds: Int,
         nextSafeAction: String?,
         essentialGoalImpact: String?,
@@ -135,6 +141,7 @@ object OverlayAlertWindow {
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
         view.findViewById<TextView>(R.id.overlayAlertMessage).text = message
+        applySeverityStyle(view, severity)
         bindExplainability(
             view = view,
             nextSafeAction = nextSafeAction,
@@ -233,5 +240,21 @@ object OverlayAlertWindow {
 
     private fun canShowOverlay(context: Context): Boolean {
         return Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
+    }
+
+    private fun applySeverityStyle(view: View, severity: String) {
+        val context = view.context
+        val style = AlertNotifier.styleForSeverity(severity)
+        val scrim = view.findViewById<View>(R.id.overlayScrim)
+        val tag = view.findViewById<TextView>(R.id.overlayAlertTag)
+        val title = view.findViewById<TextView>(R.id.overlayAlertTitle)
+        val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
+
+        scrim.setBackgroundColor(ContextCompat.getColor(context, style.scrimColorRes))
+        tag.text = context.getString(style.tagTextRes)
+        tag.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, style.badgeBgColorRes))
+        tag.setTextColor(ContextCompat.getColor(context, style.badgeTextColorRes))
+        title.setTextColor(ContextCompat.getColor(context, style.badgeTextColorRes))
+        dismissBtn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(context, style.badgeTextColorRes))
     }
 }

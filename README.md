@@ -52,6 +52,14 @@ Backend layout:
 - `backend/literacy/runtime.py`: monitor build/persist helpers around literacy state
 - `backend/pilot/storage.py`: SQLite persistence for pilot/literacy state
 
+Research layout:
+- `research/protocol_v1.md`: pilot design and analysis plan
+- `research/metrics.md`: primary/secondary pilot metrics
+- `research/simulator/`: synthetic cohort simulator for pre-pilot policy testing
+
+Synthetic comparison entrypoint:
+- `./scripts/run_simulator_comparison.sh`
+
 ## Run locally
 ```bash
 python -m venv .venv
@@ -219,6 +227,10 @@ Current logic supports:
 8. Confidence-gated transaction-to-goal inference (`unknown` fallback if confidence is low).
 9. Bias-guarded feedback learning with merchant memory (essential/non-essential).
 10. Facilitator-assisted onboarding assets for field pilots (`docs/FACILITATOR_ONBOARDING_CARD.md`).
+11. Explicit production alert severity classification:
+   - `soft`
+   - `medium`
+   - `hard`
 
 Policy is configurable via environment variables:
 - `CORS_ALLOWED_ORIGINS` (optional comma-separated list; if unset, backend allows `*` without credentials for research/dev)
@@ -261,6 +273,8 @@ Contextual scoring and logging:
   - `txn_anomaly_score, hour_of_day, rapid_txn_flag, upi_open_flag`
   - `recent_dismissals_24h, risk_score, confidence_score`
   - `tone_selected, frequency_bucket`
+- Emitted payloads now also expose:
+  - `severity` (`soft|medium|hard`)
 - For very high-risk UPI-open alerts, backend returns `pause_seconds=5` (used by Android app for pause-and-confirm friction).
 - Alert goal context is persisted per alert:
   - `txn_goal_inferred, txn_goal_confidence, txn_goal_confidence_gate_passed, txn_goal_inference_source`

@@ -132,6 +132,9 @@ Follow the system prompts to complete setup.</string>
 
     <string name="overlay_tag">Live Safety Alert</string>
     <string name="ussd_tag">USSD Style Alert</string>
+    <string name="alert_tag_soft">Soft Advisory</string>
+    <string name="alert_tag_medium">Caution Alert</string>
+    <string name="alert_tag_hard">High-Risk Alert</string>
     <string name="alert_title_default">Financial Safety Alert</string>
     <string name="alert_body_default">This payment may disturb your daily or weekly planning.</string>
     <string name="alert_ack_short">Okay</string>

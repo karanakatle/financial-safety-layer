@@ -45,6 +45,7 @@ object AppConstants {
         const val ALERT_MESSAGE = "extra_message"
         const val ALERT_ID = "extra_alert_id"
         const val ALERT_PAUSE_SECONDS = "extra_alert_pause_seconds"
+        const val ALERT_SEVERITY = "extra_alert_severity"
         const val ALERT_NEXT_SAFE_ACTION = "extra_next_safe_action"
         const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
     }

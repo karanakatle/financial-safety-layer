@@ -1,5 +1,6 @@
 from .safety_monitor import FinancialLiteracySafetyMonitor
 from .decisioning import (
+    alert_severity_from_context,
     effective_goal_profile,
     essential_goal_envelope,
     goal_impact_text,
@@ -31,6 +32,7 @@ from .runtime import build_literacy_monitor, persist_literacy_monitor
 
 __all__ = [
     "apply_goal_feedback_learning",
+    "alert_severity_from_context",
     "auto_recalibrate_policy",
     "FinancialLiteracySafetyMonitor",
     "build_literacy_monitor",

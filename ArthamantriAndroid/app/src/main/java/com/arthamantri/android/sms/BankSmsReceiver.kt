@@ -66,6 +66,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                         title = context.getString(R.string.alert_title_default),
                         body = alert.message ?: context.getString(R.string.alert_spending_threshold),
                         alertId = alert.alert_id,
+                        severity = alert.severity ?: "medium",
                         pauseSeconds = alert.pause_seconds ?: 0,
                         nextSafeAction = alert.next_best_action,
                         essentialGoalImpact = alert.essential_goal_impact,

@@ -65,6 +65,7 @@ def test_sms_ingest_returns_explainability_fields(tmp_path, monkeypatch):
     assert payload["literacy_alerts"]
     alert = payload["literacy_alerts"][0]
     assert alert["risk_level"] in {"low", "medium", "high", "critical"}
+    assert alert["severity"] in {"soft", "medium", "hard"}
     assert isinstance(alert.get("why_this_alert"), str) and alert["why_this_alert"]
     assert isinstance(alert.get("next_best_action"), str) and alert["next_best_action"]
 

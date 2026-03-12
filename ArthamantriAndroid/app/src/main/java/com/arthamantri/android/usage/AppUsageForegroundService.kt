@@ -90,6 +90,7 @@ class AppUsageForegroundService : Service() {
                     title = getString(R.string.alert_payment_risk_title),
                     body = alert.message ?: getString(R.string.alert_body_default),
                     alertId = alert.alert_id,
+                    severity = alert.severity ?: "medium",
                     pauseSeconds = alert.pause_seconds ?: 0,
                     nextSafeAction = alert.next_best_action,
                     essentialGoalImpact = alert.essential_goal_impact,
