@@ -5,31 +5,111 @@ import json
 
 from research.simulator.personas import default_personas
 from research.simulator.runner import SimulationConfig, SimulationRunner
+from research.simulator.scenarios import SCENARIO_PRESETS
 
 
-def build_comparison(days: int, seed: int, include_adverse_events: bool) -> dict:
+def _numeric_delta(left: dict, right: dict) -> dict:
+    return {
+        key: round(left[key] - right[key], 4)
+        for key in left.keys()
+        if isinstance(left[key], (int, float)) and isinstance(right.get(key), (int, float))
+    }
+
+
+def _build_per_persona(adaptive_rows: list[dict], static_rows: list[dict]) -> list[dict]:
+    adaptive_by_id = {row["participant_id"]: row for row in adaptive_rows}
+    static_by_id = {row["participant_id"]: row for row in static_rows}
+    participant_ids = sorted(set(adaptive_by_id) | set(static_by_id))
+
+    rows = []
+    for participant_id in participant_ids:
+        adaptive = adaptive_by_id.get(participant_id, {})
+        static = static_by_id.get(participant_id, {})
+        rows.append(
+            {
+                "participant_id": participant_id,
+                "adaptive": adaptive,
+                "static_baseline": static,
+                "delta_adaptive_minus_static": _numeric_delta(adaptive, static),
+            }
+        )
+    return rows
+
+
+def build_comparison(days: int, seed: int, include_adverse_events: bool, scenario: str = "default") -> dict:
     personas = default_personas()
     runner = SimulationRunner(
-        SimulationConfig(days=days, seed=seed, include_adverse_events=include_adverse_events)
+        SimulationConfig(
+            days=days,
+            seed=seed,
+            include_adverse_events=include_adverse_events,
+            scenario=scenario,
+        )
     )
-    adaptive = runner.run(personas, variant="adaptive").aggregate()
-    static = runner.run(personas, variant="static_baseline").aggregate()
-    delta = {
-        key: round(adaptive[key] - static[key], 4)
-        for key in adaptive.keys()
-        if isinstance(adaptive[key], (int, float)) and key in static
-    }
+    adaptive_report = runner.run(personas, variant="adaptive")
+    static_report = runner.run(personas, variant="static_baseline")
+    adaptive = adaptive_report.aggregate()
+    static = static_report.aggregate()
+    delta = _numeric_delta(adaptive, static)
     return {
         "config": {
             "days": days,
             "seed": seed,
             "include_adverse_events": include_adverse_events,
+            "scenario": scenario,
             "persona_count": len(personas),
         },
         "adaptive": adaptive,
         "static_baseline": static,
         "delta_adaptive_minus_static": delta,
+        "per_persona": _build_per_persona(
+            adaptive_report.by_participant(),
+            static_report.by_participant(),
+        ),
     }
+
+
+def _print_metric_row(metric: str, adaptive_value, static_value, delta_value) -> None:
+    print(f"{metric:20} {str(adaptive_value):>9} {str(static_value):>9} {str(delta_value):>9}")
+
+
+def _print_persona_section(rows: list[dict]) -> None:
+    print("")
+    print("Per-Persona Comparison")
+    print("")
+    for row in rows:
+        adaptive = row["adaptive"]
+        static = row["static_baseline"]
+        delta = row["delta_adaptive_minus_static"]
+
+        print(f"[{row['participant_id']}]")
+        for metric in (
+            "active_days",
+            "alert_count",
+            "soft_alert_count",
+            "medium_alert_count",
+            "hard_alert_count",
+            "useful_rate",
+            "preventive_inconvenient_rate",
+            "beneficial_rate",
+            "dismiss_rate",
+            "prevention_rate",
+            "retention_value",
+            "trust_score_final",
+        ):
+            _print_metric_row(
+                metric,
+                adaptive.get(metric),
+                static.get(metric),
+                delta.get(metric),
+            )
+        print(f"{'retained':20} {str(adaptive.get('retained')):>9} {str(static.get('retained')):>9} {'-':>9}")
+        print(
+            f"{'uninstall_day':20} "
+            f"{str(adaptive.get('uninstall_day')):>9} "
+            f"{str(static.get('uninstall_day')):>9} {'-':>9}"
+        )
+        print("")
 
 
 def main() -> None:
@@ -47,12 +127,19 @@ def main() -> None:
         default="text",
         help="Output format.",
     )
+    parser.add_argument(
+        "--scenario",
+        choices=sorted(SCENARIO_PRESETS),
+        default="default",
+        help="Scenario preset to stress the same policy under a specific real-world condition.",
+    )
     args = parser.parse_args()
 
     result = build_comparison(
         days=args.days,
         seed=args.seed,
         include_adverse_events=not args.no_adverse_events,
+        scenario=args.scenario,
     )
 
     if args.format == "json":
@@ -62,6 +149,7 @@ def main() -> None:
     print("Arthamantri Synthetic Cohort Comparison")
     print(
         f"days={result['config']['days']} seed={result['config']['seed']} "
+        f"scenario={result['config']['scenario']} "
         f"adverse_events={result['config']['include_adverse_events']} personas={result['config']['persona_count']}"
     )
     print("")
@@ -73,6 +161,8 @@ def main() -> None:
         "total_medium_alerts",
         "total_hard_alerts",
         "useful_rate",
+        "preventive_inconvenient_rate",
+        "beneficial_rate",
         "dismiss_rate",
         "soft_alert_rate",
         "medium_alert_rate",
@@ -80,10 +170,13 @@ def main() -> None:
         "prevention_rate",
         "retention_rate",
     ):
-        adaptive_value = result["adaptive"][metric]
-        static_value = result["static_baseline"][metric]
-        delta_value = result["delta_adaptive_minus_static"][metric]
-        print(f"{metric:20} {str(adaptive_value):>9} {str(static_value):>9} {str(delta_value):>9}")
+        _print_metric_row(
+            metric,
+            result["adaptive"][metric],
+            result["static_baseline"][metric],
+            result["delta_adaptive_minus_static"][metric],
+        )
+    _print_persona_section(result["per_persona"])
 
 
 if __name__ == "__main__":
