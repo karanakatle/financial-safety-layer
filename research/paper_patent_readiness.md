@@ -24,6 +24,8 @@
    and measure degradation.
 3. Outcome stability over at least 8-12 weeks.
 4. Language parity analysis for Hindi vs English.
+5. Pilot-calibrated response parameters rather than simulator-only severity assumptions:
+   - `research/parameter_learning_plan_v1.md`
 
 ## Evidence Needed Before Final Patent Filing
 1. Architecture diagram + flow claims tied to implemented endpoints.

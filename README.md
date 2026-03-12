@@ -59,6 +59,13 @@ Research layout:
 
 Synthetic comparison entrypoint:
 - `./scripts/run_simulator_comparison.sh`
+- `./scripts/run_simulator_sweep.sh`
+- scenario presets supported:
+  - `--scenario default`
+  - `--scenario fraud_week`
+  - `--scenario festival_spend`
+  - `--scenario medical_emergency`
+  - `--scenario shared_phone_noise_heavy`
 
 ## Run locally
 ```bash
@@ -372,6 +379,8 @@ Implementation status:
 See detailed pilot protocol and publication/patent readiness docs:
 - `research/protocol_v1.md`
 - `research/paper_patent_readiness.md`
+- `research/parameter_learning_plan_v1.md`
+- `research/pilot_rollout_checklist.md`
 
 Local test sequence:
 ```bash

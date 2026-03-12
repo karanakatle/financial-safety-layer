@@ -9,6 +9,16 @@
   - fraud prevention
   - essential-goal savings behavior
 
+## Readiness Note
+- Simulator phase-1 is frozen as the pre-pilot baseline:
+  - `research/simulator/PHASE1_FREEZE.md`
+  - `research/simulator/SWEEP_INTERPRETATION.md`
+- Next work priority is pilot/readiness planning, not further uncontrolled simulator expansion.
+- Phase-2 learning path is documented in:
+  - `research/parameter_learning_plan_v1.md`
+- Operational rollout checklist is documented in:
+  - `research/pilot_rollout_checklist.md`
+
 ## Study Design
 - Design: randomized A/B at participant level.
 - Experiment name: `adaptive_alerts_v1`.
@@ -66,6 +76,15 @@
 - Report both:
   - aggregate outcomes
   - per-participant distribution to detect outlier bias.
+
+## Phase-2 Calibration Bridge
+After the first pilot telemetry window:
+- fit interpretable response models for `useful`, `dismiss`, and `prevent`
+- calibrate simulator severity assumptions from real participant outcomes
+- convert learned evidence into conservative production threshold updates
+
+See:
+- `research/parameter_learning_plan_v1.md`
 
 ## Exclusion Rules
 - participants with < 3 active days.
