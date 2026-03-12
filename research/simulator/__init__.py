@@ -9,8 +9,15 @@ def build_comparison(*args, **kwargs):
 
     return _build_comparison(*args, **kwargs)
 
+
+def build_sweep(*args, **kwargs):
+    from .sweep import build_sweep as _build_sweep
+
+    return _build_sweep(*args, **kwargs)
+
 __all__ = [
     "build_comparison",
+    "build_sweep",
     "ParticipantSimulationSummary",
     "PersonaProfile",
     "SimulationConfig",
