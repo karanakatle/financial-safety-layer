@@ -12,13 +12,23 @@ import android.os.Handler
 import android.os.Build
 import android.os.Looper
 import android.provider.Settings
+import androidx.annotation.ColorRes
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 
 object AlertNotifier {
+    data class AlertVisualStyle(
+        @param:ColorRes val scrimColorRes: Int,
+        @param:ColorRes val badgeBgColorRes: Int,
+        @param:ColorRes val badgeTextColorRes: Int,
+        val tagTextRes: Int,
+        val notificationPriority: Int,
+    )
+
     private val mainHandler = Handler(Looper.getMainLooper())
     private val explainabilityMarkers = listOf(
         "\nRisk level:",
@@ -52,11 +62,14 @@ object AlertNotifier {
         title: String,
         body: String,
         alertId: String? = null,
+        severity: String = "medium",
         pauseSeconds: Int = 0,
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
     ) {
         ensureChannel(context)
+        val resolvedSeverity = normalizeSeverity(severity)
+        val style = styleForSeverity(resolvedSeverity)
         val primaryBody = sanitizeBody(
             body = body,
             hasExplainabilitySections = !nextSafeAction.isNullOrBlank() || !essentialGoalImpact.isNullOrBlank(),
@@ -75,6 +88,7 @@ object AlertNotifier {
                     alertId = resolvedAlertId,
                     title = title,
                     message = primaryBody,
+                    severity = resolvedSeverity,
                     pauseSeconds = pauseSeconds,
                     nextSafeAction = nextSafeAction,
                     essentialGoalImpact = essentialGoalImpact,
@@ -88,6 +102,7 @@ object AlertNotifier {
                 putExtra(AlertDisplayActivity.EXTRA_MESSAGE, primaryBody)
                 putExtra(AlertDisplayActivity.EXTRA_ALERT_ID, resolvedAlertId)
                 putExtra(AlertDisplayActivity.EXTRA_PAUSE_SECONDS, pauseSeconds)
+                putExtra(AlertDisplayActivity.EXTRA_SEVERITY, resolvedSeverity)
                 putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
                 putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -123,11 +138,12 @@ object AlertNotifier {
                 .setContentTitle(title)
                 .setContentText(primaryBody)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(primaryBody))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setPriority(style.notificationPriority)
                 .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
                 .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
                 .setContentIntent(fullScreenIntent)
                 .setAutoCancel(true)
+                .setColor(ContextCompat.getColor(context, style.badgeTextColorRes))
                 .build()
 
             NotificationManagerCompat.from(context).notify(id, notification)
@@ -146,5 +162,39 @@ object AlertNotifier {
             }
         }
         return if (minIndex > 0) body.substring(0, minIndex).trim() else body
+    }
+
+    fun normalizeSeverity(severity: String?): String {
+        return when (severity?.trim()?.lowercase()) {
+            "soft" -> "soft"
+            "hard" -> "hard"
+            else -> "medium"
+        }
+    }
+
+    fun styleForSeverity(severity: String): AlertVisualStyle {
+        return when (normalizeSeverity(severity)) {
+            "soft" -> AlertVisualStyle(
+                scrimColorRes = R.color.alert_soft_scrim,
+                badgeBgColorRes = R.color.alert_soft_badge_bg,
+                badgeTextColorRes = R.color.alert_soft_badge_text,
+                tagTextRes = R.string.alert_tag_soft,
+                notificationPriority = NotificationCompat.PRIORITY_DEFAULT,
+            )
+            "hard" -> AlertVisualStyle(
+                scrimColorRes = R.color.alert_hard_scrim,
+                badgeBgColorRes = R.color.alert_hard_badge_bg,
+                badgeTextColorRes = R.color.alert_hard_badge_text,
+                tagTextRes = R.string.alert_tag_hard,
+                notificationPriority = NotificationCompat.PRIORITY_HIGH,
+            )
+            else -> AlertVisualStyle(
+                scrimColorRes = R.color.alert_medium_scrim,
+                badgeBgColorRes = R.color.alert_medium_badge_bg,
+                badgeTextColorRes = R.color.alert_medium_badge_text,
+                tagTextRes = R.string.alert_tag_medium,
+                notificationPriority = NotificationCompat.PRIORITY_HIGH,
+            )
+        }
     }
 }

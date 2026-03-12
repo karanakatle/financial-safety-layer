@@ -1,11 +1,13 @@
 package com.arthamantri.android.notify
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import java.util.UUID
@@ -22,11 +24,13 @@ class AlertDisplayActivity : AppCompatActivity() {
         val message = intent.getStringExtra(EXTRA_MESSAGE)
             ?: getString(R.string.alert_body_default)
         val pauseSeconds = intent.getIntExtra(EXTRA_PAUSE_SECONDS, 0)
+        val severity = intent.getStringExtra(EXTRA_SEVERITY).orEmpty()
         val nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
         val essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
 
         findViewById<TextView>(R.id.alertTitle).text = title
         findViewById<TextView>(R.id.alertMessage).text = message
+        applySeverityStyle(severity)
         bindExplainability(nextSafeAction, essentialGoalImpact)
         val dismissBtn = findViewById<Button>(R.id.dismissBtn)
         val usefulBtn = findViewById<Button>(R.id.usefulBtn)
@@ -152,11 +156,27 @@ class AlertDisplayActivity : AppCompatActivity() {
         }
     }
 
+    private fun applySeverityStyle(severity: String) {
+        val style = AlertNotifier.styleForSeverity(severity)
+        val scrim = findViewById<View>(R.id.alertScrim)
+        val tag = findViewById<TextView>(R.id.alertTag)
+        val title = findViewById<TextView>(R.id.alertTitle)
+        val dismissBtn = findViewById<Button>(R.id.dismissBtn)
+
+        scrim.setBackgroundColor(ContextCompat.getColor(this, style.scrimColorRes))
+        tag.text = getString(style.tagTextRes)
+        tag.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, style.badgeBgColorRes))
+        tag.setTextColor(ContextCompat.getColor(this, style.badgeTextColorRes))
+        title.setTextColor(ContextCompat.getColor(this, style.badgeTextColorRes))
+        dismissBtn.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(this, style.badgeTextColorRes))
+    }
+
     companion object {
         const val EXTRA_TITLE = AppConstants.IntentExtras.ALERT_TITLE
         const val EXTRA_MESSAGE = AppConstants.IntentExtras.ALERT_MESSAGE
         const val EXTRA_ALERT_ID = AppConstants.IntentExtras.ALERT_ID
         const val EXTRA_PAUSE_SECONDS = AppConstants.IntentExtras.ALERT_PAUSE_SECONDS
+        const val EXTRA_SEVERITY = AppConstants.IntentExtras.ALERT_SEVERITY
         const val EXTRA_NEXT_SAFE_ACTION = AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION
         const val EXTRA_ESSENTIAL_GOAL_IMPACT = AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT
     }

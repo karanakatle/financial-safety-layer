@@ -17,6 +17,17 @@
     <color name="btn_secondary_bg">#F2EBF6</color>
     <color name="btn_secondary_text">#4D2A5C</color>
 
+    <color name="alert_soft_badge_bg">#E9F3EC</color>
+    <color name="alert_soft_badge_text">#2E6650</color>
+    <color name="alert_medium_badge_bg">#F5E9D8</color>
+    <color name="alert_medium_badge_text">#8C5A1C</color>
+    <color name="alert_hard_badge_bg">#F5DDE2</color>
+    <color name="alert_hard_badge_text">#8A2544</color>
+
+    <color name="alert_soft_scrim">#6A0F1A1F</color>
+    <color name="alert_medium_scrim">#821F1910</color>
+    <color name="alert_hard_scrim">#9C2E1020</color>
+
     <color name="bg_grad_top">#FBF5F8</color>
     <color name="bg_grad_mid">#F3ECF5</color>
     <color name="bg_grad_bottom">#ECE4EF</color>

@@ -33,6 +33,7 @@ data class LiteracyAlert(
     val risk_score: Double? = null,
     val confidence_score: Double? = null,
     val risk_level: String? = null,
+    val severity: String? = null,
     val tone_selected: String? = null,
     val frequency_bucket: String? = null,
     val pause_seconds: Int? = null,
