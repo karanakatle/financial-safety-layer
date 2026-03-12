@@ -45,6 +45,24 @@ def risk_level_from_score(risk_score: float) -> str:
     return "low"
 
 
+def alert_severity_from_context(
+    *,
+    frequency_bucket: str,
+    risk_level: str,
+    upi_open_flag: bool,
+    pause_seconds: int,
+) -> str:
+    if frequency_bucket == "hard":
+        if risk_level == "critical" or pause_seconds > 0:
+            return "hard"
+        return "medium"
+    if upi_open_flag and risk_level in {"high", "critical"}:
+        return "medium"
+    if risk_level in {"high", "critical"}:
+        return "medium"
+    return "soft"
+
+
 def localized_label(language: str, key: str) -> str:
     return literacy_message(language, f"labels.{key}")
 

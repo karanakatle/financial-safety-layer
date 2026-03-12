@@ -23,6 +23,7 @@ from rule_engine.engine import FinancialAgent
 from backend.voice.factory import get_voice_provider
 from backend.literacy import (
     apply_goal_feedback_learning,
+    alert_severity_from_context,
     build_literacy_monitor,
     clamp,
     compute_contextual_scores,
@@ -317,6 +318,12 @@ def _apply_contextual_alert_intensity(
     contextual_alert["tone_selected"] = features["tone_selected"]
     contextual_alert["frequency_bucket"] = features["frequency_bucket"]
     contextual_alert["pause_seconds"] = features["pause_seconds"]
+    contextual_alert["severity"] = alert_severity_from_context(
+        frequency_bucket=features["frequency_bucket"],
+        risk_level=risk_level,
+        upi_open_flag=upi_open_flag,
+        pause_seconds=int(features["pause_seconds"]),
+    )
     contextual_alert["why_this_alert"] = why_this
     contextual_alert["next_best_action"] = next_action
     contextual_alert["essential_goal_impact"] = goal_impact
@@ -336,9 +343,11 @@ def _apply_contextual_alert_intensity(
     if goal_impact:
         appended_lines.append(f"{localized_label(language, 'goal_impact')}: {goal_impact}")
     contextual_alert["message"] = "\n".join([message, *appended_lines]).strip()
-    contextual_alert["priority"] = (
-        "critical" if features["frequency_bucket"] == "hard" else contextual_alert.get("priority", "high")
-    )
+    contextual_alert["priority"] = {
+        "hard": "critical",
+        "medium": "high",
+        "soft": "default",
+    }.get(contextual_alert["severity"], contextual_alert.get("priority", "high"))
     return contextual_alert
 
 
