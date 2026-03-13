@@ -6,6 +6,7 @@ import android.app.AppOpsManager
 import android.content.res.Configuration
 import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
@@ -15,6 +16,9 @@ import android.os.Build
 import android.provider.Settings.EXTRA_APP_PACKAGE
 import android.provider.Settings
 import android.provider.Settings.Secure
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.BulletSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -109,7 +113,9 @@ class MainActivity : AppCompatActivity() {
         val stopServiceBtn = findViewById<Button>(R.id.stopServiceBtn)
         val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
 
-        accessItemsExpanded = prefs.getBoolean(AppConstants.Prefs.KEY_MANAGE_ACCESS_EXPANDED, false)
+        val shouldRestoreDrawerState = shouldRestoreDrawerStateFromSettings(prefs)
+        accessItemsExpanded = shouldRestoreDrawerState &&
+            prefs.getBoolean(AppConstants.Prefs.KEY_MANAGE_ACCESS_EXPANDED, false)
 
         menuBtn.setOnClickListener {
             drawerLayout.openDrawer(GravityCompat.START)
@@ -203,10 +209,7 @@ class MainActivity : AppCompatActivity() {
         continueOnboardingFlow()
         maybeRestoreHelpDialogAfterLanguageSwitch()
 
-        if (prefs.getBoolean(AppConstants.Prefs.KEY_DRAWER_OPEN, false) ||
-            prefs.getBoolean(AppConstants.Prefs.KEY_RESTORE_DRAWER_ON_RETURN, false)
-        ) {
-            prefs.edit().putBoolean(AppConstants.Prefs.KEY_RESTORE_DRAWER_ON_RETURN, false).apply()
+        if (shouldRestoreDrawerState) {
             drawerLayout.post { drawerLayout.openDrawer(GravityCompat.START) }
         }
     }
@@ -297,7 +300,7 @@ class MainActivity : AppCompatActivity() {
             addView(spinner)
         }
 
-        AlertDialog.Builder(this)
+        val dialog = AlertDialog.Builder(this)
             .setTitle(getString(R.string.dialog_language_title))
             .setMessage(getString(R.string.dialog_language_message))
             .setView(container)
@@ -310,15 +313,26 @@ class MainActivity : AppCompatActivity() {
             .setNegativeButton(if (force) getString(R.string.help_close) else getString(R.string.consent_exit)) { _, _ ->
                 if (!force) finish()
             }
-            .show()
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.show()
     }
 
     private fun showConsentDialog(allowExit: Boolean = true) {
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_consent_title))
-            .setMessage(getString(R.string.dialog_consent_message))
-            .setCancelable(false)
-            .setPositiveButton(getString(R.string.consent_accept)) { _, _ ->
+        val dialog = buildInfoBoxDialog(
+            title = getString(R.string.dialog_consent_title),
+            subtitle = getString(R.string.dialog_consent_subtitle),
+            body = buildBulletedDialogMessage(
+                bullets = listOf(
+                    getString(R.string.dialog_consent_bullet_1),
+                    getString(R.string.dialog_consent_bullet_2),
+                    getString(R.string.dialog_consent_bullet_3),
+                ),
+            ),
+            positiveLabel = getString(R.string.consent_accept),
+            negativeLabel = if (allowExit) getString(R.string.consent_exit) else getString(R.string.help_close),
+            cancelable = false,
+            onPositive = {
                 val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
                 prefs.edit().putBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, true).apply()
                 CoroutineScope(Dispatchers.IO).launch {
@@ -333,11 +347,13 @@ class MainActivity : AppCompatActivity() {
                 }
                 sendAppLog("info", "consent_accepted")
                 continueOnboardingFlow()
+            },
+            onNegative = { dialogInterface ->
+                if (allowExit) finish() else dialogInterface.dismiss()
             }
-            .setNegativeButton(if (allowExit) getString(R.string.consent_exit) else getString(R.string.help_close)) { dialog, _ ->
-                if (allowExit) finish() else dialog.dismiss()
-            }
-            .show()
+        )
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
     }
 
     private fun showMoneySetupDialog() {
@@ -384,6 +400,7 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.money_setup_save_continue), null)
             .setNegativeButton(getString(R.string.money_setup_skip), null)
             .create()
+        dialog.setCanceledOnTouchOutside(false)
 
         dialog.setOnShowListener {
             val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -540,6 +557,28 @@ class MainActivity : AppCompatActivity() {
         return runtimeGranted && NotificationManagerCompat.from(this).areNotificationsEnabled()
     }
 
+    private fun hasIncompleteAccessSetup(): Boolean {
+        return !hasSmsRuntimePermissions() ||
+            !hasAppNotificationsEnabled() ||
+            !hasUsageStatsPermission() ||
+            !Settings.canDrawOverlays(this) ||
+            !hasNotificationListenerPermission()
+    }
+
+    private fun shouldRestoreDrawerStateFromSettings(prefs: SharedPreferences): Boolean {
+        val requested = prefs.getBoolean(AppConstants.Prefs.KEY_RESTORE_DRAWER_ON_RETURN, false)
+        val shouldRestore = requested && hasIncompleteAccessSetup()
+        prefs.edit()
+            .putBoolean(AppConstants.Prefs.KEY_RESTORE_DRAWER_ON_RETURN, false)
+            .putBoolean(AppConstants.Prefs.KEY_DRAWER_OPEN, false)
+            .putBoolean(
+                AppConstants.Prefs.KEY_MANAGE_ACCESS_EXPANDED,
+                if (shouldRestore) prefs.getBoolean(AppConstants.Prefs.KEY_MANAGE_ACCESS_EXPANDED, false) else false,
+            )
+            .apply()
+        return shouldRestore
+    }
+
     private fun persistMoneySetup(
         cohort: String,
         goals: List<String>,
@@ -648,11 +687,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showPermissionSetupDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_perm_title))
-            .setMessage(getString(R.string.dialog_perm_message))
-            .setCancelable(false)
-            .setPositiveButton(getString(R.string.perm_continue)) { _, _ ->
+        val dialog = buildInfoBoxDialog(
+            title = getString(R.string.dialog_perm_title),
+            subtitle = getString(R.string.dialog_perm_subtitle),
+            body = buildBulletedDialogMessage(
+                intro = getString(R.string.dialog_perm_intro),
+                bullets = listOf(
+                    getString(R.string.dialog_perm_bullet_sms),
+                    getString(R.string.dialog_perm_bullet_usage),
+                    getString(R.string.dialog_perm_bullet_overlay),
+                ),
+                outro = getString(R.string.dialog_perm_followup),
+            ),
+            positiveLabel = getString(R.string.perm_continue),
+            negativeLabel = null,
+            cancelable = false,
+            onPositive = {
                 requestRuntimePermissions()
                 openUsageSettings()
                 openOverlaySettings()
@@ -662,8 +712,107 @@ class MainActivity : AppCompatActivity() {
                 sendAppLog("info", "permission_onboarding_prompted")
 
                 startMonitoringWithChecks()
+            },
+        )
+        dialog.show()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    }
+
+    private fun buildBulletedDialogMessage(
+        bullets: List<String>,
+        intro: String? = null,
+        outro: String? = null,
+    ): CharSequence {
+        val builder = SpannableStringBuilder()
+        val bulletGapPx = (resources.displayMetrics.density * 12).toInt()
+
+        if (!intro.isNullOrBlank()) {
+            builder.append(intro.trim())
+            if (bullets.any { it.isNotBlank() }) {
+                builder.append("\n\n")
             }
-            .show()
+        }
+
+        bullets.filter { it.isNotBlank() }.forEachIndexed { index, bullet ->
+            if (index > 0) {
+                builder.append('\n')
+            }
+            val start = builder.length
+            builder.append(bullet.trim())
+            builder.setSpan(
+                BulletSpan(bulletGapPx),
+                start,
+                builder.length,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE,
+            )
+        }
+
+        if (!outro.isNullOrBlank()) {
+            if (builder.isNotEmpty()) {
+                builder.append("\n\n")
+            }
+            builder.append(outro.trim())
+        }
+        return builder
+    }
+
+    private fun buildInfoBoxDialog(
+        title: String,
+        subtitle: String?,
+        body: CharSequence,
+        positiveLabel: String,
+        negativeLabel: String?,
+        cancelable: Boolean,
+        onPositive: () -> Unit,
+        onNegative: ((AlertDialog) -> Unit)? = null,
+    ): AlertDialog {
+        val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_info_box, null)
+        val titleView = contentView.findViewById<TextView>(R.id.infoDialogTitle)
+        val subtitleView = contentView.findViewById<TextView>(R.id.infoDialogSubtitle)
+        val bodyView = contentView.findViewById<TextView>(R.id.infoDialogBody)
+        val actionsView = contentView.findViewById<LinearLayout>(R.id.infoDialogActions)
+        val negativeButton = contentView.findViewById<Button>(R.id.infoDialogNegativeButton)
+        val positiveButton = contentView.findViewById<Button>(R.id.infoDialogPositiveButton)
+
+        titleView.text = title
+        if (subtitle.isNullOrBlank()) {
+            subtitleView.visibility = View.GONE
+        } else {
+            subtitleView.visibility = View.VISIBLE
+            subtitleView.text = subtitle
+        }
+        bodyView.text = body
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(contentView)
+            .setCancelable(cancelable)
+            .create()
+        dialog.setCanceledOnTouchOutside(cancelable)
+
+        if (negativeLabel.isNullOrBlank()) {
+            negativeButton.visibility = View.GONE
+        } else {
+            negativeButton.visibility = View.VISIBLE
+            negativeButton.text = negativeLabel
+        }
+        positiveButton.text = positiveLabel
+
+        if (negativeButton.visibility == View.GONE) {
+            actionsView.gravity = android.view.Gravity.END
+        }
+
+        negativeButton.setOnClickListener {
+            if (onNegative != null) {
+                onNegative(dialog)
+            } else {
+                dialog.dismiss()
+            }
+        }
+        positiveButton.setOnClickListener {
+            dialog.dismiss()
+            onPositive()
+        }
+        return dialog
     }
 
     private fun requestRuntimePermissions() {
@@ -844,6 +993,9 @@ class MainActivity : AppCompatActivity() {
         if (markSelected) {
             editor.putBoolean(AppConstants.Prefs.KEY_LANGUAGE_SELECTED, true)
         }
+        // A locale switch should not inherit drawer-open restoration from earlier navigation state.
+        editor.putBoolean(AppConstants.Prefs.KEY_DRAWER_OPEN, false)
+        editor.putBoolean(AppConstants.Prefs.KEY_RESTORE_DRAWER_ON_RETURN, false)
         editor.putBoolean(AppConstants.Prefs.KEY_REOPEN_HELP_AFTER_LOCALE_SWITCH, reopenHelpAfterSwitch)
         editor.apply()
 

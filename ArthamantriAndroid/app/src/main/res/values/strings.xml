@@ -47,9 +47,13 @@
     <string name="lang_hindi">Hindi</string>
 
     <string name="dialog_consent_title">Research Pilot Consent</string>
+    <string name="dialog_consent_subtitle">Review these points before continuing with pilot monitoring.</string>
     <string name="dialog_consent_message">• Arthamantri is a research prototype.
 • This is not investment advice.
 • By continuing, you consent to monitoring and pilot data collection.</string>
+    <string name="dialog_consent_bullet_1">Arthamantri is a research prototype.</string>
+    <string name="dialog_consent_bullet_2">This is not investment advice.</string>
+    <string name="dialog_consent_bullet_3">By continuing, you consent to monitoring and pilot data collection.</string>
     <string name="consent_accept">I Agree</string>
     <string name="consent_exit">Exit</string>
 
@@ -94,12 +98,18 @@
     <string name="facilitator_status_monitoring_ready">Ready to monitor: %1$s</string>
 
     <string name="dialog_perm_title">Permission Setup</string>
+    <string name="dialog_perm_subtitle">Complete the required access steps so monitoring works reliably.</string>
     <string name="dialog_perm_message">To use the app, allow these permissions:
 • SMS
 • Usage Access
 • Overlay access
 
 Follow the system prompts to complete setup.</string>
+    <string name="dialog_perm_intro">To use the app, allow these permissions:</string>
+    <string name="dialog_perm_bullet_sms">SMS</string>
+    <string name="dialog_perm_bullet_usage">Usage Access</string>
+    <string name="dialog_perm_bullet_overlay">Overlay access</string>
+    <string name="dialog_perm_followup">Follow the system prompts to complete setup.</string>
     <string name="perm_continue">Continue</string>
 
     <string name="help_title">Help &amp; Setup</string>
