@@ -31,6 +31,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.Insets
 import androidx.core.view.GravityCompat
@@ -495,7 +496,7 @@ class MainActivity : AppCompatActivity() {
         val smsRuntimeDone = hasSmsRuntimePermissions()
         val usageDone = hasUsageStatsPermission()
         val overlayDone = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(this) else true
-        val notificationDone = hasNotificationListenerPermission()
+        val notificationDone = hasAppNotificationsEnabled()
         val monitoringReady = smsRuntimeDone && usageDone && overlayDone
 
         languageStatus.text = facilitatorStatusText(languageDone)
@@ -528,6 +529,15 @@ class MainActivity : AppCompatActivity() {
             true
         }
         return smsReceive && smsRead && notifications
+    }
+
+    private fun hasAppNotificationsEnabled(): Boolean {
+        val runtimeGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+        return runtimeGranted && NotificationManagerCompat.from(this).areNotificationsEnabled()
     }
 
     private fun persistMoneySetup(
