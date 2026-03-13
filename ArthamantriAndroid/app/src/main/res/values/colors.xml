@@ -14,8 +14,10 @@
     <color name="badge_text">#4B2359</color>
 
     <color name="btn_primary_text">#FFFFFF</color>
+    <color name="btn_primary_ripple">#33FFFFFF</color>
     <color name="btn_secondary_bg">#F2EBF6</color>
     <color name="btn_secondary_text">#4D2A5C</color>
+    <color name="btn_secondary_ripple">#1F5A2E68</color>
     <color name="btn_facilitator_bg">#FFFFFF</color>
     <color name="btn_facilitator_ripple">#1F5A2E68</color>
 

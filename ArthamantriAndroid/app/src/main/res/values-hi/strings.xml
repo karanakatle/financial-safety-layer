@@ -47,9 +47,13 @@
     <string name="lang_hindi">हिंदी</string>
 
     <string name="dialog_consent_title">शोध पायलट सहमति</string>
+    <string name="dialog_consent_subtitle">पायलट निगरानी जारी रखने से पहले इन बिंदुओं को पढ़ लें।</string>
     <string name="dialog_consent_message">• अर्थमंत्री एक शोध प्रोटोटाइप है।
 • यह निवेश सलाह नहीं है।
 • आगे बढ़कर आप निगरानी और पायलट डेटा संग्रह के लिए सहमति देते हैं।</string>
+    <string name="dialog_consent_bullet_1">अर्थमंत्री एक शोध प्रोटोटाइप है।</string>
+    <string name="dialog_consent_bullet_2">यह निवेश सलाह नहीं है।</string>
+    <string name="dialog_consent_bullet_3">आगे बढ़कर आप निगरानी और पायलट डेटा संग्रह के लिए सहमति देते हैं।</string>
     <string name="consent_accept">मैं सहमत हूं</string>
     <string name="consent_exit">बंद करें</string>
 
@@ -94,12 +98,18 @@
     <string name="facilitator_status_monitoring_ready">निगरानी के लिए तैयार: %1$s</string>
 
     <string name="dialog_perm_title">अनुमति सेटअप</string>
+    <string name="dialog_perm_subtitle">निगरानी सही तरह चले, इसके लिए जरूरी अनुमतियां पूरी करें।</string>
     <string name="dialog_perm_message">ऐप उपयोग के लिए ये अनुमतियां दें:
 • SMS
 • उपयोग-अनुमति
 • ओवरले अनुमति
 
 सेटअप पूरा करने के लिए सिस्टम निर्देशों का पालन करें।</string>
+    <string name="dialog_perm_intro">ऐप उपयोग के लिए ये अनुमतियां दें:</string>
+    <string name="dialog_perm_bullet_sms">SMS</string>
+    <string name="dialog_perm_bullet_usage">उपयोग-अनुमति</string>
+    <string name="dialog_perm_bullet_overlay">ओवरले अनुमति</string>
+    <string name="dialog_perm_followup">सेटअप पूरा करने के लिए सिस्टम निर्देशों का पालन करें।</string>
     <string name="perm_continue">जारी रखें</string>
 
     <string name="help_title">सहायता और प्रारंभिक मार्गदर्शन</string>

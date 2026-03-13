@@ -3,49 +3,53 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/nav_manage_access"
+        android:visible="false"
         app:actionLayout="@layout/nav_manage_access_toggle"
         android:icon="@android:drawable/ic_menu_manage"
-        android:orderInCategory="10"
+        android:orderInCategory="1"
         app:showAsAction="always"
         android:title="@string/menu_manage_access_expanded" />
     <item
         android:id="@+id/nav_access_notifications"
+        android:visible="false"
         android:icon="@drawable/ic_indented_notification"
-        android:orderInCategory="11"
+        android:orderInCategory="2"
         android:title="@string/menu_access_notifications" />
     <item
         android:id="@+id/nav_access_usage"
+        android:visible="false"
         android:icon="@drawable/ic_indented_usage"
-        android:orderInCategory="12"
+        android:orderInCategory="3"
         android:title="@string/menu_access_usage" />
     <item
         android:id="@+id/nav_access_overlay"
+        android:visible="false"
         android:icon="@drawable/ic_indented_overlay"
-        android:orderInCategory="13"
+        android:orderInCategory="4"
         android:title="@string/menu_access_overlay" />
     <item
         android:id="@+id/nav_feedback"
         android:icon="@android:drawable/ic_menu_edit"
-        android:orderInCategory="20"
+        android:orderInCategory="10"
         android:title="@string/menu_feedback" />
     <item
         android:id="@+id/nav_money_setup"
         android:icon="@android:drawable/ic_menu_myplaces"
-        android:orderInCategory="25"
+        android:orderInCategory="15"
         android:title="@string/menu_money_setup" />
     <item
         android:id="@+id/nav_facilitator_pack"
         android:icon="@android:drawable/ic_menu_agenda"
-        android:orderInCategory="27"
+        android:orderInCategory="20"
         android:title="@string/menu_facilitator_pack" />
     <item
         android:id="@+id/nav_help"
         android:icon="@android:drawable/ic_menu_help"
-        android:orderInCategory="30"
+        android:orderInCategory="25"
         android:title="@string/menu_help" />
     <item
         android:id="@+id/nav_privacy_policy"
         android:icon="@android:drawable/ic_menu_info_details"
-        android:orderInCategory="40"
+        android:orderInCategory="30"
         android:title="@string/menu_privacy_policy" />
 </menu>
