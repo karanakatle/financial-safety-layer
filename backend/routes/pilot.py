@@ -14,12 +14,12 @@ from backend.api_models import (
     PilotGrievanceIn,
     PilotGrievanceStatusIn,
 )
+from backend.literacy.messages import literacy_message
 
 
 def build_pilot_router(
     *,
     pilot_storage,
-    pilot_disclaimer: str,
     resolve_experiment_variant: Callable[[str, str], str],
 ) -> APIRouter:
     router = APIRouter()
@@ -29,7 +29,8 @@ def build_pilot_router(
         return {"status": "ok"}
 
     @router.get("/api/pilot/meta")
-    def pilot_meta() -> dict:
+    def pilot_meta(language: Optional[str] = None) -> dict:
+        normalized_language = "hi" if (language or "").strip().lower().startswith("hi") else "en"
         return {
             "pilot_mode": True,
             "target_cohort_size": 60,
@@ -39,7 +40,7 @@ def build_pilot_router(
                 "fraud_prevention",
                 "essential_goal_savings_behavior",
             ],
-            "disclaimer": pilot_disclaimer,
+            "disclaimer": literacy_message(normalized_language, "pilot_disclaimer"),
             "alert_policy": {
                 "income": "informational_only",
                 "overspending": "stage1_near_threshold_once",

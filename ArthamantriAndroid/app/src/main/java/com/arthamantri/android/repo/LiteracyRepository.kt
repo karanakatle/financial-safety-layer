@@ -72,7 +72,7 @@ object LiteracyRepository {
     }
 
     suspend fun pilotMeta(context: Context): PilotMetaResponse {
-        return ApiClient.literacyApi(context).pilotMeta()
+        return ApiClient.literacyApi(context).pilotMeta(resolveLanguage(context))
     }
 
     suspend fun submitPilotConsent(
