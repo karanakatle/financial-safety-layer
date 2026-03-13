@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 
 def _client_with_temp_db(tmp_path, monkeypatch) -> TestClient:
     monkeypatch.setenv("PILOT_DB_PATH", str(tmp_path / "pilot_research.db"))
+    monkeypatch.setenv("VOICE_PROVIDER", "bhashini")
     if "backend.main" in sys.modules:
         del sys.modules["backend.main"]
     module = importlib.import_module("backend.main")
@@ -235,6 +236,7 @@ def test_storage_health_reports_absolute_db_path(tmp_path, monkeypatch):
 
 def test_cors_origins_can_be_configured(tmp_path, monkeypatch):
     monkeypatch.setenv("PILOT_DB_PATH", str(tmp_path / "pilot_research.db"))
+    monkeypatch.setenv("VOICE_PROVIDER", "bhashini")
     monkeypatch.setenv("CORS_ALLOWED_ORIGINS", "https://app.example.com, https://research.example.com")
     if "backend.main" in sys.modules:
         del sys.modules["backend.main"]
