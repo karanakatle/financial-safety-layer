@@ -41,7 +41,6 @@ from backend.literacy import (
     risk_level_from_score,
     why_text,
 )
-from backend.literacy.messages import DEFAULT_PILOT_DISCLAIMER
 from backend.pilot import PilotStorage
 from backend.config import load_literacy_policy
 from backend.nlp.pipeline import process_text
@@ -57,8 +56,6 @@ LITERACY_POLICY = load_literacy_policy()
 
 voice = get_voice_provider()
 pilot_storage = PilotStorage(os.getenv("PILOT_DB_PATH", "data/pilot_research.db"))
-
-PILOT_DISCLAIMER = DEFAULT_PILOT_DISCLAIMER
 
 SUPPORTED_COHORTS = {"women_led_household", "daily_cashflow_worker"}
 SUPPORTED_ESSENTIAL_GOALS = {
@@ -354,7 +351,6 @@ def _apply_contextual_alert_intensity(
 app.include_router(
     build_pilot_router(
         pilot_storage=pilot_storage,
-        pilot_disclaimer=PILOT_DISCLAIMER,
         resolve_experiment_variant=lambda participant_id, experiment_name: resolve_experiment_variant(
             participant_id=participant_id,
             experiment_name=experiment_name,

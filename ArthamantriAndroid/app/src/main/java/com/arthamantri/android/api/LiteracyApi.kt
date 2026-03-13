@@ -34,7 +34,7 @@ interface LiteracyApi {
     suspend fun status(@Query("participant_id") participantId: String): LiteracyState
 
     @GET("api/pilot/meta")
-    suspend fun pilotMeta(): PilotMetaResponse
+    suspend fun pilotMeta(@Query("language") language: String): PilotMetaResponse
 
     @POST("api/pilot/consent")
     suspend fun pilotConsent(@Body body: PilotConsentRequest): PilotConsentResponse

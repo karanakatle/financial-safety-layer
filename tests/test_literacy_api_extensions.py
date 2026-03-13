@@ -36,6 +36,18 @@ def test_essential_goals_upsert_and_get(tmp_path, monkeypatch):
     assert read_json["envelope"]["reserve_ratio"] > 0
 
 
+def test_pilot_meta_localizes_disclaimer(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    english = client.get("/api/pilot/meta", params={"language": "en"})
+    hindi = client.get("/api/pilot/meta", params={"language": "hi"})
+
+    assert english.status_code == 200
+    assert hindi.status_code == 200
+    assert "research prototype" in english.json()["disclaimer"]
+    assert "शोध प्रोटोटाइप" in hindi.json()["disclaimer"]
+
+
 def test_sms_ingest_returns_explainability_fields(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 
@@ -68,6 +80,28 @@ def test_sms_ingest_returns_explainability_fields(tmp_path, monkeypatch):
     assert alert["severity"] in {"soft", "medium", "hard"}
     assert isinstance(alert.get("why_this_alert"), str) and alert["why_this_alert"]
     assert isinstance(alert.get("next_best_action"), str) and alert["next_best_action"]
+
+
+def test_sms_ingest_localizes_hindi_alert_message(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "p2_hi",
+            "language": "hi",
+            "amount": 6000,
+            "category": "upi",
+            "note": "test",
+        },
+    )
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["literacy_alerts"]
+    alert = payload["literacy_alerts"][0]
+    assert "दैनिक सुरक्षित" in alert["message"]
+    assert "जोखिम स्तर" in alert["message"]
+    assert "अगला सुरक्षित कदम" in alert["message"]
 
 
 def test_goal_confidence_gate_keeps_low_confidence_unknown(tmp_path, monkeypatch):

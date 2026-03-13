@@ -16,6 +16,8 @@
     <color name="btn_primary_text">#FFFFFF</color>
     <color name="btn_secondary_bg">#F2EBF6</color>
     <color name="btn_secondary_text">#4D2A5C</color>
+    <color name="btn_facilitator_bg">#FFFFFF</color>
+    <color name="btn_facilitator_ripple">#1F5A2E68</color>
 
     <color name="alert_soft_badge_bg">#E9F3EC</color>
     <color name="alert_soft_badge_text">#2E6650</color>
