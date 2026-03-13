@@ -70,8 +70,13 @@ Synthetic comparison entrypoint:
 ## Run locally
 ```bash
 python -m venv .venv
+./.venv/bin/python -m pip install -r requirements.txt
+./.venv/bin/python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+```
+Optional shell activation:
+```bash
 source .venv/bin/activate
-pip install -r requirements.txt
+pytest -q
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
 ```
 Then open http://localhost:8000.
@@ -79,11 +84,11 @@ Then open http://localhost:8000.
 ## How to test it
 ### 1) Unit tests (fastest)
 ```bash
-pytest -q
+./.venv/bin/python -m pytest -q
 ```
 
 ### 2) Manual UI test
-1. Start server with `uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000`.
+1. Start server with `./.venv/bin/python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000`.
 2. Open `http://localhost:8000`.
 3. Add an `expense` event and verify:
    - balance updates
@@ -113,7 +118,7 @@ This repo now includes a web app manifest + service worker so the app can be ins
    ```
    If you prefer manual startup:
    ```bash
-   uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+   ./.venv/bin/python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
    ```
 2. Find your laptop LAN IP and open `http://<LAN_IP>:8000` from Android Chrome on the same Wi-Fi.
    - Example: `http://192.168.1.54:8000`
