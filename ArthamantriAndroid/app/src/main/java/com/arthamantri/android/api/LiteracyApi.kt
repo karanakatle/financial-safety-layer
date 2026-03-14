@@ -16,6 +16,8 @@ import com.arthamantri.android.model.ExperimentAssignmentRequest
 import com.arthamantri.android.model.ExperimentAssignmentResponse
 import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.SmsIngestResponse
+import com.arthamantri.android.model.UpiRequestInspectRequest
+import com.arthamantri.android.model.UpiRequestInspectResponse
 import com.arthamantri.android.model.UpiOpenRequest
 import com.arthamantri.android.model.UpiOpenResponse
 import retrofit2.http.Body
@@ -29,6 +31,9 @@ interface LiteracyApi {
 
     @POST("api/literacy/upi-open")
     suspend fun upiOpen(@Body body: UpiOpenRequest): UpiOpenResponse
+
+    @POST("api/literacy/upi-request-inspect")
+    suspend fun upiRequestInspect(@Body body: UpiRequestInspectRequest): UpiRequestInspectResponse
 
     @GET("api/literacy/status")
     suspend fun status(@Query("participant_id") participantId: String): LiteracyState

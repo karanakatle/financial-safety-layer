@@ -22,8 +22,7 @@ object SmsParser {
             return null
         }
 
-        val normalizedAmount = extractAmount(message) ?: return null
-        val amount = normalizedAmount.toDoubleOrNull() ?: return null
+        val amount = extractAmountValue(message) ?: return null
 
         val category = when {
             body.contains("upi") -> AppConstants.Domain.CATEGORY_UPI
@@ -39,7 +38,7 @@ object SmsParser {
         )
     }
 
-    private fun extractAmount(message: String): String? {
+    fun extractAmountValue(message: String): Double? {
         for (regex in amountRegexes) {
             val value = regex.find(message)
                 ?.groupValues
@@ -47,7 +46,7 @@ object SmsParser {
                 ?.replace(",", "")
                 ?.trim()
             if (!value.isNullOrEmpty()) {
-                return value
+                return value.toDoubleOrNull()
             }
         }
         return null

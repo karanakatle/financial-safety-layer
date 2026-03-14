@@ -338,39 +338,39 @@ class MainActivity : AppCompatActivity() {
         val options = languageOptions.map { it.displayName }
         val selectedCode = currentLangCode()
         val selectedIndex = languageOptions.indexOfFirst { it.code == selectedCode }.takeIf { it >= 0 } ?: 0
-        val spinner = Spinner(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            )
-            adapter = ArrayAdapter(
-                this@MainActivity,
-                android.R.layout.simple_spinner_item,
-                options,
-            ).also { a -> a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
-            setSelection(selectedIndex)
-        }
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(48, 8, 48, 0)
-            addView(spinner)
-        }
+        val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_language_selection, null)
+        val spinner = contentView.findViewById<Spinner>(R.id.languageDialogSpinner)
+        val primaryButton = contentView.findViewById<Button>(R.id.languageDialogPrimaryButton)
+        val secondaryButton = contentView.findViewById<Button>(R.id.languageDialogSecondaryButton)
+
+        spinner.adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            options,
+        ).also { a -> a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        spinner.setSelection(selectedIndex)
+        secondaryButton.text = if (force) getString(R.string.help_close) else getString(R.string.consent_exit)
+        primaryButton.setTextColor(ContextCompat.getColor(this, R.color.btn_primary_text))
+        secondaryButton.setTextColor(ContextCompat.getColor(this, R.color.btn_secondary_text))
+        primaryButton.backgroundTintList = null
+        secondaryButton.backgroundTintList = null
 
         val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_language_title))
-            .setMessage(getString(R.string.dialog_language_message))
-            .setView(container)
+            .setView(contentView)
             .setCancelable(false)
-            .setPositiveButton(getString(R.string.perm_continue)) { _, _ ->
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setOnShowListener {
+            primaryButton.setOnClickListener {
                 val langCode = languageOptions.getOrNull(spinner.selectedItemPosition)?.code
                     ?: AppConstants.Locale.DEFAULT_LANGUAGE
                 applyLanguage(langCode, markSelected = true)
             }
-            .setNegativeButton(if (force) getString(R.string.help_close) else getString(R.string.consent_exit)) { _, _ ->
+            secondaryButton.setOnClickListener {
+                dialog.dismiss()
                 if (!force) finish()
             }
-            .create()
-        dialog.setCanceledOnTouchOutside(false)
+        }
         showManagedFlowDialog(dialog, transparentBackground = false)
     }
 
@@ -378,6 +378,7 @@ class MainActivity : AppCompatActivity() {
         val dialog = buildInfoBoxDialog(
             title = getString(R.string.dialog_consent_title),
             subtitle = getString(R.string.dialog_consent_subtitle),
+            guidedStep = 2,
             body = buildBulletedDialogMessage(
                 bullets = listOf(
                     getString(R.string.dialog_consent_bullet_1),
@@ -423,6 +424,7 @@ class MainActivity : AppCompatActivity() {
         val dialog = buildInfoBoxDialog(
             title = getString(R.string.dialog_purpose_title),
             subtitle = getString(R.string.dialog_purpose_subtitle),
+            guidedStep = 2,
             body = buildBulletedDialogMessage(
                 bullets = listOf(
                     getString(R.string.dialog_purpose_bullet_1),
@@ -530,6 +532,9 @@ class MainActivity : AppCompatActivity() {
         val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_facilitator_pack, null)
         val readinessStatus = contentView.findViewById<TextView>(R.id.facilitatorReadinessStatus)
         val nextActionValue = contentView.findViewById<TextView>(R.id.facilitatorNextActionValue)
+        val languagePill = contentView.findViewById<TextView>(R.id.facilitatorLanguagePill)
+        val consentPill = contentView.findViewById<TextView>(R.id.facilitatorConsentPill)
+        val permissionsPill = contentView.findViewById<TextView>(R.id.facilitatorPermissionsPill)
         val languageStatus = contentView.findViewById<TextView>(R.id.facilitatorStepLanguageStatus)
         val consentStatus = contentView.findViewById<TextView>(R.id.facilitatorStepConsentStatus)
         val permissionsStatus = contentView.findViewById<TextView>(R.id.facilitatorStepPermissionsStatus)
@@ -551,6 +556,9 @@ class MainActivity : AppCompatActivity() {
             refreshFacilitatorStatus(
                 readinessStatus = readinessStatus,
                 nextActionValue = nextActionValue,
+                languagePill = languagePill,
+                consentPill = consentPill,
+                permissionsPill = permissionsPill,
                 languageStatus = languageStatus,
                 consentStatus = consentStatus,
                 permissionsStatus = permissionsStatus,
@@ -605,6 +613,9 @@ class MainActivity : AppCompatActivity() {
     private fun refreshFacilitatorStatus(
         readinessStatus: TextView,
         nextActionValue: TextView,
+        languagePill: TextView,
+        consentPill: TextView,
+        permissionsPill: TextView,
         languageStatus: TextView,
         consentStatus: TextView,
         permissionsStatus: TextView,
@@ -617,12 +628,32 @@ class MainActivity : AppCompatActivity() {
         startMonitoringButton: Button,
     ) {
         val snapshot = facilitatorStatusSnapshot()
+        val languageProgress = if (snapshot.languageSelected) {
+            FacilitatorStepProgress.COMPLETE
+        } else {
+            FacilitatorStepProgress.PENDING
+        }
+        val consentProgress = when {
+            snapshot.consentAccepted -> FacilitatorStepProgress.COMPLETE
+            snapshot.onboardingStep == OnboardingStep.PURPOSE_AND_CONSENT -> FacilitatorStepProgress.PENDING
+            else -> FacilitatorStepProgress.BLOCKED
+        }
+        val permissionsProgress = when {
+            snapshot.permissionState.isComplete() -> FacilitatorStepProgress.COMPLETE
+            snapshot.onboardingStep == OnboardingStep.PERMISSIONS && snapshot.permissionState.completedCount() > 0 ->
+                FacilitatorStepProgress.IN_PROGRESS
+            snapshot.onboardingStep == OnboardingStep.PERMISSIONS -> FacilitatorStepProgress.PENDING
+            else -> FacilitatorStepProgress.BLOCKED
+        }
 
         readinessStatus.text = facilitatorReadinessText(snapshot)
         nextActionValue.text = facilitatorNextActionText(snapshot)
+        applyFacilitatorPill(languagePill, getString(R.string.facilitator_pill_language), languageProgress)
+        applyFacilitatorPill(consentPill, getString(R.string.facilitator_pill_consent), consentProgress)
+        applyFacilitatorPill(permissionsPill, getString(R.string.facilitator_pill_permissions), permissionsProgress)
 
         languageStatus.text = facilitatorStepStatusText(
-            progress = if (snapshot.languageSelected) FacilitatorStepProgress.COMPLETE else FacilitatorStepProgress.PENDING,
+            progress = languageProgress,
             detail = if (snapshot.languageSelected) {
                 getString(R.string.facilitator_detail_language_done)
             } else {
@@ -630,12 +661,7 @@ class MainActivity : AppCompatActivity() {
             },
         )
         consentStatus.text = facilitatorStepStatusText(
-            progress = when {
-                snapshot.consentAccepted -> FacilitatorStepProgress.COMPLETE
-                snapshot.onboardingStep == OnboardingStep.PURPOSE_AND_CONSENT -> FacilitatorStepProgress.PENDING
-                !snapshot.languageSelected -> FacilitatorStepProgress.BLOCKED
-                else -> FacilitatorStepProgress.BLOCKED
-            },
+            progress = consentProgress,
             detail = when {
                 snapshot.consentAccepted -> getString(R.string.facilitator_detail_consent_done)
                 snapshot.onboardingStep == OnboardingStep.PURPOSE_AND_CONSENT -> getString(R.string.facilitator_detail_consent_pending)
@@ -739,6 +765,34 @@ class MainActivity : AppCompatActivity() {
             else -> FacilitatorStepProgress.BLOCKED
         }
         return facilitatorStepStatusText(progress, detail) + "\n" + summary
+    }
+
+    private fun applyFacilitatorPill(view: TextView, label: String, progress: FacilitatorStepProgress) {
+        val (statusTextRes, backgroundRes, textColorRes) = when (progress) {
+            FacilitatorStepProgress.COMPLETE -> Triple(
+                R.string.facilitator_pill_done,
+                R.drawable.bg_status_pill_done,
+                R.color.color_semantic_safe_text,
+            )
+            FacilitatorStepProgress.IN_PROGRESS -> Triple(
+                R.string.facilitator_pill_in_progress,
+                R.drawable.bg_status_pill_pending,
+                R.color.color_semantic_warning_text,
+            )
+            FacilitatorStepProgress.PENDING -> Triple(
+                R.string.facilitator_pill_pending,
+                R.drawable.bg_status_pill_pending,
+                R.color.color_semantic_warning_text,
+            )
+            FacilitatorStepProgress.BLOCKED -> Triple(
+                R.string.facilitator_pill_blocked,
+                R.drawable.bg_status_pill_blocked,
+                R.color.color_semantic_high_risk_text,
+            )
+        }
+        view.text = getString(R.string.facilitator_pill_format, label, getString(statusTextRes))
+        view.setBackgroundResource(backgroundRes)
+        view.setTextColor(ContextCompat.getColor(this, textColorRes))
     }
 
     private fun facilitatorMonitoringStatusText(snapshot: FacilitatorStatusSnapshot): String {
@@ -975,6 +1029,7 @@ class MainActivity : AppCompatActivity() {
             val dialog = buildInfoBoxDialog(
                 title = getString(R.string.dialog_perm_complete_title),
                 subtitle = getString(R.string.dialog_perm_complete_subtitle),
+                guidedStep = 4,
                 body = buildBulletedDialogMessage(
                     bullets = listOf(
                         getString(R.string.dialog_perm_complete_bullet_1),
@@ -1014,6 +1069,7 @@ class MainActivity : AppCompatActivity() {
                     state.totalCount(),
                 )
             },
+            guidedStep = 3,
             body = buildBulletedDialogMessage(
                 bullets = listOf(
                     getString(R.string.dialog_perm_bullet_helps, permissionStepHelpText(step)),
@@ -1180,6 +1236,7 @@ class MainActivity : AppCompatActivity() {
     private fun buildInfoBoxDialog(
         title: String,
         subtitle: String?,
+        guidedStep: Int? = null,
         body: CharSequence,
         positiveLabel: String,
         negativeLabel: String?,
@@ -1190,6 +1247,21 @@ class MainActivity : AppCompatActivity() {
         val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_info_box, null)
         val titleView = contentView.findViewById<TextView>(R.id.infoDialogTitle)
         val subtitleView = contentView.findViewById<TextView>(R.id.infoDialogSubtitle)
+        val stepCard = contentView.findViewById<LinearLayout>(R.id.infoDialogStepCard)
+        val stepTitleView = contentView.findViewById<TextView>(R.id.infoDialogStepTitle)
+        val stepSubtitleView = contentView.findViewById<TextView>(R.id.infoDialogStepSubtitle)
+        val stepNumViews = listOf(
+            contentView.findViewById<TextView>(R.id.infoDialogStepOneNum),
+            contentView.findViewById<TextView>(R.id.infoDialogStepTwoNum),
+            contentView.findViewById<TextView>(R.id.infoDialogStepThreeNum),
+            contentView.findViewById<TextView>(R.id.infoDialogStepFourNum),
+        )
+        val stepTextViews = listOf(
+            contentView.findViewById<TextView>(R.id.infoDialogStepOneText),
+            contentView.findViewById<TextView>(R.id.infoDialogStepTwoText),
+            contentView.findViewById<TextView>(R.id.infoDialogStepThreeText),
+            contentView.findViewById<TextView>(R.id.infoDialogStepFourText),
+        )
         val bodyView = contentView.findViewById<TextView>(R.id.infoDialogBody)
         val actionsView = contentView.findViewById<LinearLayout>(R.id.infoDialogActions)
         val negativeButton = contentView.findViewById<Button>(R.id.infoDialogNegativeButton)
@@ -1202,6 +1274,14 @@ class MainActivity : AppCompatActivity() {
             subtitleView.visibility = View.VISIBLE
             subtitleView.text = subtitle
         }
+        bindGuidedSetupTracker(
+            stepCard = stepCard,
+            stepTitleView = stepTitleView,
+            stepSubtitleView = stepSubtitleView,
+            stepNumViews = stepNumViews,
+            stepTextViews = stepTextViews,
+            currentStep = guidedStep,
+        )
         bodyView.text = body
 
         val dialog = AlertDialog.Builder(this)
@@ -1217,10 +1297,10 @@ class MainActivity : AppCompatActivity() {
             negativeButton.text = negativeLabel
         }
         positiveButton.text = positiveLabel
-
-        if (negativeButton.visibility == View.GONE) {
-            actionsView.gravity = android.view.Gravity.END
-        }
+        negativeButton.setTextColor(ContextCompat.getColor(this, R.color.btn_secondary_text))
+        positiveButton.setTextColor(ContextCompat.getColor(this, R.color.btn_primary_text))
+        negativeButton.backgroundTintList = null
+        positiveButton.backgroundTintList = null
 
         negativeButton.setOnClickListener {
             if (onNegative != null) {
@@ -1234,6 +1314,64 @@ class MainActivity : AppCompatActivity() {
             onPositive()
         }
         return dialog
+    }
+
+    private fun bindGuidedSetupTracker(
+        stepCard: View,
+        stepTitleView: TextView,
+        stepSubtitleView: TextView,
+        stepNumViews: List<TextView>,
+        stepTextViews: List<TextView>,
+        currentStep: Int?,
+    ) {
+        if (currentStep == null) {
+            stepCard.visibility = View.GONE
+            return
+        }
+
+        stepCard.visibility = View.VISIBLE
+        val stepTitleRes = when (currentStep) {
+            1 -> R.string.dialog_setup_step_1_title
+            2 -> R.string.dialog_setup_step_2_title
+            3 -> R.string.dialog_setup_step_3_title
+            else -> R.string.dialog_setup_step_4_title
+        }
+        val stepSubtitleRes = when (currentStep) {
+            1 -> R.string.dialog_setup_step_1_subtitle
+            2 -> R.string.dialog_setup_step_2_subtitle
+            3 -> R.string.dialog_setup_step_3_subtitle
+            else -> R.string.dialog_setup_step_4_subtitle
+        }
+        val itemLabels = listOf(
+            getString(R.string.dialog_setup_step_item_language),
+            getString(R.string.dialog_setup_step_item_consent),
+            getString(R.string.dialog_setup_step_item_permissions),
+            getString(R.string.dialog_setup_step_item_monitoring),
+        )
+        stepTitleView.text = getString(stepTitleRes)
+        stepSubtitleView.text = getString(stepSubtitleRes)
+
+        stepNumViews.forEachIndexed { index, textView ->
+            val stepNumber = index + 1
+            when {
+                stepNumber < currentStep -> {
+                    textView.setBackgroundResource(R.drawable.bg_step_circle_done)
+                    textView.setTextColor(ContextCompat.getColor(this, R.color.color_semantic_safe_text))
+                    stepTextViews[index].setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+                }
+                stepNumber == currentStep -> {
+                    textView.setBackgroundResource(R.drawable.bg_step_circle_active)
+                    textView.setTextColor(ContextCompat.getColor(this, android.R.color.white))
+                    stepTextViews[index].setTextColor(ContextCompat.getColor(this, R.color.text_primary))
+                }
+                else -> {
+                    textView.setBackgroundResource(R.drawable.bg_step_circle_inactive)
+                    textView.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+                    stepTextViews[index].setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
+                }
+            }
+            stepTextViews[index].text = itemLabels[index]
+        }
     }
 
     private fun showManagedFlowDialog(dialog: AlertDialog, transparentBackground: Boolean = true) {

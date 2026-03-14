@@ -43,6 +43,13 @@
 
     <string name="home_card_monitor_title">Live Monitoring</string>
     <string name="home_card_monitor_desc">Observes SMS/UPI activity in the background and triggers risk alerts.</string>
+    <string name="home_status_section_title">Confidence status</string>
+    <string name="home_status_label">Current status</string>
+    <string name="home_money_setup_label">Money setup</string>
+    <string name="home_info_hint">Warnings appear during risky moments. This home screen is only for setup and status.</string>
+    <string name="facilitator_badge">Facilitator view</string>
+    <string name="facilitator_steps_section_title">Setup steps</string>
+    <string name="facilitator_script_section_title">Helper script</string>
     <string name="action_start_monitor">Start Monitoring</string>
     <string name="action_resume_setup">Resume Setup</string>
     <string name="action_stop_monitor">Stop Monitoring</string>
@@ -51,7 +58,21 @@
     <string name="home_card_info_desc">You get a stage-1 warning before threshold breach and a stage-2 warning on the first UPI app open after that.</string>
 
     <string name="dialog_language_title">Select language</string>
+    <string name="dialog_language_subtitle">Choose the language that feels easiest to read during setup and warnings.</string>
     <string name="dialog_language_message">Choose your app language from the dropdown below.</string>
+    <string name="dialog_language_hint_title">Setup will use this language first</string>
+    <string name="dialog_setup_step_1_title">Step 1 of 4: Select language</string>
+    <string name="dialog_setup_step_1_subtitle">Start with the language that feels easiest to understand.</string>
+    <string name="dialog_setup_step_2_title">Step 2 of 4: Review and consent</string>
+    <string name="dialog_setup_step_2_subtitle">Understand how Arthamantri helps before monitoring begins.</string>
+    <string name="dialog_setup_step_3_title">Step 3 of 4: Enable permissions</string>
+    <string name="dialog_setup_step_3_subtitle">Allow only the access needed to warn you at the right moment.</string>
+    <string name="dialog_setup_step_4_title">Step 4 of 4: Start monitoring</string>
+    <string name="dialog_setup_step_4_subtitle">Finish setup and verify the first sample alert.</string>
+    <string name="dialog_setup_step_item_language">Select language</string>
+    <string name="dialog_setup_step_item_consent">Record consent</string>
+    <string name="dialog_setup_step_item_permissions">Enable permissions</string>
+    <string name="dialog_setup_step_item_monitoring">Start monitoring</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">Hindi</string>
 
@@ -77,6 +98,8 @@
 
     <string name="dialog_money_setup_title">Money Setup Lite</string>
     <string name="dialog_money_setup_message">Pick your profile and up to 2 essential goals. You can skip for now.</string>
+    <string name="dialog_money_setup_hint_title">A short setup for safer guidance</string>
+    <string name="dialog_money_setup_hint_body">Choose what matters most right now. You can save it or skip it and continue.</string>
     <string name="money_setup_cohort_label">Profile</string>
     <string name="money_setup_goal1_label">Essential Goal 1</string>
     <string name="money_setup_goal2_label">Essential Goal 2 (optional)</string>
@@ -98,6 +121,7 @@
     <string name="toast_money_setup_saved">Money setup saved.</string>
     <string name="toast_money_setup_failed">Money setup could not be synced. Continuing with defaults.</string>
     <string name="facilitator_title">Facilitator Setup Pack</string>
+    <string name="facilitator_banner_headline">Finish setup in 2 minutes</string>
     <string name="facilitator_subtitle">2-minute assisted setup for field helper, family helper, or BC.</string>
     <string name="facilitator_step_language">Step 1: Select language</string>
     <string name="facilitator_step_consent">Step 2: Record consent</string>
@@ -117,6 +141,14 @@
     <string name="facilitator_action_start_monitor">Start monitoring</string>
     <string name="facilitator_action_monitoring_verified">Monitoring verified</string>
     <string name="facilitator_action_refresh">Refresh status</string>
+    <string name="facilitator_pill_format">%1$s %2$s</string>
+    <string name="facilitator_pill_language">Language</string>
+    <string name="facilitator_pill_consent">Consent</string>
+    <string name="facilitator_pill_permissions">Permissions</string>
+    <string name="facilitator_pill_done">done</string>
+    <string name="facilitator_pill_pending">pending</string>
+    <string name="facilitator_pill_blocked">blocked</string>
+    <string name="facilitator_pill_in_progress">in progress</string>
     <string name="facilitator_status_done">Complete</string>
     <string name="facilitator_status_pending">Pending</string>
     <string name="facilitator_status_in_progress">In progress</string>

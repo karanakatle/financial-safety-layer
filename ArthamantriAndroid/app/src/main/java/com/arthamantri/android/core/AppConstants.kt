@@ -83,6 +83,34 @@ object AppConstants {
         const val ALERT_ACTION_DISMISSED = "dismissed"
     }
 
+    object PaymentInspection {
+        const val SOURCE_FOREGROUND_APP = "foreground_app"
+        const val SOURCE_NOTIFICATION = "notification"
+
+        const val REQUEST_KIND_UNKNOWN = "unknown_request"
+        const val REQUEST_KIND_COLLECT = "collect_request"
+        const val REQUEST_KIND_REFUND = "refund_request"
+        const val REQUEST_KIND_SEND = "send_money"
+
+        val NOTIFICATION_REQUEST_KEYWORDS = listOf(
+            "collect",
+            "request money",
+            "payment request",
+            "approve request",
+            "upi request",
+            "mandate",
+            "autopay",
+            "collect request",
+        )
+
+        val NOTIFICATION_REFUND_KEYWORDS = listOf(
+            "refund",
+            "cashback",
+            "claim refund",
+            "receive refund",
+        )
+    }
+
     object Parsing {
         val AMOUNT_REGEX_PATTERNS = listOf(
             // Prefix currency marker: "INR 1,100", "Rs. 1100", "₹1100.50"

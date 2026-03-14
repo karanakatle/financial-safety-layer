@@ -43,6 +43,13 @@
 
     <string name="home_card_monitor_title">तत्काल अनुश्रवण</string>
     <string name="home_card_monitor_desc">बैकग्राउंड में SMS/UPI गतिविधि देखकर जोखिम चेतावनी ट्रिगर करता है।</string>
+    <string name="home_status_section_title">विश्वास स्थिति</string>
+    <string name="home_status_label">अभी की स्थिति</string>
+    <string name="home_money_setup_label">धन सेटअप</string>
+    <string name="home_info_hint">जोखिम के समय चेतावनी अलग से दिखेगी। यह होम स्क्रीन केवल सेटअप और स्थिति दिखाती है।</string>
+    <string name="facilitator_badge">सहायक दृश्य</string>
+    <string name="facilitator_steps_section_title">सेटअप चरण</string>
+    <string name="facilitator_script_section_title">सहायक स्क्रिप्ट</string>
     <string name="action_start_monitor">निगरानी शुरू करें</string>
     <string name="action_resume_setup">सेटअप फिर शुरू करें</string>
     <string name="action_stop_monitor">निगरानी बंद करें</string>
@@ -51,7 +58,21 @@
     <string name="home_card_info_desc">सीमा पार होने से पहले चरण-1 चेतावनी और उसके बाद पहली UPI ओपन पर चरण-2 चेतावनी मिलती है।</string>
 
     <string name="dialog_language_title">भाषा चुनें</string>
+    <string name="dialog_language_subtitle">सेटअप और चेतावनियां जिस भाषा में सबसे आसान लगें, वही चुनें।</string>
     <string name="dialog_language_message">नीचे दी गई सूची से ऐप की भाषा चुनें।</string>
+    <string name="dialog_language_hint_title">आगे का सेटअप इसी भाषा में दिखेगा</string>
+    <string name="dialog_setup_step_1_title">चरण 1 / 4: भाषा चुनें</string>
+    <string name="dialog_setup_step_1_subtitle">शुरुआत उसी भाषा से करें जो सबसे आसानी से समझ आए।</string>
+    <string name="dialog_setup_step_2_title">चरण 2 / 4: समझें और सहमति दें</string>
+    <string name="dialog_setup_step_2_subtitle">मॉनिटरिंग शुरू होने से पहले देखें कि अर्थमंत्री कैसे मदद करता है।</string>
+    <string name="dialog_setup_step_3_title">चरण 3 / 4: अनुमतियां चालू करें</string>
+    <string name="dialog_setup_step_3_subtitle">केवल वही अनुमति दें जो सही समय पर चेतावनी दिखाने के लिए जरूरी है।</string>
+    <string name="dialog_setup_step_4_title">चरण 4 / 4: मॉनिटरिंग शुरू करें</string>
+    <string name="dialog_setup_step_4_subtitle">सेटअप पूरा करें और पहला नमूना अलर्ट देखकर जांच लें।</string>
+    <string name="dialog_setup_step_item_language">भाषा चुनें</string>
+    <string name="dialog_setup_step_item_consent">सहमति दें</string>
+    <string name="dialog_setup_step_item_permissions">अनुमतियां चालू करें</string>
+    <string name="dialog_setup_step_item_monitoring">मॉनिटरिंग शुरू करें</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिंदी</string>
 
@@ -77,6 +98,8 @@
 
     <string name="dialog_money_setup_title">त्वरित धन सेटअप</string>
     <string name="dialog_money_setup_message">अपनी प्रोफाइल और अधिकतम 2 आवश्यक लक्ष्य चुनें। चाहें तो अभी छोड़ सकते हैं।</string>
+    <string name="dialog_money_setup_hint_title">सुरक्षित मार्गदर्शन के लिए छोटा सा सेटअप</string>
+    <string name="dialog_money_setup_hint_body">अभी जो सबसे जरूरी है, उसे चुनें। चाहें तो सहेजें या छोड़कर आगे बढ़ें।</string>
     <string name="money_setup_cohort_label">प्रोफाइल</string>
     <string name="money_setup_goal1_label">आवश्यक लक्ष्य 1</string>
     <string name="money_setup_goal2_label">आवश्यक लक्ष्य 2 (वैकल्पिक)</string>
@@ -98,6 +121,7 @@
     <string name="toast_money_setup_saved">धन सेटअप सहेज दिया गया।</string>
     <string name="toast_money_setup_failed">धन सेटअप सिंक नहीं हो सका। डिफ़ॉल्ट सेटिंग्स जारी रहेंगी।</string>
     <string name="facilitator_title">सहायक सेटअप पैक</string>
+    <string name="facilitator_banner_headline">2 मिनट में सेटअप पूरा करें</string>
     <string name="facilitator_subtitle">फील्ड सहायक, परिवार सहायक या BC के लिए 2-मिनट निर्देशित सेटअप।</string>
     <string name="facilitator_step_language">चरण 1: भाषा चुनें</string>
     <string name="facilitator_step_consent">चरण 2: सहमति दर्ज करें</string>
@@ -117,6 +141,14 @@
     <string name="facilitator_action_start_monitor">निगरानी शुरू करें</string>
     <string name="facilitator_action_monitoring_verified">निगरानी सत्यापित</string>
     <string name="facilitator_action_refresh">स्थिति रीफ्रेश करें</string>
+    <string name="facilitator_pill_format">%1$s %2$s</string>
+    <string name="facilitator_pill_language">भाषा</string>
+    <string name="facilitator_pill_consent">सहमति</string>
+    <string name="facilitator_pill_permissions">अनुमतियां</string>
+    <string name="facilitator_pill_done">पूर्ण</string>
+    <string name="facilitator_pill_pending">बाकी</string>
+    <string name="facilitator_pill_blocked">रुका</string>
+    <string name="facilitator_pill_in_progress">जारी</string>
     <string name="facilitator_status_done">पूर्ण</string>
     <string name="facilitator_status_pending">लंबित</string>
     <string name="facilitator_status_in_progress">जारी</string>

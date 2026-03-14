@@ -3,6 +3,7 @@ package com.arthamantri.android.notify
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
+import java.time.Instant
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.repo.LiteracyRepository
@@ -46,11 +47,39 @@ class TransactionNotificationListenerService : NotificationListenerService() {
             return
         }
 
-        val parsed = SmsParser.parseExpense(pkg, payload) ?: return
-        val category = if (UpiPackages.isUpiPackage(this, pkg)) AppConstants.Domain.CATEGORY_UPI else parsed.category
+        val isUpiPackage = UpiPackages.isUpiPackage(this, pkg)
+        val appName = UpiPackages.displayName(this, pkg)
+        val paymentSignal = PaymentInspectionNotificationParser.parse(
+            packageName = pkg,
+            appName = appName,
+            title = title,
+            text = text,
+            bigText = bigText,
+            isUpiPackage = isUpiPackage,
+        )
+        val parsed = SmsParser.parseExpense(pkg, payload)
+        val category = if (isUpiPackage) AppConstants.Domain.CATEGORY_UPI else parsed?.category
 
         serviceScope.launch {
             try {
+                paymentSignal?.let { signal ->
+                    LiteracyRepository.inspectUpiRequest(
+                        context = this@TransactionNotificationListenerService,
+                        appName = signal.appName,
+                        requestKind = signal.requestKind,
+                        amount = signal.amount,
+                        payeeLabel = signal.payeeLabel,
+                        payeeHandle = signal.payeeHandle,
+                        rawText = signal.rawText,
+                        source = signal.source,
+                        timestamp = Instant.ofEpochMilli(sbn.postTime).toString(),
+                    )
+                }
+
+                if (parsed == null || category == null) {
+                    return@launch
+                }
+
                 val result = LiteracyRepository.sendSmsExpense(
                     context = this@TransactionNotificationListenerService,
                     amount = parsed.amount,

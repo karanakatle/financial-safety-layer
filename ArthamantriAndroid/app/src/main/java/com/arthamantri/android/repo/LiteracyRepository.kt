@@ -15,6 +15,8 @@ import com.arthamantri.android.model.EssentialGoalProfileRequest
 import com.arthamantri.android.model.EssentialGoalProfileResponse
 import com.arthamantri.android.model.ExperimentAssignmentRequest
 import com.arthamantri.android.model.SmsIngestRequest
+import com.arthamantri.android.model.UpiRequestInspectRequest
+import com.arthamantri.android.model.UpiRequestInspectResponse
 import com.arthamantri.android.model.UpiOpenRequest
 
 object LiteracyRepository {
@@ -65,6 +67,36 @@ object LiteracyRepository {
                 intent_amount = intentAmount,
             )
         ).alert
+    }
+
+    suspend fun inspectUpiRequest(
+        context: Context,
+        appName: String = "",
+        requestKind: String = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
+        amount: Double? = null,
+        payeeLabel: String = "",
+        payeeHandle: String = "",
+        rawText: String = "",
+        source: String = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
+        timestamp: String? = null,
+    ): UpiRequestInspectResponse {
+        val participantId = resolveParticipantId(context)
+        val language = resolveLanguage(context)
+        val api = ApiClient.literacyApi(context)
+        return api.upiRequestInspect(
+            UpiRequestInspectRequest(
+                participant_id = participantId,
+                language = language,
+                app_name = appName,
+                request_kind = requestKind.ifBlank { AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN },
+                amount = amount,
+                payee_label = payeeLabel,
+                payee_handle = payeeHandle,
+                raw_text = rawText,
+                source = source,
+                timestamp = timestamp,
+            )
+        )
     }
 
     suspend fun status(context: Context): LiteracyState {

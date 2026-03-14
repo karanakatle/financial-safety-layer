@@ -1,19 +1,81 @@
 <resources>
-    <color name="gov_primary">#4DB6AC</color>
-    <color name="gov_primary_dark">#2A8A7F</color>
-    <color name="gov_secondary">#5DADE2</color>
-    <color name="gov_accent">#F5B041</color>
+    <!-- Semantic visual tokens -->
+    <color name="color_trust_primary">#58AFA4</color>
+    <color name="color_trust_primary_dark">#3C8E84</color>
+    <color name="color_accent_warm">#D0AE78</color>
+    <color name="color_surface_base">#101817</color>
+    <color name="color_surface_card">#172320</color>
+    <color name="color_surface_raised">#1C2B28</color>
+    <color name="color_surface_soft">#22322F</color>
+    <color name="color_surface_step">#17312E</color>
+    <color name="color_border_soft">#304744</color>
+    <color name="color_border_emphasis">#4D7069</color>
+    <color name="color_text_primary">#E7F1EE</color>
+    <color name="color_text_secondary">#B5C7C3</color>
+    <color name="color_badge_bg">#16312D</color>
+    <color name="color_badge_text">#9AD8CD</color>
+    <color name="color_semantic_safe_bg">#18342F</color>
+    <color name="color_semantic_safe_text">#9EDCCD</color>
+    <color name="color_semantic_warning_bg">#433321</color>
+    <color name="color_semantic_warning_text">#E6C07B</color>
+    <color name="color_semantic_high_risk_bg">#452821</color>
+    <color name="color_semantic_high_risk_text">#F0AE95</color>
+    <color name="color_scrim_safe">#A0121C1A</color>
+    <color name="color_scrim_warning">#B0251F14</color>
+    <color name="color_scrim_high_risk">#B8331815</color>
 
-    <color name="screen_bg">#0F1A1F</color>
-    <color name="card_bg">#16242B</color>
-    <color name="card_border">#28414B</color>
-    <color name="text_primary">#E8F1F4</color>
-    <color name="text_secondary">#B4C7CF</color>
+    <!-- Compatibility aliases for existing app resources -->
+    <color name="gov_primary">@color/color_trust_primary</color>
+    <color name="gov_primary_dark">@color/color_trust_primary_dark</color>
+    <color name="gov_secondary">@color/color_accent_warm</color>
+    <color name="gov_accent">@color/color_semantic_warning_text</color>
 
-    <color name="badge_bg">#1E3B36</color>
-    <color name="badge_text">#9EE3D7</color>
+    <color name="screen_bg">@color/color_surface_base</color>
+    <color name="card_bg">@color/color_surface_card</color>
+    <color name="card_border">@color/color_border_soft</color>
+    <color name="text_primary">@color/color_text_primary</color>
+    <color name="text_secondary">@color/color_text_secondary</color>
 
-    <color name="btn_primary_text">#081214</color>
-    <color name="btn_secondary_bg">#20313A</color>
-    <color name="btn_secondary_text">#A7D7E7</color>
+    <color name="badge_bg">@color/color_badge_bg</color>
+    <color name="badge_text">@color/color_badge_text</color>
+
+    <color name="btn_primary_text">#F7FBFA</color>
+    <color name="btn_primary_ripple">#33FFFFFF</color>
+    <color name="btn_primary_stroke">#2AFFFFFF</color>
+    <color name="btn_secondary_bg">@color/color_surface_raised</color>
+    <color name="btn_secondary_text">@color/color_text_primary</color>
+    <color name="btn_secondary_ripple">#3358AFA4</color>
+    <color name="btn_facilitator_bg">@color/color_surface_card</color>
+    <color name="btn_facilitator_ripple">#3358AFA4</color>
+    <color name="btn_step_bg">@color/color_surface_raised</color>
+    <color name="btn_step_border">@color/color_border_emphasis</color>
+    <color name="btn_step_text">@color/color_text_primary</color>
+
+    <color name="alert_soft_badge_bg">@color/color_semantic_safe_bg</color>
+    <color name="alert_soft_badge_text">@color/color_semantic_safe_text</color>
+    <color name="alert_medium_badge_bg">@color/color_semantic_warning_bg</color>
+    <color name="alert_medium_badge_text">@color/color_semantic_warning_text</color>
+    <color name="alert_hard_badge_bg">@color/color_semantic_high_risk_bg</color>
+    <color name="alert_hard_badge_text">@color/color_semantic_high_risk_text</color>
+
+    <color name="alert_soft_scrim">@color/color_scrim_safe</color>
+    <color name="alert_medium_scrim">@color/color_scrim_warning</color>
+    <color name="alert_hard_scrim">@color/color_scrim_high_risk</color>
+
+    <color name="card_gradient_top">#FF1B2A27</color>
+    <color name="dialog_gradient_top">#FF1A2926</color>
+    <color name="dialog_gradient_bottom">#FF15211F</color>
+    <color name="badge_gradient_top">#FF1B3732</color>
+    <color name="chip_gradient_top">#FF1F3834</color>
+
+    <color name="bg_grad_top">#141E1D</color>
+    <color name="bg_grad_mid">#111B19</color>
+    <color name="bg_grad_bottom">#0D1514</color>
+    <color name="motif_rupee_mark">#3058AFA4</color>
+    <color name="motif_ring_gold">#30D0AE78</color>
+    <color name="motif_ring_outline">#3E9A8058</color>
+    <color name="motif_note_500">#245D8F79</color>
+    <color name="motif_note_500_line">#3354826B</color>
+    <color name="motif_note_2000">#246D9583</color>
+    <color name="motif_note_2000_line">#32517461</color>
 </resources>

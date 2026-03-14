@@ -4,13 +4,10 @@
 
     <item>
         <shape android:shape="rectangle">
-            <gradient
-                android:angle="90"
-                android:endColor="#FFF3EEF7"
-                android:startColor="#FFF8F4FA" />
+            <solid android:color="@color/btn_secondary_bg" />
             <stroke
-                android:width="1.2dp"
-                android:color="#BBA98CBE" />
+                android:width="1dp"
+                android:color="@color/card_border" />
             <corners android:radius="14dp" />
         </shape>
     </item>

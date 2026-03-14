@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import java.time.Instant
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.notify.AlertNotifier
@@ -78,6 +79,15 @@ class AppUsageForegroundService : Service() {
 
         try {
             val appName = UpiPackages.displayName(this, packageName)
+            LiteracyRepository.inspectUpiRequest(
+                context = this,
+                appName = appName,
+                requestKind = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
+                amount = null,
+                rawText = "",
+                source = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
+                timestamp = Instant.ofEpochMilli(now).toString(),
+            )
             val alert = LiteracyRepository.notifyUpiOpen(
                 context = this,
                 appName = appName,

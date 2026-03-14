@@ -19,6 +19,29 @@ data class UpiOpenRequest(
     val timestamp: String? = null,
 )
 
+data class UpiRequestInspectRequest(
+    val participant_id: String,
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
+    val app_name: String = "",
+    val request_kind: String = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
+    val amount: Double? = null,
+    val payee_label: String = "",
+    val payee_handle: String = "",
+    val raw_text: String = "",
+    val source: String = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
+    val timestamp: String? = null,
+)
+
+data class UpiRequestInspectResponse(
+    val scenario: String? = null,
+    val risk_level: String? = null,
+    val message: String? = null,
+    val why_this_alert: String? = null,
+    val next_best_action: String? = null,
+    val actions: List<String> = emptyList(),
+    val alert_id: String? = null,
+)
+
 data class LiteracyAlert(
     val alert_id: String? = null,
     val type: String? = null,

@@ -62,6 +62,29 @@ class UPIOpenIn(BaseModel):
     timestamp: Optional[str] = None
 
 
+class UPIRequestInspectIn(BaseModel):
+    participant_id: str = "global_user"
+    language: str = "en"
+    app_name: str = ""
+    request_kind: Optional[str] = None
+    amount: Optional[float] = Field(default=None, ge=0)
+    payee_label: str = ""
+    payee_handle: str = ""
+    raw_text: str = ""
+    source: str = "android"
+    timestamp: Optional[str] = None
+
+
+class UPIRequestInspectOut(BaseModel):
+    scenario: str
+    risk_level: Literal["low", "medium", "high", "critical"]
+    message: str
+    why_this_alert: str
+    next_best_action: str
+    actions: list[str] = Field(default_factory=list)
+    alert_id: str
+
+
 class LiteracyPolicyUpsertIn(BaseModel):
     participant_id: str
     daily_safe_limit: float = Field(gt=0)

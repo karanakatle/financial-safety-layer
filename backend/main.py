@@ -17,6 +17,7 @@ from backend.api_models import (
     LiteracyAlertFeedbackIn,
     LiteracyPolicyUpsertIn,
     SMSIngestIn,
+    UPIRequestInspectIn,
     UPIOpenIn,
 )
 from rule_engine.engine import FinancialAgent
@@ -41,6 +42,7 @@ from backend.literacy import (
     risk_level_from_score,
     why_text,
 )
+from backend.literacy.payment_inspection import inspect_payment_request
 from backend.pilot import PilotStorage
 from backend.config import load_literacy_policy
 from backend.nlp.pipeline import process_text
@@ -592,6 +594,19 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
         "language": language,
         "experiment_variant": variant,
     }
+
+
+@app.post("/api/literacy/upi-request-inspect")
+def literacy_upi_request_inspect(payload: UPIRequestInspectIn) -> dict:
+    participant_id = _normalized_participant_id(payload.participant_id)
+    language = _normalized_language(payload.language)
+    inspection = inspect_payment_request(
+        payload,
+        participant_id=participant_id,
+        language=language,
+        alert_id=str(uuid4()),
+    )
+    return inspection.model_dump()
 
 
 @app.get("/api/literacy/status")

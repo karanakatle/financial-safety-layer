@@ -4,7 +4,7 @@
     <gradient
         android:angle="300"
         android:endColor="@color/badge_bg"
-        android:startColor="#F7F0F9" />
+        android:startColor="@color/chip_gradient_top" />
     <corners android:radius="14dp" />
     <stroke
         android:width="1dp"
