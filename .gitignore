@@ -8,3 +8,13 @@ __pycache__/
 .DS_Store
 agent.log
 data/*.db
+
+# Local planning / agent artifacts
+_bmad/
+_bmad-output/
+.agents/
+.claude/
+.cursor/
+ArthamantriAndroid/.kotlin/
+.github/
+config/
