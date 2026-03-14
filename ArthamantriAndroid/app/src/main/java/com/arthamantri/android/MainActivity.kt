@@ -49,6 +49,7 @@ import com.arthamantri.android.BuildConfig
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.model.EssentialGoalEnvelopeDto
 import com.arthamantri.android.model.EssentialGoalProfileDto
+import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.usage.AppUsageForegroundService
 import com.google.android.material.navigation.NavigationView
@@ -63,6 +64,24 @@ class MainActivity : AppCompatActivity() {
         val badgeText: String,
     )
 
+    private enum class FacilitatorStepProgress {
+        PENDING,
+        IN_PROGRESS,
+        COMPLETE,
+        BLOCKED,
+    }
+
+    private data class FacilitatorStatusSnapshot(
+        val onboardingStep: OnboardingStep,
+        val permissionState: PermissionOnboardingState,
+        val languageSelected: Boolean,
+        val consentAccepted: Boolean,
+        val moneySetupDone: Boolean,
+        val moneySetupSkipped: Boolean,
+        val monitoringActive: Boolean,
+        val verificationShown: Boolean,
+    )
+
     private val participantId: String by lazy {
         Secure.getString(contentResolver, Secure.ANDROID_ID) ?: AppConstants.Domain.UNKNOWN_PARTICIPANT_ID
     }
@@ -73,11 +92,14 @@ class MainActivity : AppCompatActivity() {
     private lateinit var moneySetupLine: TextView
     private lateinit var pilotBanner: TextView
     private lateinit var languageChip: TextView
+    private lateinit var startServiceButton: Button
+    private lateinit var stopServiceButton: Button
     private lateinit var summaryCard: View
     private lateinit var monitorCard: View
     private lateinit var infoCard: View
     private var accessItemsExpanded = false
     private var currentHelpDialog: AlertDialog? = null
+    private var activeFlowDialog: AlertDialog? = null
     private var helpHeadingView: TextView? = null
     private var helpSubtitleView: TextView? = null
     private var helpStepsView: TextView? = null
@@ -85,6 +107,14 @@ class MainActivity : AppCompatActivity() {
     private var helpLanguageSpinner: Spinner? = null
     private var helpMoneySetupButton: Button? = null
     private var helpFacilitatorPackButton: Button? = null
+    private var facilitatorStatusRefresh: (() -> Unit)? = null
+
+    override fun onDestroy() {
+        activeFlowDialog?.dismiss()
+        activeFlowDialog = null
+        facilitatorStatusRefresh = null
+        super.onDestroy()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         applySavedLanguage()
@@ -109,8 +139,8 @@ class MainActivity : AppCompatActivity() {
         applyEdgeToEdgeInsets(mainScrollView, mainContentContainer, navigationView)
 
         val menuBtn = findViewById<ImageButton>(R.id.menuBtn)
-        val startServiceBtn = findViewById<Button>(R.id.startServiceBtn)
-        val stopServiceBtn = findViewById<Button>(R.id.stopServiceBtn)
+        startServiceButton = findViewById(R.id.startServiceBtn)
+        stopServiceButton = findViewById(R.id.stopServiceBtn)
         val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
 
         val shouldRestoreDrawerState = shouldRestoreDrawerStateFromSettings(prefs)
@@ -134,17 +164,29 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 R.id.nav_access_notifications -> {
-                    openNotificationAccess()
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showPermissionSetupDialog(
+                        permissionStepOverride = PermissionStep.NOTIFICATIONS,
+                        fromReview = true,
+                    )
                     true
                 }
 
                 R.id.nav_access_overlay -> {
-                    openOverlaySettings()
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showPermissionSetupDialog(
+                        permissionStepOverride = PermissionStep.OVERLAY,
+                        fromReview = true,
+                    )
                     true
                 }
 
                 R.id.nav_access_usage -> {
-                    openUsageSettings()
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showPermissionSetupDialog(
+                        permissionStepOverride = PermissionStep.USAGE,
+                        fromReview = true,
+                    )
                     true
                 }
 
@@ -192,13 +234,14 @@ class MainActivity : AppCompatActivity() {
             }
         })
 
-        startServiceBtn.setOnClickListener {
-            startMonitoringWithChecks()
+        startServiceButton.setOnClickListener {
+            handlePrimaryAction()
         }
 
-        stopServiceBtn.setOnClickListener {
+        stopServiceButton.setOnClickListener {
             stopService(Intent(this, AppUsageForegroundService::class.java))
-            setStatus(getString(R.string.action_stop_monitor))
+            setMonitoringActive(false)
+            refreshPrimaryActionState()
             toast(getString(R.string.toast_monitor_stopped))
             sendAppLog("info", "monitor_stopped")
         }
@@ -247,34 +290,47 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        syncPermissionOnboardingDone()
         updateLanguageChip()
+        refreshPrimaryActionState()
+        loadEssentialGoalSummary()
+        drawerLayout.post {
+            handlePendingPermissionSettingsReturn()
+            facilitatorStatusRefresh?.invoke()
+        }
     }
 
-    private fun continueOnboardingFlow() {
+    private fun continueOnboardingFlow(forceResumeConsent: Boolean = false) {
         val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        syncPermissionOnboardingDone(prefs)
+        val state = onboardingEntryState(prefs)
 
-        if (!prefs.getBoolean(AppConstants.Prefs.KEY_LANGUAGE_SELECTED, false)) {
-            showLanguageSelectionDialog(force = false)
-            return
+        refreshPrimaryActionState(state)
+
+        when (state.nextStep()) {
+            OnboardingStep.LANGUAGE -> {
+                showLanguageSelectionDialog(force = false)
+            }
+
+            OnboardingStep.PURPOSE_AND_CONSENT -> {
+                if (forceResumeConsent || state.shouldAutoOpenOnLaunch()) {
+                    clearDeferredConsent(prefs)
+                    showPurposeDialog()
+                }
+            }
+
+            OnboardingStep.MONEY_SETUP -> {
+                showMoneySetupDialog()
+            }
+
+            OnboardingStep.PERMISSIONS -> {
+                showPermissionSetupDialog()
+            }
+
+            OnboardingStep.COMPLETE -> {
+                loadEssentialGoalSummary()
+            }
         }
-
-        if (!prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, false)) {
-            showConsentDialog()
-            return
-        }
-
-        if (!prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false)) {
-            showMoneySetupDialog()
-            return
-        }
-
-        if (!prefs.getBoolean(AppConstants.Prefs.KEY_PERMISSION_ONBOARDING_DONE, false)) {
-            showPermissionSetupDialog()
-            return
-        }
-
-        setStatus(getString(R.string.status_initial))
-        loadEssentialGoalSummary()
     }
 
     private fun showLanguageSelectionDialog(force: Boolean) {
@@ -315,7 +371,7 @@ class MainActivity : AppCompatActivity() {
             }
             .create()
         dialog.setCanceledOnTouchOutside(false)
-        dialog.show()
+        showManagedFlowDialog(dialog, transparentBackground = false)
     }
 
     private fun showConsentDialog(allowExit: Boolean = true) {
@@ -330,11 +386,14 @@ class MainActivity : AppCompatActivity() {
                 ),
             ),
             positiveLabel = getString(R.string.consent_accept),
-            negativeLabel = if (allowExit) getString(R.string.consent_exit) else getString(R.string.help_close),
+            negativeLabel = if (allowExit) getString(R.string.consent_not_now) else getString(R.string.help_close),
             cancelable = false,
             onPositive = {
                 val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
-                prefs.edit().putBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, true).apply()
+                prefs.edit()
+                    .putBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, true)
+                    .putBoolean(AppConstants.Prefs.KEY_CONSENT_DEFERRED, false)
+                    .apply()
                 CoroutineScope(Dispatchers.IO).launch {
                     runCatching {
                         LiteracyRepository.submitPilotConsent(
@@ -349,11 +408,40 @@ class MainActivity : AppCompatActivity() {
                 continueOnboardingFlow()
             },
             onNegative = { dialogInterface ->
-                if (allowExit) finish() else dialogInterface.dismiss()
+                if (allowExit) {
+                    dialogInterface.dismiss()
+                    deferConsent()
+                } else {
+                    dialogInterface.dismiss()
+                }
             }
         )
-        dialog.show()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        showManagedFlowDialog(dialog, transparentBackground = false)
+    }
+
+    private fun showPurposeDialog() {
+        val dialog = buildInfoBoxDialog(
+            title = getString(R.string.dialog_purpose_title),
+            subtitle = getString(R.string.dialog_purpose_subtitle),
+            body = buildBulletedDialogMessage(
+                bullets = listOf(
+                    getString(R.string.dialog_purpose_bullet_1),
+                    getString(R.string.dialog_purpose_bullet_2),
+                    getString(R.string.dialog_purpose_bullet_3),
+                ),
+            ),
+            positiveLabel = getString(R.string.purpose_continue),
+            negativeLabel = getString(R.string.purpose_not_now),
+            cancelable = false,
+            onPositive = {
+                showConsentDialog()
+            },
+            onNegative = { dialogInterface ->
+                dialogInterface.dismiss()
+                deferConsent()
+            },
+        )
+        showManagedFlowDialog(dialog, transparentBackground = false)
     }
 
     private fun showMoneySetupDialog() {
@@ -435,20 +523,22 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
-        dialog.show()
+        showManagedFlowDialog(dialog, transparentBackground = false)
     }
 
     private fun showFacilitatorSetupPackDialog() {
         val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_facilitator_pack, null)
+        val readinessStatus = contentView.findViewById<TextView>(R.id.facilitatorReadinessStatus)
+        val nextActionValue = contentView.findViewById<TextView>(R.id.facilitatorNextActionValue)
         val languageStatus = contentView.findViewById<TextView>(R.id.facilitatorStepLanguageStatus)
         val consentStatus = contentView.findViewById<TextView>(R.id.facilitatorStepConsentStatus)
-        val moneySetupStatus = contentView.findViewById<TextView>(R.id.facilitatorStepMoneySetupStatus)
         val permissionsStatus = contentView.findViewById<TextView>(R.id.facilitatorStepPermissionsStatus)
+        val moneySetupStatus = contentView.findViewById<TextView>(R.id.facilitatorStepMoneySetupStatus)
         val monitoringStatus = contentView.findViewById<TextView>(R.id.facilitatorStepMonitoringStatus)
         val languageButton = contentView.findViewById<Button>(R.id.facilitatorLanguageButton)
         val consentButton = contentView.findViewById<Button>(R.id.facilitatorConsentButton)
-        val moneySetupButton = contentView.findViewById<Button>(R.id.facilitatorMoneySetupButton)
         val permissionsButton = contentView.findViewById<Button>(R.id.facilitatorPermissionsButton)
+        val moneySetupButton = contentView.findViewById<Button>(R.id.facilitatorMoneySetupButton)
         val startMonitoringButton = contentView.findViewById<Button>(R.id.facilitatorStartMonitoringButton)
         val refreshButton = contentView.findViewById<Button>(R.id.facilitatorRefreshButton)
         val closeButton = contentView.findViewById<Button>(R.id.facilitatorCloseButton)
@@ -459,13 +549,22 @@ class MainActivity : AppCompatActivity() {
 
         val refresh = {
             refreshFacilitatorStatus(
+                readinessStatus = readinessStatus,
+                nextActionValue = nextActionValue,
                 languageStatus = languageStatus,
                 consentStatus = consentStatus,
-                moneySetupStatus = moneySetupStatus,
                 permissionsStatus = permissionsStatus,
+                moneySetupStatus = moneySetupStatus,
                 monitoringStatus = monitoringStatus,
+                languageButton = languageButton,
+                consentButton = consentButton,
+                permissionsButton = permissionsButton,
+                moneySetupButton = moneySetupButton,
+                startMonitoringButton = startMonitoringButton,
             )
         }
+        facilitatorStatusRefresh = refresh
+        dialog.setOnDismissListener { facilitatorStatusRefresh = null }
 
         dialog.setOnShowListener {
             refresh()
@@ -496,41 +595,206 @@ class MainActivity : AppCompatActivity() {
 
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val metrics = resources.displayMetrics
+        dialog.window?.setLayout(
+            (metrics.widthPixels * 0.94f).toInt(),
+            (metrics.heightPixels * 0.85f).toInt(),
+        )
     }
 
     private fun refreshFacilitatorStatus(
+        readinessStatus: TextView,
+        nextActionValue: TextView,
         languageStatus: TextView,
         consentStatus: TextView,
-        moneySetupStatus: TextView,
         permissionsStatus: TextView,
+        moneySetupStatus: TextView,
         monitoringStatus: TextView,
+        languageButton: Button,
+        consentButton: Button,
+        permissionsButton: Button,
+        moneySetupButton: Button,
+        startMonitoringButton: Button,
     ) {
-        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        val snapshot = facilitatorStatusSnapshot()
 
-        val languageDone = prefs.getBoolean(AppConstants.Prefs.KEY_LANGUAGE_SELECTED, false)
-        val consentDone = prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, false)
-        val moneySetupDone = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false)
-        val smsRuntimeDone = hasSmsRuntimePermissions()
-        val usageDone = hasUsageStatsPermission()
-        val overlayDone = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(this) else true
-        val notificationDone = hasAppNotificationsEnabled()
-        val monitoringReady = smsRuntimeDone && usageDone && overlayDone
+        readinessStatus.text = facilitatorReadinessText(snapshot)
+        nextActionValue.text = facilitatorNextActionText(snapshot)
 
-        languageStatus.text = facilitatorStatusText(languageDone)
-        consentStatus.text = facilitatorStatusText(consentDone)
-        moneySetupStatus.text = facilitatorStatusText(moneySetupDone)
-        permissionsStatus.text = getString(
-            R.string.facilitator_status_permissions,
-            yesNoShort(smsRuntimeDone),
-            yesNoShort(usageDone),
-            yesNoShort(overlayDone),
-            yesNoShort(notificationDone),
+        languageStatus.text = facilitatorStepStatusText(
+            progress = if (snapshot.languageSelected) FacilitatorStepProgress.COMPLETE else FacilitatorStepProgress.PENDING,
+            detail = if (snapshot.languageSelected) {
+                getString(R.string.facilitator_detail_language_done)
+            } else {
+                getString(R.string.facilitator_detail_language_pending)
+            },
         )
-        monitoringStatus.text = getString(R.string.facilitator_status_monitoring_ready, yesNoShort(monitoringReady))
+        consentStatus.text = facilitatorStepStatusText(
+            progress = when {
+                snapshot.consentAccepted -> FacilitatorStepProgress.COMPLETE
+                snapshot.onboardingStep == OnboardingStep.PURPOSE_AND_CONSENT -> FacilitatorStepProgress.PENDING
+                !snapshot.languageSelected -> FacilitatorStepProgress.BLOCKED
+                else -> FacilitatorStepProgress.BLOCKED
+            },
+            detail = when {
+                snapshot.consentAccepted -> getString(R.string.facilitator_detail_consent_done)
+                snapshot.onboardingStep == OnboardingStep.PURPOSE_AND_CONSENT -> getString(R.string.facilitator_detail_consent_pending)
+                else -> getString(R.string.facilitator_detail_finish_earlier_steps)
+            },
+        )
+        permissionsStatus.text = facilitatorPermissionStatusText(snapshot)
+        moneySetupStatus.text = facilitatorStepStatusText(
+            progress = when {
+                snapshot.moneySetupDone -> FacilitatorStepProgress.COMPLETE
+                snapshot.onboardingStep == OnboardingStep.MONEY_SETUP -> FacilitatorStepProgress.PENDING
+                snapshot.onboardingStep == OnboardingStep.COMPLETE -> FacilitatorStepProgress.PENDING
+                snapshot.permissionState.isComplete() -> FacilitatorStepProgress.PENDING
+                else -> FacilitatorStepProgress.BLOCKED
+            },
+            detail = when {
+                snapshot.moneySetupDone && snapshot.moneySetupSkipped -> getString(R.string.facilitator_detail_money_setup_skipped)
+                snapshot.moneySetupDone -> getString(R.string.facilitator_detail_money_setup_done)
+                snapshot.permissionState.isComplete() -> getString(R.string.facilitator_detail_money_setup_pending)
+                else -> getString(R.string.facilitator_detail_finish_earlier_steps)
+            },
+        )
+        monitoringStatus.text = facilitatorMonitoringStatusText(snapshot)
+
+        languageButton.text = if (snapshot.languageSelected) {
+            getString(R.string.facilitator_action_review_language)
+        } else {
+            getString(R.string.facilitator_action_select_language)
+        }
+        consentButton.text = if (snapshot.consentAccepted) {
+            getString(R.string.facilitator_action_review_consent)
+        } else {
+            getString(R.string.facilitator_action_record_consent)
+        }
+        permissionsButton.text = if (snapshot.permissionState.isComplete()) {
+            getString(R.string.facilitator_action_review_permissions)
+        } else {
+            getString(R.string.facilitator_action_permissions)
+        }
+        moneySetupButton.text = if (snapshot.moneySetupDone) {
+            getString(R.string.facilitator_action_review_money_setup)
+        } else {
+            getString(R.string.facilitator_action_money_setup)
+        }
+        startMonitoringButton.text = if (snapshot.monitoringActive && snapshot.verificationShown) {
+            getString(R.string.facilitator_action_monitoring_verified)
+        } else {
+            getString(R.string.facilitator_action_start_monitor)
+        }
+        startMonitoringButton.isEnabled = !snapshot.monitoringActive || !snapshot.verificationShown
     }
 
-    private fun facilitatorStatusText(done: Boolean): String {
-        return if (done) getString(R.string.facilitator_status_done) else getString(R.string.facilitator_status_pending)
+    private fun facilitatorStatusSnapshot(): FacilitatorStatusSnapshot {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        syncPermissionOnboardingDone(prefs)
+        return FacilitatorStatusSnapshot(
+            onboardingStep = onboardingEntryState(prefs).nextStep(),
+            permissionState = permissionOnboardingState(),
+            languageSelected = prefs.getBoolean(AppConstants.Prefs.KEY_LANGUAGE_SELECTED, false),
+            consentAccepted = prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, false),
+            moneySetupDone = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false),
+            moneySetupSkipped = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, false),
+            monitoringActive = isMonitoringActive(),
+            verificationShown = prefs.getBoolean(AppConstants.Prefs.KEY_SETUP_VERIFICATION_SHOWN, false),
+        )
+    }
+
+    private fun facilitatorStepStatusText(progress: FacilitatorStepProgress, detail: String): String {
+        val label = when (progress) {
+            FacilitatorStepProgress.PENDING -> getString(R.string.facilitator_status_pending)
+            FacilitatorStepProgress.IN_PROGRESS -> getString(R.string.facilitator_status_in_progress)
+            FacilitatorStepProgress.COMPLETE -> getString(R.string.facilitator_status_done)
+            FacilitatorStepProgress.BLOCKED -> getString(R.string.facilitator_status_blocked)
+        }
+        return getString(R.string.facilitator_status_with_detail, label, detail)
+    }
+
+    private fun facilitatorPermissionStatusText(snapshot: FacilitatorStatusSnapshot): String {
+        val summary = getString(
+            R.string.facilitator_status_permissions,
+            yesNoShort(snapshot.permissionState.smsGranted),
+            yesNoShort(snapshot.permissionState.notificationsGranted),
+            yesNoShort(snapshot.permissionState.usageGranted),
+            yesNoShort(snapshot.permissionState.overlayGranted),
+        )
+        val detail = when {
+            snapshot.permissionState.isComplete() -> getString(R.string.facilitator_detail_permissions_done)
+            snapshot.onboardingStep == OnboardingStep.PERMISSIONS -> {
+                getString(
+                    R.string.facilitator_detail_permissions_pending,
+                    permissionStepLabel(snapshot.permissionState.nextStep()),
+                )
+            }
+            else -> getString(R.string.facilitator_detail_finish_earlier_steps)
+        }
+        val progress = when {
+            snapshot.permissionState.isComplete() -> FacilitatorStepProgress.COMPLETE
+            snapshot.onboardingStep == OnboardingStep.PERMISSIONS && snapshot.permissionState.completedCount() > 0 ->
+                FacilitatorStepProgress.IN_PROGRESS
+            snapshot.onboardingStep == OnboardingStep.PERMISSIONS -> FacilitatorStepProgress.PENDING
+            else -> FacilitatorStepProgress.BLOCKED
+        }
+        return facilitatorStepStatusText(progress, detail) + "\n" + summary
+    }
+
+    private fun facilitatorMonitoringStatusText(snapshot: FacilitatorStatusSnapshot): String {
+        val monitoringReady = snapshot.onboardingStep == OnboardingStep.COMPLETE
+            && snapshot.permissionState.isComplete()
+            && snapshot.moneySetupDone
+
+        return when {
+            snapshot.monitoringActive && snapshot.verificationShown ->
+                facilitatorStepStatusText(
+                    FacilitatorStepProgress.COMPLETE,
+                    getString(R.string.facilitator_detail_monitoring_verified),
+                )
+            snapshot.monitoringActive ->
+                facilitatorStepStatusText(
+                    FacilitatorStepProgress.IN_PROGRESS,
+                    getString(R.string.facilitator_detail_monitoring_started),
+                )
+            monitoringReady ->
+                facilitatorStepStatusText(
+                    FacilitatorStepProgress.PENDING,
+                    getString(R.string.facilitator_detail_monitoring_pending),
+                )
+            else ->
+                facilitatorStepStatusText(
+                    FacilitatorStepProgress.BLOCKED,
+                    getString(R.string.facilitator_detail_finish_earlier_steps),
+                )
+        }
+    }
+
+    private fun facilitatorReadinessText(snapshot: FacilitatorStatusSnapshot): String {
+        return when {
+            snapshot.monitoringActive && snapshot.verificationShown ->
+                getString(R.string.facilitator_readiness_ready)
+            snapshot.onboardingStep == OnboardingStep.COMPLETE ->
+                getString(R.string.facilitator_readiness_verify)
+            else ->
+                getString(R.string.facilitator_readiness_not_ready)
+        }
+    }
+
+    private fun facilitatorNextActionText(snapshot: FacilitatorStatusSnapshot): String {
+        return when (snapshot.onboardingStep) {
+            OnboardingStep.LANGUAGE -> getString(R.string.facilitator_next_action_language)
+            OnboardingStep.PURPOSE_AND_CONSENT -> getString(R.string.facilitator_next_action_consent)
+            OnboardingStep.PERMISSIONS -> getString(R.string.facilitator_next_action_permissions)
+            OnboardingStep.MONEY_SETUP -> getString(R.string.facilitator_next_action_money_setup)
+            OnboardingStep.COMPLETE -> {
+                if (snapshot.monitoringActive && snapshot.verificationShown) {
+                    getString(R.string.facilitator_next_action_done)
+                } else {
+                    getString(R.string.facilitator_next_action_monitoring)
+                }
+            }
+        }
     }
 
     private fun yesNoShort(done: Boolean): String {
@@ -540,12 +804,7 @@ class MainActivity : AppCompatActivity() {
     private fun hasSmsRuntimePermissions(): Boolean {
         val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
         val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-        val notifications = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-        return smsReceive && smsRead && notifications
+        return smsReceive && smsRead
     }
 
     private fun hasAppNotificationsEnabled(): Boolean {
@@ -595,16 +854,21 @@ class MainActivity : AppCompatActivity() {
                 )
             }
             runOnUiThread {
-                val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
-                prefs.edit().putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, true).apply()
-
                 response.onSuccess { saved ->
+                    setMoneySetupState(
+                        done = true,
+                        skipped = saved.profile?.setup_skipped == true || setupSkipped,
+                    )
                     updateMoneySetupSummary(saved.profile, saved.envelope)
                     if (!setupSkipped) {
                         toast(getString(R.string.toast_money_setup_saved))
                     }
                     sendAppLog("info", "money_setup_saved:$cohort:${goals.joinToString("|")}")
                 }.onFailure { error ->
+                    setMoneySetupState(
+                        done = setupSkipped,
+                        skipped = setupSkipped,
+                    )
                     if (setupSkipped) {
                         moneySetupLine.text = getString(R.string.money_setup_skipped)
                     } else {
@@ -627,9 +891,7 @@ class MainActivity : AppCompatActivity() {
                 response.onSuccess { profileResponse ->
                     updateMoneySetupSummary(profileResponse.profile, profileResponse.envelope)
                 }.onFailure {
-                    if (moneySetupLine.text.isNullOrBlank()) {
-                        moneySetupLine.text = getString(R.string.money_setup_pending)
-                    }
+                    applyLocalMoneySetupFallback()
                 }
             }
         }
@@ -639,8 +901,13 @@ class MainActivity : AppCompatActivity() {
         profile: EssentialGoalProfileDto?,
         envelope: EssentialGoalEnvelopeDto?,
     ) {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        if (!prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false)) {
+            applyLocalMoneySetupFallback()
+            return
+        }
         if (profile == null) {
-            moneySetupLine.text = getString(R.string.money_setup_pending)
+            applyLocalMoneySetupFallback()
             return
         }
         val goals = profile.essential_goals.filter { it.isNotBlank() }
@@ -686,36 +953,190 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showPermissionSetupDialog() {
-        val dialog = buildInfoBoxDialog(
-            title = getString(R.string.dialog_perm_title),
-            subtitle = getString(R.string.dialog_perm_subtitle),
-            body = buildBulletedDialogMessage(
-                intro = getString(R.string.dialog_perm_intro),
-                bullets = listOf(
-                    getString(R.string.dialog_perm_bullet_sms),
-                    getString(R.string.dialog_perm_bullet_usage),
-                    getString(R.string.dialog_perm_bullet_overlay),
+    private fun showPermissionSetupDialog(
+        permissionStepOverride: PermissionStep? = null,
+        fromReview: Boolean = false,
+    ) {
+        val state = permissionOnboardingState()
+        syncPermissionOnboardingDone()
+
+        if (!fromReview) {
+            setGuidedPermissionFlowActive(true)
+        }
+
+        if (!fromReview && state.isComplete()) {
+            setGuidedPermissionFlowActive(false)
+            refreshPrimaryActionState()
+            return
+        }
+
+        val step = permissionStepOverride ?: state.nextStep()
+        if (step == PermissionStep.COMPLETE) {
+            val dialog = buildInfoBoxDialog(
+                title = getString(R.string.dialog_perm_complete_title),
+                subtitle = getString(R.string.dialog_perm_complete_subtitle),
+                body = buildBulletedDialogMessage(
+                    bullets = listOf(
+                        getString(R.string.dialog_perm_complete_bullet_1),
+                        getString(R.string.dialog_perm_complete_bullet_2),
+                    ),
                 ),
-                outro = getString(R.string.dialog_perm_followup),
+                positiveLabel = getString(R.string.help_close),
+                negativeLabel = null,
+                cancelable = true,
+                onPositive = {
+                    refreshPrimaryActionState()
+                },
+            )
+            dialog.show()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            return
+        }
+
+        val currentGranted = isPermissionStepGranted(step, state)
+        val remainingLabels = state.remainingSteps()
+            .filter { it != step }
+            .joinToString(separator = ", ") { permissionStepLabel(it) }
+            .ifBlank { getString(R.string.dialog_perm_next_ready) }
+
+        val dialog = buildInfoBoxDialog(
+            title = if (currentGranted && fromReview) {
+                getString(R.string.dialog_perm_review_title, permissionStepLabel(step))
+            } else {
+                getString(R.string.dialog_perm_step_title, permissionStepLabel(step))
+            },
+            subtitle = if (currentGranted && fromReview) {
+                getString(R.string.dialog_perm_review_subtitle)
+            } else {
+                getString(
+                    R.string.dialog_perm_step_subtitle,
+                    state.completedCount() + 1,
+                    state.totalCount(),
+                )
+            },
+            body = buildBulletedDialogMessage(
+                bullets = listOf(
+                    getString(R.string.dialog_perm_bullet_helps, permissionStepHelpText(step)),
+                    getString(R.string.dialog_perm_bullet_not_access),
+                    if (currentGranted && fromReview) {
+                        getString(R.string.dialog_perm_bullet_currently_on)
+                    } else {
+                        getString(R.string.dialog_perm_bullet_if_off, permissionStepOffText(step))
+                    },
+                    getString(R.string.dialog_perm_bullet_next, remainingLabels),
+                ),
             ),
-            positiveLabel = getString(R.string.perm_continue),
-            negativeLabel = null,
-            cancelable = false,
+            positiveLabel = permissionStepActionLabel(step),
+            negativeLabel = getString(R.string.help_close),
+            cancelable = true,
             onPositive = {
-                requestRuntimePermissions()
-                openUsageSettings()
-                openOverlaySettings()
-
-                val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
-                prefs.edit().putBoolean(AppConstants.Prefs.KEY_PERMISSION_ONBOARDING_DONE, true).apply()
-                sendAppLog("info", "permission_onboarding_prompted")
-
-                startMonitoringWithChecks()
+                openPermissionStep(step, continueGuidedFlow = !fromReview)
+            },
+            onNegative = { dialogInterface ->
+                dialogInterface.dismiss()
+                if (!fromReview) {
+                    setGuidedPermissionFlowActive(false)
+                }
+                refreshPrimaryActionState()
             },
         )
-        dialog.show()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        showManagedFlowDialog(dialog)
+    }
+
+    private fun permissionOnboardingState(): PermissionOnboardingState {
+        return PermissionOnboardingState(
+            smsGranted = hasSmsAccessEnabled(),
+            usageGranted = hasUsageStatsPermission(),
+            overlayGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(this) else true,
+            notificationsGranted = hasNotificationPermissionForOnboarding(),
+        )
+    }
+
+    private fun syncPermissionOnboardingDone(
+        prefs: SharedPreferences = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE),
+    ) {
+        val isComplete = permissionOnboardingState().isComplete()
+        if (prefs.getBoolean(AppConstants.Prefs.KEY_PERMISSION_ONBOARDING_DONE, false) == isComplete) {
+            return
+        }
+        prefs.edit().putBoolean(AppConstants.Prefs.KEY_PERMISSION_ONBOARDING_DONE, isComplete).apply()
+    }
+
+    private fun permissionStepLabel(step: PermissionStep): String {
+        return when (step) {
+            PermissionStep.SMS -> getString(R.string.permission_label_sms)
+            PermissionStep.USAGE -> getString(R.string.menu_access_usage)
+            PermissionStep.OVERLAY -> getString(R.string.menu_access_overlay)
+            PermissionStep.NOTIFICATIONS -> getString(R.string.menu_access_notifications)
+            PermissionStep.COMPLETE -> getString(R.string.dialog_perm_complete_title)
+        }
+    }
+
+    private fun permissionStepHelpText(step: PermissionStep): String {
+        return when (step) {
+            PermissionStep.SMS -> getString(R.string.permission_help_sms)
+            PermissionStep.USAGE -> getString(R.string.permission_help_usage)
+            PermissionStep.OVERLAY -> getString(R.string.permission_help_overlay)
+            PermissionStep.NOTIFICATIONS -> getString(R.string.permission_help_notifications)
+            PermissionStep.COMPLETE -> getString(R.string.dialog_perm_complete_subtitle)
+        }
+    }
+
+    private fun permissionStepOffText(step: PermissionStep): String {
+        return when (step) {
+            PermissionStep.SMS -> getString(R.string.permission_if_off_sms)
+            PermissionStep.USAGE -> getString(R.string.permission_if_off_usage)
+            PermissionStep.OVERLAY -> getString(R.string.permission_if_off_overlay)
+            PermissionStep.NOTIFICATIONS -> getString(R.string.permission_if_off_notifications)
+            PermissionStep.COMPLETE -> getString(R.string.dialog_perm_complete_bullet_1)
+        }
+    }
+
+    private fun permissionStepActionLabel(step: PermissionStep): String {
+        return when (step) {
+            PermissionStep.SMS -> getString(R.string.permission_action_sms)
+            PermissionStep.USAGE -> getString(R.string.permission_action_usage)
+            PermissionStep.OVERLAY -> getString(R.string.permission_action_overlay)
+            PermissionStep.NOTIFICATIONS -> getString(R.string.permission_action_notifications)
+            PermissionStep.COMPLETE -> getString(R.string.help_close)
+        }
+    }
+
+    private fun openPermissionStep(step: PermissionStep, continueGuidedFlow: Boolean) {
+        setGuidedPermissionFlowActive(continueGuidedFlow)
+        when (step) {
+            PermissionStep.SMS -> {
+                requestSmsRuntimePermissions()
+                sendAppLog("info", "permission_step_sms_prompted")
+            }
+
+            PermissionStep.USAGE -> {
+                openUsageSettings()
+                sendAppLog("info", "permission_step_usage_prompted")
+            }
+
+            PermissionStep.OVERLAY -> {
+                openOverlaySettings()
+                sendAppLog("info", "permission_step_overlay_prompted")
+            }
+
+            PermissionStep.NOTIFICATIONS -> {
+                openNotificationAccess()
+                sendAppLog("info", "permission_step_notifications_prompted")
+            }
+
+            PermissionStep.COMPLETE -> Unit
+        }
+    }
+
+    private fun isPermissionStepGranted(step: PermissionStep, state: PermissionOnboardingState): Boolean {
+        return when (step) {
+            PermissionStep.SMS -> state.smsGranted
+            PermissionStep.USAGE -> state.usageGranted
+            PermissionStep.OVERLAY -> state.overlayGranted
+            PermissionStep.NOTIFICATIONS -> state.notificationsGranted
+            PermissionStep.COMPLETE -> state.isComplete()
+        }
     }
 
     private fun buildBulletedDialogMessage(
@@ -815,7 +1236,21 @@ class MainActivity : AppCompatActivity() {
         return dialog
     }
 
-    private fun requestRuntimePermissions() {
+    private fun showManagedFlowDialog(dialog: AlertDialog, transparentBackground: Boolean = true) {
+        activeFlowDialog?.dismiss()
+        activeFlowDialog = dialog
+        dialog.setOnDismissListener {
+            if (activeFlowDialog === dialog) {
+                activeFlowDialog = null
+            }
+        }
+        dialog.show()
+        if (transparentBackground) {
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        }
+    }
+
+    private fun requestSmsRuntimePermissions() {
         val needed = mutableListOf<String>()
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
@@ -824,11 +1259,6 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             needed.add(Manifest.permission.READ_SMS)
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            needed.add(Manifest.permission.POST_NOTIFICATIONS)
-        }
 
         if (needed.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), AppConstants.RequestCodes.RUNTIME_PERMISSIONS)
@@ -836,6 +1266,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openUsageSettings() {
+        markPendingPermissionSettingsStep(PermissionStep.USAGE)
         markRestoreDrawerOnReturn()
         val directUsageIntent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS).apply {
             data = Uri.parse("package:$packageName")
@@ -849,17 +1280,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openNotificationAccess() {
-        markRestoreDrawerOnReturn()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
-                AppConstants.RequestCodes.POST_NOTIFICATIONS,
-            )
+            requestNotificationPermissionIfNeeded()
+            return
         }
 
+        if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+            val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            if (prefs.getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)) {
+                showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+            }
+            return
+        }
+
+        markRestoreDrawerOnReturn()
         val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                 putExtra(EXTRA_APP_PACKAGE, packageName)
@@ -873,6 +1309,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openOverlaySettings() {
+        markPendingPermissionSettingsStep(PermissionStep.OVERLAY)
         markRestoreDrawerOnReturn()
         val packageUri = Uri.parse("package:$packageName")
         val explicitOverlayAospIntent = Intent().apply {
@@ -910,17 +1347,59 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun startMonitoringWithChecks() {
-        if (!hasUsageStatsPermission()) {
-            setStatus(getString(R.string.status_usage_missing))
-            toast(getString(R.string.toast_usage_missing))
-            sendAppLog("warn", "monitor_start_blocked_usage_access")
-            return
-        }
+        syncPermissionOnboardingDone()
+        val onboardingState = onboardingEntryState()
+        val activationState = MonitoringActivationState(
+            onboardingStep = onboardingState.nextStep(),
+            permissionState = permissionOnboardingState(),
+        )
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            setStatus(getString(R.string.status_overlay_missing))
-            toast(getString(R.string.toast_overlay_missing))
-            sendAppLog("warn", "monitor_start_without_overlay")
+        when (activationState.blocker()) {
+            MonitoringStartBlocker.ONBOARDING -> {
+                refreshPrimaryActionState(onboardingState)
+                toast(getString(R.string.toast_complete_setup_first))
+                sendAppLog("warn", "monitor_start_blocked_onboarding:${onboardingState.nextStep().name.lowercase()}")
+                when (onboardingState.nextStep()) {
+                    OnboardingStep.MONEY_SETUP -> showMoneySetupDialog()
+                    OnboardingStep.PERMISSIONS -> showPermissionSetupDialog()
+                    else -> continueOnboardingFlow(forceResumeConsent = true)
+                }
+                return
+            }
+
+            MonitoringStartBlocker.SMS -> {
+                setStatus(getString(R.string.status_sms_missing))
+                toast(getString(R.string.toast_sms_missing))
+                sendAppLog("warn", "monitor_start_blocked_sms_access")
+                continueOnboardingFlow()
+                return
+            }
+
+            MonitoringStartBlocker.USAGE -> {
+                setStatus(getString(R.string.status_usage_missing))
+                toast(getString(R.string.toast_usage_missing))
+                sendAppLog("warn", "monitor_start_blocked_usage_access")
+                continueOnboardingFlow()
+                return
+            }
+
+            MonitoringStartBlocker.OVERLAY -> {
+                setStatus(getString(R.string.status_overlay_missing))
+                toast(getString(R.string.toast_overlay_missing))
+                sendAppLog("warn", "monitor_start_blocked_overlay_access")
+                continueOnboardingFlow()
+                return
+            }
+
+            MonitoringStartBlocker.NOTIFICATIONS -> {
+                setStatus(getString(R.string.status_notifications_missing))
+                toast(getString(R.string.toast_notifications_missing))
+                sendAppLog("warn", "monitor_start_blocked_notifications_access")
+                continueOnboardingFlow()
+                return
+            }
+
+            MonitoringStartBlocker.NONE -> Unit
         }
 
         if (!hasNotificationListenerPermission()) {
@@ -929,14 +1408,44 @@ class MainActivity : AppCompatActivity() {
 
         try {
             startForegroundService(Intent(this, AppUsageForegroundService::class.java))
+            setMonitoringActive(true)
             setStatus(getString(R.string.status_monitoring_active))
             toast(getString(R.string.toast_monitor_started))
             sendAppLog("info", "monitor_started")
+            maybeShowMonitoringVerificationAlert()
         } catch (e: Exception) {
+            setMonitoringActive(false)
             setStatus(getString(R.string.status_monitoring_failed))
             toast(e.message ?: getString(R.string.toast_monitor_failed))
             sendAppLog("error", "monitor_start_error:${e.message}")
         }
+    }
+
+    private fun handlePrimaryAction() {
+        val state = onboardingEntryState()
+        if (state.homePrimaryActionState() == HomePrimaryActionState.RESUME_SETUP) {
+            continueOnboardingFlow(forceResumeConsent = true)
+            return
+        }
+        startMonitoringWithChecks()
+    }
+
+    private fun maybeShowMonitoringVerificationAlert() {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        if (prefs.getBoolean(AppConstants.Prefs.KEY_SETUP_VERIFICATION_SHOWN, false)) {
+            return
+        }
+
+        prefs.edit().putBoolean(AppConstants.Prefs.KEY_SETUP_VERIFICATION_SHOWN, true).apply()
+        AlertNotifier.show(
+            context = this,
+            title = getString(R.string.alert_setup_verification_title),
+            body = getString(R.string.alert_setup_verification_body),
+            alertId = "setup-verification-${System.currentTimeMillis()}",
+            severity = "soft",
+            nextSafeAction = getString(R.string.alert_setup_verification_next_action),
+        )
+        sendAppLog("info", "setup_verification_alert_shown")
     }
 
     private fun checkApiStatus() {
@@ -1199,9 +1708,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.monitorDesc).text = getString(R.string.home_card_monitor_desc)
         findViewById<TextView>(R.id.infoTitle).text = getString(R.string.home_card_info_title)
         findViewById<TextView>(R.id.infoDesc).text = getString(R.string.home_card_info_desc)
-        findViewById<Button>(R.id.startServiceBtn).text = getString(R.string.action_start_monitor)
-        findViewById<Button>(R.id.stopServiceBtn).text = getString(R.string.action_stop_monitor)
-        findViewById<TextView>(R.id.statusLine).text = getString(R.string.status_initial)
+        stopServiceButton.text = getString(R.string.action_stop_monitor)
         moneySetupLine.text = getString(R.string.money_setup_pending)
 
         val header = navigationView.getHeaderView(0)
@@ -1211,6 +1718,7 @@ class MainActivity : AppCompatActivity() {
         applyDrawerMenuState()
 
         updateLanguageChip()
+        refreshPrimaryActionState()
         loadEssentialGoalSummary()
     }
 
@@ -1366,8 +1874,241 @@ class MainActivity : AppCompatActivity() {
         return enabled.contains(packageName)
     }
 
+    private fun hasSmsAccessEnabled(): Boolean {
+        val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
+        val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
+        return smsReceive && smsRead
+    }
+
     private fun setStatus(text: String) {
         statusLine.text = text
+    }
+
+    private fun setMoneySetupState(done: Boolean, skipped: Boolean) {
+        getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, done)
+            .putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, skipped)
+            .apply()
+    }
+
+    private fun applyLocalMoneySetupFallback() {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        moneySetupLine.text = if (prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, false)) {
+            getString(R.string.money_setup_skipped)
+        } else {
+            getString(R.string.money_setup_pending)
+        }
+    }
+
+    private fun onboardingEntryState(
+        prefs: SharedPreferences = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE),
+    ): OnboardingEntryState {
+        return OnboardingEntryState(
+            languageSelected = prefs.getBoolean(AppConstants.Prefs.KEY_LANGUAGE_SELECTED, false),
+            consentAccepted = prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, false),
+            consentDeferred = prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_DEFERRED, false),
+            moneySetupDone = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false),
+            permissionOnboardingDone = prefs.getBoolean(AppConstants.Prefs.KEY_PERMISSION_ONBOARDING_DONE, false),
+        )
+    }
+
+    private fun refreshPrimaryActionState(state: OnboardingEntryState = onboardingEntryState()) {
+        when (state.homePrimaryActionState()) {
+            HomePrimaryActionState.RESUME_SETUP -> {
+                startServiceButton.text = getString(R.string.action_resume_setup)
+            }
+
+            HomePrimaryActionState.START_MONITORING -> {
+                startServiceButton.text = getString(R.string.action_start_monitor)
+            }
+        }
+
+        val statusText = if (state.nextStep() == OnboardingStep.PERMISSIONS) {
+            permissionOnboardingStatusText(permissionOnboardingState())
+        } else if (state.nextStep() == OnboardingStep.COMPLETE && isMonitoringActive()) {
+            getString(R.string.status_monitoring_active)
+        } else {
+            when (state.homeStatusState()) {
+                HomeStatusState.CHOOSE_LANGUAGE -> getString(R.string.status_onboarding_language)
+                HomeStatusState.REVIEW_CONSENT -> getString(R.string.status_onboarding_consent)
+                HomeStatusState.SETUP_PAUSED -> getString(R.string.status_onboarding_resume)
+                HomeStatusState.CONTINUE_SETUP -> getString(R.string.status_onboarding_continue)
+                HomeStatusState.READY -> getString(R.string.status_initial)
+            }
+        }
+        setStatus(statusText)
+    }
+
+    private fun handlePendingPermissionSettingsReturn() {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        val guidedFlowActive = prefs.getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)
+        val pendingStep = pendingPermissionSettingsStep()
+        if (!guidedFlowActive || pendingStep == null) {
+            return
+        }
+
+        clearPendingPermissionSettingsStep()
+        if (onboardingEntryState(prefs).nextStep() != OnboardingStep.PERMISSIONS) {
+            return
+        }
+
+        when (pendingStep) {
+            PermissionStep.USAGE -> {
+                if (hasUsageStatsPermission()) {
+                    showPermissionSetupDialog(permissionStepOverride = PermissionStep.OVERLAY)
+                } else {
+                    showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                }
+            }
+
+            PermissionStep.OVERLAY -> {
+                val overlayGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    Settings.canDrawOverlays(this)
+                } else {
+                    true
+                }
+                if (overlayGranted) {
+                    syncPermissionOnboardingDone(prefs)
+                    setGuidedPermissionFlowActive(false)
+                    refreshPrimaryActionState(onboardingEntryState(prefs))
+                } else {
+                    showPermissionSetupDialog(permissionStepOverride = PermissionStep.OVERLAY)
+                }
+            }
+
+            else -> Unit
+        }
+    }
+
+    private fun permissionOnboardingStatusText(state: PermissionOnboardingState): String {
+        return if (state.isComplete()) {
+            getString(R.string.status_initial)
+        } else {
+            getString(R.string.status_onboarding_permission, permissionStepLabel(state.nextStep()))
+        }
+    }
+
+    private fun clearDeferredConsent(
+        prefs: SharedPreferences = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE),
+    ) {
+        if (!prefs.getBoolean(AppConstants.Prefs.KEY_CONSENT_DEFERRED, false)) {
+            return
+        }
+        prefs.edit().putBoolean(AppConstants.Prefs.KEY_CONSENT_DEFERRED, false).apply()
+    }
+
+    private fun deferConsent() {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        prefs.edit()
+            .putBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, false)
+            .putBoolean(AppConstants.Prefs.KEY_CONSENT_DEFERRED, true)
+            .apply()
+        setStatus(getString(R.string.status_onboarding_resume))
+        refreshPrimaryActionState(onboardingEntryState(prefs))
+        toast(getString(R.string.toast_setup_paused))
+        sendAppLog("info", "consent_deferred")
+    }
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                AppConstants.RequestCodes.POST_NOTIFICATIONS,
+            )
+        }
+    }
+
+    private fun hasNotificationPermissionForOnboarding(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray,
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        when (requestCode) {
+            AppConstants.RequestCodes.RUNTIME_PERMISSIONS -> {
+                val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+                val guidedFlowActive = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+                    .getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)
+                if (allGranted &&
+                    guidedFlowActive &&
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    requestNotificationPermissionIfNeeded()
+                } else {
+                    refreshPrimaryActionState()
+                    if (allGranted && guidedFlowActive) {
+                        showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                    }
+                }
+            }
+
+            AppConstants.RequestCodes.POST_NOTIFICATIONS -> {
+                refreshPrimaryActionState()
+                val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
+                val guidedFlowActive = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+                    .getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)
+                if (granted && guidedFlowActive) {
+                    showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                }
+            }
+        }
+    }
+
+    private fun setGuidedPermissionFlowActive(active: Boolean) {
+        val editor = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, active)
+        if (!active) {
+            editor.remove(AppConstants.Prefs.KEY_PENDING_PERMISSION_SETTINGS_STEP)
+        }
+        editor.apply()
+    }
+
+    private fun markPendingPermissionSettingsStep(step: PermissionStep) {
+        getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putString(AppConstants.Prefs.KEY_PENDING_PERMISSION_SETTINGS_STEP, step.name)
+            .apply()
+    }
+
+    private fun pendingPermissionSettingsStep(): PermissionStep? {
+        val raw = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .getString(AppConstants.Prefs.KEY_PENDING_PERMISSION_SETTINGS_STEP, null)
+            ?: return null
+        return runCatching { PermissionStep.valueOf(raw) }.getOrNull()
+    }
+
+    private fun clearPendingPermissionSettingsStep() {
+        getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .remove(AppConstants.Prefs.KEY_PENDING_PERMISSION_SETTINGS_STEP)
+            .apply()
+    }
+
+    private fun isMonitoringActive(): Boolean {
+        return getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .getBoolean(AppConstants.Prefs.KEY_MONITORING_ACTIVE, false)
+    }
+
+    private fun setMonitoringActive(active: Boolean) {
+        getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(AppConstants.Prefs.KEY_MONITORING_ACTIVE, active)
+            .apply()
     }
 
     private fun toast(text: String) {

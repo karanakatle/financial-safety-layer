@@ -13,6 +13,7 @@
     <string name="menu_access_notifications">Notification Access</string>
     <string name="menu_access_overlay">Overlay Access</string>
     <string name="menu_access_usage">Usage Access</string>
+    <string name="permission_label_sms">SMS Access</string>
     <string name="menu_feedback">Submit Pilot Feedback</string>
     <string name="menu_money_setup">Money Setup Lite</string>
     <string name="menu_facilitator_pack">Facilitator Setup Pack</string>
@@ -26,8 +27,15 @@
     <string name="home_subtitle">Adaptive financial literacy and safety nudges</string>
     <string name="pilot_banner_default">Research pilot: this is not an investment advisory product.</string>
     <string name="status_initial">Status: complete onboarding and then start monitoring.</string>
+    <string name="status_onboarding_language">Status: choose a language to begin setup.</string>
+    <string name="status_onboarding_consent">Status: review how Arthamantri helps, then give consent to continue setup.</string>
+    <string name="status_onboarding_resume">Status: setup is paused. Tap Resume Setup when you are ready.</string>
+    <string name="status_onboarding_continue">Status: continue setup to activate monitoring.</string>
+    <string name="status_onboarding_permission">Status: %1$s is still off. Tap Resume Setup to continue.</string>
+    <string name="status_sms_missing">SMS access is missing.</string>
     <string name="status_usage_missing">Usage access is missing.</string>
     <string name="status_overlay_missing">Overlay access is missing.</string>
+    <string name="status_notifications_missing">Notification access is missing.</string>
     <string name="status_monitoring_active">Monitoring is active.</string>
     <string name="status_monitoring_failed">Monitoring failed to start.</string>
     <string name="status_api_connected">API connected.</string>
@@ -36,6 +44,7 @@
     <string name="home_card_monitor_title">Live Monitoring</string>
     <string name="home_card_monitor_desc">Observes SMS/UPI activity in the background and triggers risk alerts.</string>
     <string name="action_start_monitor">Start Monitoring</string>
+    <string name="action_resume_setup">Resume Setup</string>
     <string name="action_stop_monitor">Stop Monitoring</string>
 
     <string name="home_card_info_title">How It Works</string>
@@ -46,15 +55,24 @@
     <string name="lang_english">English</string>
     <string name="lang_hindi">Hindi</string>
 
+    <string name="dialog_purpose_title">How Arthamantri helps</string>
+    <string name="dialog_purpose_subtitle">This app gives simple safety guidance before full setup is complete.</string>
+    <string name="dialog_purpose_bullet_1">It explains risky payment or money messages in simple language.</string>
+    <string name="dialog_purpose_bullet_2">It uses phone signals like SMS and app activity to give safety nudges.</string>
+    <string name="dialog_purpose_bullet_3">It does not need direct bank integration to start helping you.</string>
+    <string name="purpose_continue">Continue</string>
+    <string name="purpose_not_now">Not now</string>
+
     <string name="dialog_consent_title">Research Pilot Consent</string>
-    <string name="dialog_consent_subtitle">Review these points before continuing with pilot monitoring.</string>
+    <string name="dialog_consent_subtitle">Review these points before turning on pilot safety monitoring.</string>
     <string name="dialog_consent_message">• Arthamantri is a research prototype.
 • This is not investment advice.
 • By continuing, you consent to monitoring and pilot data collection.</string>
-    <string name="dialog_consent_bullet_1">Arthamantri is a research prototype.</string>
-    <string name="dialog_consent_bullet_2">This is not investment advice.</string>
-    <string name="dialog_consent_bullet_3">By continuing, you consent to monitoring and pilot data collection.</string>
+    <string name="dialog_consent_bullet_1">Arthamantri is being tested in a research pilot.</string>
+    <string name="dialog_consent_bullet_2">It gives safety nudges. It is not investment advice.</string>
+    <string name="dialog_consent_bullet_3">By continuing, you agree to phone-based monitoring and pilot data collection.</string>
     <string name="consent_accept">I Agree</string>
+    <string name="consent_not_now">Not now</string>
     <string name="consent_exit">Exit</string>
 
     <string name="dialog_money_setup_title">Money Setup Lite</string>
@@ -83,22 +101,63 @@
     <string name="facilitator_subtitle">2-minute assisted setup for field helper, family helper, or BC.</string>
     <string name="facilitator_step_language">Step 1: Select language</string>
     <string name="facilitator_step_consent">Step 2: Record consent</string>
-    <string name="facilitator_step_money_setup">Step 3: Money Setup Lite</string>
-    <string name="facilitator_step_permissions">Step 4: Enable permissions</string>
+    <string name="facilitator_step_permissions">Step 3: Enable permissions</string>
+    <string name="facilitator_step_money_setup">Step 4: Money Setup Lite</string>
     <string name="facilitator_step_monitoring">Step 5: Start monitoring</string>
+    <string name="facilitator_readiness_title">Participant readiness</string>
+    <string name="facilitator_next_action_title">Next required action</string>
     <string name="facilitator_action_select_language">Select language</string>
     <string name="facilitator_action_record_consent">Record consent</string>
+    <string name="facilitator_action_review_language">Review language</string>
+    <string name="facilitator_action_review_consent">Review consent</string>
     <string name="facilitator_action_money_setup">Open money setup</string>
+    <string name="facilitator_action_review_money_setup">Review money setup</string>
     <string name="facilitator_action_permissions">Enable permissions</string>
+    <string name="facilitator_action_review_permissions">Review permissions</string>
     <string name="facilitator_action_start_monitor">Start monitoring</string>
+    <string name="facilitator_action_monitoring_verified">Monitoring verified</string>
     <string name="facilitator_action_refresh">Refresh status</string>
-    <string name="facilitator_status_done">Status: Done</string>
-    <string name="facilitator_status_pending">Status: Pending</string>
-    <string name="facilitator_status_permissions">SMS: %1$s • Usage: %2$s • Overlay: %3$s • Notifications: %4$s</string>
-    <string name="facilitator_status_monitoring_ready">Ready to monitor: %1$s</string>
+    <string name="facilitator_status_done">Complete</string>
+    <string name="facilitator_status_pending">Pending</string>
+    <string name="facilitator_status_in_progress">In progress</string>
+    <string name="facilitator_status_blocked">Blocked</string>
+    <string name="facilitator_status_with_detail">%1$s: %2$s</string>
+    <string name="facilitator_status_permissions">SMS: %1$s • Notifications: %2$s • Usage: %3$s • Overlay: %4$s</string>
+    <string name="facilitator_readiness_not_ready">Setup is still in progress. Finish the next required step before starting monitoring.</string>
+    <string name="facilitator_readiness_verify">Core setup is complete. Start monitoring and wait for the sample alert.</string>
+    <string name="facilitator_readiness_ready">Participant is ready. Monitoring is active and the sample alert has been shown.</string>
+    <string name="facilitator_next_action_language">Select the participant language first.</string>
+    <string name="facilitator_next_action_consent">Read the consent script aloud and record acceptance.</string>
+    <string name="facilitator_next_action_permissions">Enable the remaining permissions in order.</string>
+    <string name="facilitator_next_action_money_setup">Open Money Setup Lite and save or skip it once.</string>
+    <string name="facilitator_next_action_monitoring">Tap Start Monitoring and confirm the sample alert appears.</string>
+    <string name="facilitator_next_action_done">Explain the sample alert, remind the participant not to share OTP or UPI PIN, then close setup.</string>
+    <string name="facilitator_detail_language_done">participant language is selected</string>
+    <string name="facilitator_detail_language_pending">participant still needs a language</string>
+    <string name="facilitator_detail_consent_done">consent has been recorded</string>
+    <string name="facilitator_detail_consent_pending">read consent aloud and record acceptance</string>
+    <string name="facilitator_detail_permissions_done">all required permissions are on</string>
+    <string name="facilitator_detail_permissions_pending">next access to enable: %1$s</string>
+    <string name="facilitator_detail_money_setup_done">Money Setup Lite has been saved</string>
+    <string name="facilitator_detail_money_setup_skipped">Money Setup Lite was skipped for now</string>
+    <string name="facilitator_detail_money_setup_pending">open Money Setup Lite and choose Save or Skip</string>
+    <string name="facilitator_detail_monitoring_pending">ready to start monitoring and show the sample alert</string>
+    <string name="facilitator_detail_monitoring_started">monitoring is active; confirm the sample alert with the participant</string>
+    <string name="facilitator_detail_monitoring_verified">sample alert was shown and setup is ready</string>
+    <string name="facilitator_detail_finish_earlier_steps">finish the earlier setup step first</string>
+    <string name="facilitator_script_title">Quick safety script</string>
+    <string name="facilitator_script_body">• This app never asks for OTP.\n• This app never asks for UPI PIN or bank password.\n• This app gives safety nudges only.</string>
 
     <string name="dialog_perm_title">Permission Setup</string>
     <string name="dialog_perm_subtitle">Complete the required access steps so monitoring works reliably.</string>
+    <string name="dialog_perm_step_title">Enable %1$s</string>
+    <string name="dialog_perm_step_subtitle">Step %1$d of %2$d</string>
+    <string name="dialog_perm_review_title">%1$s is on</string>
+    <string name="dialog_perm_review_subtitle">You can review or change this access anytime.</string>
+    <string name="dialog_perm_complete_title">Access setup is complete</string>
+    <string name="dialog_perm_complete_subtitle">All required access for MVP monitoring is turned on.</string>
+    <string name="dialog_perm_complete_bullet_1">Arthamantri can now move to monitoring safely.</string>
+    <string name="dialog_perm_complete_bullet_2">You can revisit notification, usage, and overlay access from Manage Access later.</string>
     <string name="dialog_perm_message">To use the app, allow these permissions:
 • SMS
 • Usage Access
@@ -110,6 +169,24 @@ Follow the system prompts to complete setup.</string>
     <string name="dialog_perm_bullet_usage">Usage Access</string>
     <string name="dialog_perm_bullet_overlay">Overlay access</string>
     <string name="dialog_perm_followup">Follow the system prompts to complete setup.</string>
+    <string name="dialog_perm_bullet_helps">This helps Arthamantri %1$s.</string>
+    <string name="dialog_perm_bullet_not_access">It does not access OTP, UPI PIN, or bank password.</string>
+    <string name="dialog_perm_bullet_if_off">If this stays off, %1$s.</string>
+    <string name="dialog_perm_bullet_currently_on">This access is currently on.</string>
+    <string name="dialog_perm_bullet_next">Next after this: %1$s.</string>
+    <string name="dialog_perm_next_ready">you will be ready for the next setup step</string>
+    <string name="permission_help_sms">read money-related SMS alerts</string>
+    <string name="permission_help_usage">notice when you open a payment app</string>
+    <string name="permission_help_overlay">show a warning on top of the payment screen</string>
+    <string name="permission_help_notifications">keep safety alerts visible and easy to review</string>
+    <string name="permission_if_off_sms">the app cannot understand bank SMS safely</string>
+    <string name="permission_if_off_usage">the app cannot notice risky payment moments in time</string>
+    <string name="permission_if_off_overlay">the app cannot interrupt the screen during a risky moment</string>
+    <string name="permission_if_off_notifications">the app cannot keep alerts visible or let you review them properly</string>
+    <string name="permission_action_sms">Allow SMS</string>
+    <string name="permission_action_usage">Open Usage Access</string>
+    <string name="permission_action_overlay">Open Overlay Access</string>
+    <string name="permission_action_notifications">Open Notification Access</string>
     <string name="perm_continue">Continue</string>
 
     <string name="help_title">Help &amp; Setup</string>
@@ -159,6 +236,9 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_payment_risk_title">Payment Risk Warning</string>
     <string name="alert_spending_threshold">Your spending is crossing a safe threshold.</string>
     <string name="alert_txn_risk">Spending risk detected from transaction notification.</string>
+    <string name="alert_setup_verification_title">Setup check: sample alert</string>
+    <string name="alert_setup_verification_body">Monitoring is active. This is a sample alert so you know what future safety warnings look like. Arthamantri never asks for OTP, UPI PIN, or bank password.</string>
+    <string name="alert_setup_verification_next_action">If a payment request feels unclear, pause and verify before continuing.</string>
 
     <string name="toast_monitor_started">UPI monitoring started.</string>
     <string name="toast_monitor_stopped">UPI monitoring stopped.</string>
@@ -166,9 +246,13 @@ Follow the system prompts to complete setup.</string>
     <string name="toast_api_failed">API status check failed.</string>
     <string name="toast_feedback_ok">Feedback submitted.</string>
     <string name="toast_feedback_failed">Feedback submission failed.</string>
+    <string name="toast_complete_setup_first">Complete setup first, then start monitoring.</string>
+    <string name="toast_sms_missing">Please allow SMS access.</string>
     <string name="toast_usage_missing">Please allow Usage Access.</string>
     <string name="toast_overlay_missing">Please allow Overlay Access.</string>
+    <string name="toast_notifications_missing">Please allow Notification Access.</string>
     <string name="toast_monitor_failed">Monitoring failed.</string>
+    <string name="toast_setup_paused">Setup paused. You can resume it anytime.</string>
     <string name="toast_settings_open_failed">Unable to open settings page on this device.</string>
     <string name="toast_manage_access_expanded">Manage Access options expanded.</string>
     <string name="toast_manage_access_collapsed">Manage Access options collapsed.</string>

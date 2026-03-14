@@ -13,6 +13,7 @@
     <string name="menu_access_notifications">सूचना अनुमति</string>
     <string name="menu_access_overlay">ओवरले अनुमति</string>
     <string name="menu_access_usage">उपयोग-अनुमति</string>
+    <string name="permission_label_sms">SMS अनुमति</string>
     <string name="menu_feedback">पायलट प्रतिक्रिया भेजें</string>
     <string name="menu_money_setup">त्वरित धन सेटअप</string>
     <string name="menu_facilitator_pack">सहायक सेटअप पैक</string>
@@ -26,8 +27,15 @@
     <string name="home_subtitle">अनुकूली वित्तीय साक्षरता और सुरक्षा संकेत</string>
     <string name="pilot_banner_default">शोध पायलट: यह निवेश सलाह उत्पाद नहीं है।</string>
     <string name="status_initial">स्थिति: प्रारंभिक प्रक्रिया पूरी करें, फिर निगरानी शुरू करें।</string>
+    <string name="status_onboarding_language">स्थिति: सेटअप शुरू करने के लिए भाषा चुनें।</string>
+    <string name="status_onboarding_consent">स्थिति: अर्थमंत्री कैसे मदद करता है, इसे देखें और फिर सेटअप जारी रखने के लिए सहमति दें।</string>
+    <string name="status_onboarding_resume">स्थिति: सेटअप अभी रुका हुआ है। जब तैयार हों, तब “सेटअप फिर शुरू करें” दबाएं।</string>
+    <string name="status_onboarding_continue">स्थिति: निगरानी चालू करने के लिए सेटअप पूरा करें।</string>
+    <string name="status_onboarding_permission">स्थिति: %1$s अभी बंद है। जारी रखने के लिए “सेटअप फिर शुरू करें” दबाएं।</string>
+    <string name="status_sms_missing">SMS अनुमति उपलब्ध नहीं है।</string>
     <string name="status_usage_missing">उपयोग-अनुमति उपलब्ध नहीं है।</string>
     <string name="status_overlay_missing">ओवरले अनुमति उपलब्ध नहीं है।</string>
+    <string name="status_notifications_missing">सूचना अनुमति उपलब्ध नहीं है।</string>
     <string name="status_monitoring_active">निगरानी सक्रिय है।</string>
     <string name="status_monitoring_failed">निगरानी शुरू नहीं हो सकी।</string>
     <string name="status_api_connected">सेवा सफलतापूर्वक जुड़ी है।</string>
@@ -36,6 +44,7 @@
     <string name="home_card_monitor_title">तत्काल अनुश्रवण</string>
     <string name="home_card_monitor_desc">बैकग्राउंड में SMS/UPI गतिविधि देखकर जोखिम चेतावनी ट्रिगर करता है।</string>
     <string name="action_start_monitor">निगरानी शुरू करें</string>
+    <string name="action_resume_setup">सेटअप फिर शुरू करें</string>
     <string name="action_stop_monitor">निगरानी बंद करें</string>
 
     <string name="home_card_info_title">यह कैसे काम करता है</string>
@@ -46,15 +55,24 @@
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिंदी</string>
 
+    <string name="dialog_purpose_title">अर्थमंत्री कैसे मदद करता है</string>
+    <string name="dialog_purpose_subtitle">पूरा सेटअप होने से पहले भी यह ऐप सरल सुरक्षा मार्गदर्शन देता है।</string>
+    <string name="dialog_purpose_bullet_1">यह जोखिम वाले भुगतान या पैसे से जुड़े संदेशों को आसान भाषा में समझाता है।</string>
+    <string name="dialog_purpose_bullet_2">यह SMS और ऐप गतिविधि जैसे फोन संकेतों से सुरक्षा संकेत देता है।</string>
+    <string name="dialog_purpose_bullet_3">मदद शुरू करने के लिए इसे सीधे बैंक इंटीग्रेशन की जरूरत नहीं है।</string>
+    <string name="purpose_continue">जारी रखें</string>
+    <string name="purpose_not_now">अभी नहीं</string>
+
     <string name="dialog_consent_title">शोध पायलट सहमति</string>
-    <string name="dialog_consent_subtitle">पायलट निगरानी जारी रखने से पहले इन बिंदुओं को पढ़ लें।</string>
+    <string name="dialog_consent_subtitle">पायलट सुरक्षा निगरानी चालू करने से पहले इन बातों को पढ़ लें।</string>
     <string name="dialog_consent_message">• अर्थमंत्री एक शोध प्रोटोटाइप है।
 • यह निवेश सलाह नहीं है।
 • आगे बढ़कर आप निगरानी और पायलट डेटा संग्रह के लिए सहमति देते हैं।</string>
-    <string name="dialog_consent_bullet_1">अर्थमंत्री एक शोध प्रोटोटाइप है।</string>
-    <string name="dialog_consent_bullet_2">यह निवेश सलाह नहीं है।</string>
-    <string name="dialog_consent_bullet_3">आगे बढ़कर आप निगरानी और पायलट डेटा संग्रह के लिए सहमति देते हैं।</string>
+    <string name="dialog_consent_bullet_1">अर्थमंत्री का उपयोग अभी शोध पायलट में किया जा रहा है।</string>
+    <string name="dialog_consent_bullet_2">यह सुरक्षा संकेत देता है। यह निवेश सलाह नहीं है।</string>
+    <string name="dialog_consent_bullet_3">आगे बढ़कर आप फोन-आधारित निगरानी और पायलट डेटा संग्रह के लिए सहमति देते हैं।</string>
     <string name="consent_accept">मैं सहमत हूं</string>
+    <string name="consent_not_now">अभी नहीं</string>
     <string name="consent_exit">बंद करें</string>
 
     <string name="dialog_money_setup_title">त्वरित धन सेटअप</string>
@@ -83,22 +101,63 @@
     <string name="facilitator_subtitle">फील्ड सहायक, परिवार सहायक या BC के लिए 2-मिनट निर्देशित सेटअप।</string>
     <string name="facilitator_step_language">चरण 1: भाषा चुनें</string>
     <string name="facilitator_step_consent">चरण 2: सहमति दर्ज करें</string>
-    <string name="facilitator_step_money_setup">चरण 3: त्वरित धन सेटअप</string>
-    <string name="facilitator_step_permissions">चरण 4: अनुमतियां सक्षम करें</string>
+    <string name="facilitator_step_permissions">चरण 3: अनुमतियां सक्षम करें</string>
+    <string name="facilitator_step_money_setup">चरण 4: त्वरित धन सेटअप</string>
     <string name="facilitator_step_monitoring">चरण 5: निगरानी शुरू करें</string>
+    <string name="facilitator_readiness_title">प्रतिभागी तैयारी</string>
+    <string name="facilitator_next_action_title">अगला जरूरी कदम</string>
     <string name="facilitator_action_select_language">भाषा चुनें</string>
     <string name="facilitator_action_record_consent">सहमति दर्ज करें</string>
+    <string name="facilitator_action_review_language">भाषा देखें</string>
+    <string name="facilitator_action_review_consent">सहमति देखें</string>
     <string name="facilitator_action_money_setup">धन सेटअप खोलें</string>
+    <string name="facilitator_action_review_money_setup">धन सेटअप देखें</string>
     <string name="facilitator_action_permissions">अनुमतियां सक्षम करें</string>
+    <string name="facilitator_action_review_permissions">अनुमतियां देखें</string>
     <string name="facilitator_action_start_monitor">निगरानी शुरू करें</string>
+    <string name="facilitator_action_monitoring_verified">निगरानी सत्यापित</string>
     <string name="facilitator_action_refresh">स्थिति रीफ्रेश करें</string>
-    <string name="facilitator_status_done">स्थिति: पूर्ण</string>
-    <string name="facilitator_status_pending">स्थिति: लंबित</string>
-    <string name="facilitator_status_permissions">SMS: %1$s • उपयोग: %2$s • ओवरले: %3$s • सूचनाएं: %4$s</string>
-    <string name="facilitator_status_monitoring_ready">निगरानी के लिए तैयार: %1$s</string>
+    <string name="facilitator_status_done">पूर्ण</string>
+    <string name="facilitator_status_pending">लंबित</string>
+    <string name="facilitator_status_in_progress">जारी</string>
+    <string name="facilitator_status_blocked">रुका हुआ</string>
+    <string name="facilitator_status_with_detail">%1$s: %2$s</string>
+    <string name="facilitator_status_permissions">SMS: %1$s • सूचनाएं: %2$s • उपयोग: %3$s • ओवरले: %4$s</string>
+    <string name="facilitator_readiness_not_ready">सेटअप अभी पूरा नहीं हुआ है। निगरानी शुरू करने से पहले अगला जरूरी कदम पूरा करें।</string>
+    <string name="facilitator_readiness_verify">मुख्य सेटअप पूरा है। निगरानी शुरू करें और नमूना अलर्ट आने की पुष्टि करें।</string>
+    <string name="facilitator_readiness_ready">प्रतिभागी तैयार है। निगरानी चालू है और नमूना अलर्ट दिख चुका है।</string>
+    <string name="facilitator_next_action_language">पहले प्रतिभागी की भाषा चुनें।</string>
+    <string name="facilitator_next_action_consent">सहमति संदेश पढ़कर सुनाएं और स्वीकृति दर्ज करें।</string>
+    <string name="facilitator_next_action_permissions">बाकी अनुमतियां क्रम से चालू करें।</string>
+    <string name="facilitator_next_action_money_setup">Money Setup Lite खोलें और एक बार सहेजें या छोड़ें।</string>
+    <string name="facilitator_next_action_monitoring">“निगरानी शुरू करें” दबाएं और नमूना अलर्ट आने की पुष्टि करें।</string>
+    <string name="facilitator_next_action_done">नमूना अलर्ट समझाएं, प्रतिभागी को OTP या UPI PIN साझा न करने की याद दिलाएं, फिर सेटअप बंद करें।</string>
+    <string name="facilitator_detail_language_done">प्रतिभागी की भाषा चुनी जा चुकी है</string>
+    <string name="facilitator_detail_language_pending">प्रतिभागी की भाषा अभी चुननी है</string>
+    <string name="facilitator_detail_consent_done">सहमति दर्ज हो चुकी है</string>
+    <string name="facilitator_detail_consent_pending">सहमति पढ़कर सुनाएं और दर्ज करें</string>
+    <string name="facilitator_detail_permissions_done">सभी जरूरी अनुमतियां चालू हैं</string>
+    <string name="facilitator_detail_permissions_pending">अगली अनुमति: %1$s</string>
+    <string name="facilitator_detail_money_setup_done">Money Setup Lite सहेज दिया गया है</string>
+    <string name="facilitator_detail_money_setup_skipped">Money Setup Lite अभी के लिए छोड़ा गया है</string>
+    <string name="facilitator_detail_money_setup_pending">Money Setup Lite खोलें और सहेजें या छोड़ें</string>
+    <string name="facilitator_detail_monitoring_pending">अब निगरानी शुरू करके नमूना अलर्ट दिखाना है</string>
+    <string name="facilitator_detail_monitoring_started">निगरानी चालू है; प्रतिभागी के साथ नमूना अलर्ट की पुष्टि करें</string>
+    <string name="facilitator_detail_monitoring_verified">नमूना अलर्ट दिख चुका है और सेटअप तैयार है</string>
+    <string name="facilitator_detail_finish_earlier_steps">पहले पिछले सेटअप कदम को पूरा करें</string>
+    <string name="facilitator_script_title">त्वरित सुरक्षा संदेश</string>
+    <string name="facilitator_script_body">• यह ऐप कभी OTP नहीं मांगता।\n• यह ऐप कभी UPI PIN या बैंक पासवर्ड नहीं मांगता।\n• यह ऐप केवल सुरक्षा संकेत देता है।</string>
 
     <string name="dialog_perm_title">अनुमति सेटअप</string>
     <string name="dialog_perm_subtitle">निगरानी सही तरह चले, इसके लिए जरूरी अनुमतियां पूरी करें।</string>
+    <string name="dialog_perm_step_title">%1$s सक्षम करें</string>
+    <string name="dialog_perm_step_subtitle">चरण %1$d / %2$d</string>
+    <string name="dialog_perm_review_title">%1$s चालू है</string>
+    <string name="dialog_perm_review_subtitle">आप इस अनुमति को कभी भी देख या बदल सकते हैं।</string>
+    <string name="dialog_perm_complete_title">अनुमति सेटअप पूरा है</string>
+    <string name="dialog_perm_complete_subtitle">MVP निगरानी के लिए सभी जरूरी अनुमतियां चालू हैं।</string>
+    <string name="dialog_perm_complete_bullet_1">अब अर्थमंत्री सुरक्षित रूप से निगरानी चरण में जा सकता है।</string>
+    <string name="dialog_perm_complete_bullet_2">बाद में आप Manage Access से सूचना, उपयोग और ओवरले अनुमति फिर देख सकते हैं।</string>
     <string name="dialog_perm_message">ऐप उपयोग के लिए ये अनुमतियां दें:
 • SMS
 • उपयोग-अनुमति
@@ -110,6 +169,24 @@
     <string name="dialog_perm_bullet_usage">उपयोग-अनुमति</string>
     <string name="dialog_perm_bullet_overlay">ओवरले अनुमति</string>
     <string name="dialog_perm_followup">सेटअप पूरा करने के लिए सिस्टम निर्देशों का पालन करें।</string>
+    <string name="dialog_perm_bullet_helps">यह अर्थमंत्री को %1$s में मदद करता है।</string>
+    <string name="dialog_perm_bullet_not_access">यह OTP, UPI PIN या बैंक पासवर्ड तक पहुंच नहीं लेता।</string>
+    <string name="dialog_perm_bullet_if_off">यदि यह बंद रहा, तो %1$s।</string>
+    <string name="dialog_perm_bullet_currently_on">यह अनुमति अभी चालू है।</string>
+    <string name="dialog_perm_bullet_next">इसके बाद: %1$s।</string>
+    <string name="dialog_perm_next_ready">आप अगले सेटअप चरण के लिए तैयार होंगे</string>
+    <string name="permission_help_sms">पैसे से जुड़े SMS अलर्ट पढ़ने</string>
+    <string name="permission_help_usage">जब आप भुगतान ऐप खोलते हैं, उसे पहचानने</string>
+    <string name="permission_help_overlay">भुगतान स्क्रीन के ऊपर चेतावनी दिखाने</string>
+    <string name="permission_help_notifications">सुरक्षा अलर्ट को साफ़ और दिखाई देने योग्य रखने</string>
+    <string name="permission_if_off_sms">ऐप बैंक SMS को सुरक्षित रूप से समझ नहीं पाएगा</string>
+    <string name="permission_if_off_usage">ऐप जोखिम वाले भुगतान क्षण को समय पर पहचान नहीं पाएगा</string>
+    <string name="permission_if_off_overlay">ऐप जोखिम के समय स्क्रीन पर रुकावट नहीं दिखा पाएगा</string>
+    <string name="permission_if_off_notifications">ऐप अलर्ट को ठीक से दिखा या बाद में समीक्षा नहीं करा पाएगा</string>
+    <string name="permission_action_sms">SMS अनुमति दें</string>
+    <string name="permission_action_usage">उपयोग-अनुमति खोलें</string>
+    <string name="permission_action_overlay">ओवरले अनुमति खोलें</string>
+    <string name="permission_action_notifications">सूचना अनुमति खोलें</string>
     <string name="perm_continue">जारी रखें</string>
 
     <string name="help_title">सहायता और प्रारंभिक मार्गदर्शन</string>
@@ -159,6 +236,9 @@
     <string name="alert_payment_risk_title">भुगतान जोखिम चेतावनी</string>
     <string name="alert_spending_threshold">आपका खर्च सुरक्षित सीमा को पार कर रहा है।</string>
     <string name="alert_txn_risk">लेन-देन सूचना से खर्च जोखिम पाया गया।</string>
+    <string name="alert_setup_verification_title">सेटअप जांच: नमूना चेतावनी</string>
+    <string name="alert_setup_verification_body">निगरानी सक्रिय है। यह एक नमूना चेतावनी है ताकि आप समझ सकें कि आगे के सुरक्षा संकेत कैसे दिखेंगे। अर्थमंत्री कभी OTP, UPI PIN या बैंक पासवर्ड नहीं मांगता।</string>
+    <string name="alert_setup_verification_next_action">अगर कोई भुगतान अनुरोध साफ़ न लगे, तो आगे बढ़ने से पहले रुककर पुष्टि करें।</string>
 
     <string name="toast_monitor_started">UPI निगरानी शुरू हो गई।</string>
     <string name="toast_monitor_stopped">UPI निगरानी बंद हो गई।</string>
@@ -166,9 +246,13 @@
     <string name="toast_api_failed">सेवा स्थिति जांच असफल रही।</string>
     <string name="toast_feedback_ok">प्रतिक्रिया भेज दी गई।</string>
     <string name="toast_feedback_failed">प्रतिक्रिया भेजना असफल रहा।</string>
+    <string name="toast_complete_setup_first">पहले सेटअप पूरा करें, फिर निगरानी शुरू करें।</string>
+    <string name="toast_sms_missing">कृपया SMS अनुमति दें।</string>
     <string name="toast_usage_missing">कृपया उपयोग-अनुमति दें।</string>
     <string name="toast_overlay_missing">कृपया ओवरले अनुमति दें।</string>
+    <string name="toast_notifications_missing">कृपया सूचना अनुमति दें।</string>
     <string name="toast_monitor_failed">निगरानी शुरू नहीं हो सकी।</string>
+    <string name="toast_setup_paused">सेटअप रोक दिया गया है। आप इसे कभी भी फिर शुरू कर सकते हैं।</string>
     <string name="toast_settings_open_failed">इस डिवाइस पर सेटिंग पेज नहीं खुल सका।</string>
     <string name="toast_manage_access_expanded">अनुमति प्रबंधन विकल्प खुल गए।</string>
     <string name="toast_manage_access_collapsed">अनुमति प्रबंधन विकल्प बंद हो गए।</string>
