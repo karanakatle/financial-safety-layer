@@ -102,3 +102,27 @@ def compute_contextual_scores(
         "frequency_bucket": frequency_bucket,
         "pause_seconds": pause_seconds,
     }
+
+
+def recent_financial_context(*, participant_id: str, pilot_storage, limit: int = 10) -> dict:
+    signals = pilot_storage.recent_financial_signals(participant_id, limit=limit)
+    latest_income = next(
+        (signal for signal in signals if signal.get("signal_type") == "income" and signal.get("amount") is not None),
+        None,
+    )
+    latest_expense = next(
+        (signal for signal in signals if signal.get("signal_type") == "expense" and signal.get("amount") is not None),
+        None,
+    )
+    partial_count = sum(1 for signal in signals if signal.get("signal_type") == "partial")
+    income_count = sum(1 for signal in signals if signal.get("signal_type") == "income")
+    expense_count = sum(1 for signal in signals if signal.get("signal_type") == "expense")
+
+    return {
+        "signals": signals,
+        "income_count": income_count,
+        "expense_count": expense_count,
+        "partial_count": partial_count,
+        "latest_income_amount": float(latest_income["amount"]) if latest_income else None,
+        "latest_expense_amount": float(latest_expense["amount"]) if latest_expense else None,
+    }

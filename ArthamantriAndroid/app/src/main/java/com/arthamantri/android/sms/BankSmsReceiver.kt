@@ -34,23 +34,25 @@ class BankSmsReceiver : BroadcastReceiver() {
             "Incoming SMS sender=$sender body='${body.take(180)}'"
         )
 
-        val parsed = SmsParser.parseExpense(sender, body)
+        val parsed = SmsParser.parseSignal(sender, body)
         if (parsed == null) {
             Log.w(
                 AppConstants.LogTags.BANK_SMS_RECEIVER,
-                "SMS ignored: parser did not detect debit/amount pattern"
+                "SMS ignored: parser did not detect financial signal pattern"
             )
             return
         }
         Log.i(
             AppConstants.LogTags.BANK_SMS_RECEIVER,
-            "Parsed SMS expense amount=${parsed.amount} category=${parsed.category} baseUrl=${AppConfig.getBaseUrl(context)}"
+            "Parsed SMS signal type=${parsed.signalType} confidence=${parsed.confidence} amount=${parsed.amount} category=${parsed.category} baseUrl=${AppConfig.getBaseUrl(context)}"
         )
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val result = LiteracyRepository.sendSmsExpense(
+                val result = LiteracyRepository.sendSmsSignal(
                     context = context,
+                    signalType = parsed.signalType,
+                    confidence = parsed.confidence,
                     amount = parsed.amount,
                     category = parsed.category,
                     note = parsed.note,
@@ -82,7 +84,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                 AlertNotifier.show(
                     context = context,
                     title = "SMS Processed (Offline)",
-                    body = "Amount: ${parsed.amount}\nStatus: Network Error. Could not sync with server.",
+                    body = "Signal: ${parsed.signalType}\nAmount: ${parsed.amount ?: "unknown"}\nStatus: Network Error. Could not sync with server.",
                     severity = "medium"
                 )
             }

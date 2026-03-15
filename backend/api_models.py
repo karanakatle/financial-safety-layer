@@ -48,7 +48,9 @@ class SavingsDecision(BaseModel):
 class SMSIngestIn(BaseModel):
     participant_id: str = "global_user"
     language: str = "en"
-    amount: float = Field(gt=0)
+    amount: Optional[float] = Field(default=None, ge=0)
+    signal_type: Literal["expense", "income", "partial"] = "expense"
+    signal_confidence: Literal["confirmed", "partial"] = "confirmed"
     category: str = "bank_sms"
     note: str = ""
     timestamp: Optional[str] = None
