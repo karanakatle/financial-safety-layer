@@ -131,6 +131,17 @@ def localize_alert(
     return localized
 
 
+def localized_goal_names(language: str, envelope: dict) -> str:
+    goals = [str(goal or "").strip() for goal in list(envelope.get("essential_goals") or []) if str(goal or "").strip()]
+    if not goals:
+        return literacy_message(language, "daily_essentials")
+    localized_goals = [
+        literacy_message(language, f"goals.{goal}") if literacy_message(language, f"goals.{goal}") != f"goals.{goal}" else goal
+        for goal in goals[:2]
+    ]
+    return ", ".join(localized_goals)
+
+
 def goal_impact_text(language: str, envelope: dict, projected_spend: float) -> str:
     protected_limit = float(envelope.get("protected_limit") or 0.0)
     if protected_limit <= 0:
@@ -138,37 +149,100 @@ def goal_impact_text(language: str, envelope: dict, projected_spend: float) -> s
     delta = round(projected_spend - protected_limit, 2)
     if delta <= 0:
         return ""
-    goals = list(envelope.get("essential_goals") or [])
-    goal_names = ", ".join(goals) if goals else literacy_message(language, "daily_essentials")
+    goal_names = localized_goal_names(language, envelope)
     return literacy_message(language, "goal_impact_template", delta=delta, goal_names=goal_names)
+
+
+def primary_cashflow_message(
+    language: str,
+    reason: str,
+    projected_spend: float,
+    daily_safe_limit: float,
+    envelope: dict,
+    upi_open_flag: bool,
+) -> str:
+    protected_limit = float(envelope.get("protected_limit") or 0.0)
+    essential_pressure = protected_limit > 0 and projected_spend > protected_limit
+    over_limit = daily_safe_limit > 0 and projected_spend > daily_safe_limit
+
+    if essential_pressure and over_limit:
+        return literacy_message(language, "cashflow_message_over_limit_essentials")
+    if essential_pressure:
+        return literacy_message(language, "cashflow_message_essential_pressure")
+    if upi_open_flag or reason == "upi_open_after_threshold_warning":
+        return literacy_message(language, "cashflow_message_upi_open")
+    return literacy_message(language, "cashflow_message_close_limit")
 
 
 def why_text(
     language: str,
     reason: str,
     risk_level: str,
+    projected_spend: float,
+    daily_safe_limit: float,
+    envelope: dict,
+    financial_context: dict | None,
     spend_ratio: float,
     txn_anomaly_score: float,
     upi_open_flag: bool,
 ) -> str:
-    base = literacy_message(
-        language,
-        "why_base_template",
-        spend_ratio=round(spend_ratio, 2),
-        risk_level=localized_label(language, risk_level),
-    )
+    protected_limit = float(envelope.get("protected_limit") or 0.0)
+    goal_names = localized_goal_names(language, envelope)
+    essential_pressure = protected_limit > 0 and projected_spend > protected_limit
+    income_count = int((financial_context or {}).get("income_count") or 0)
+    expense_count = int((financial_context or {}).get("expense_count") or 0)
+
+    if essential_pressure:
+        base = literacy_message(
+            language,
+            "why_essential_pressure_template",
+            goal_names=goal_names,
+            protected_limit=round(protected_limit, 2),
+        )
+    else:
+        base = literacy_message(
+            language,
+            "why_daily_limit_template",
+            projected_spend=round(projected_spend, 2),
+            daily_safe_limit=round(daily_safe_limit, 2),
+        )
+
+    extras: list[str] = []
+    if income_count > 0:
+        extras.append(literacy_message(language, "why_recent_income_seen"))
+    if expense_count >= 2:
+        extras.append(literacy_message(language, "why_multiple_expenses_seen"))
     if reason == "catastrophic_risk_override":
-        return f"{base} {literacy_message(language, 'why_suffix_catastrophic')}"
-    if upi_open_flag:
-        return f"{base} {literacy_message(language, 'why_suffix_upi_open')}"
-    if txn_anomaly_score >= 0.7:
-        return f"{base} {literacy_message(language, 'why_suffix_anomaly')}"
-    return base
+        extras.append(literacy_message(language, "why_suffix_catastrophic"))
+    elif upi_open_flag:
+        extras.append(literacy_message(language, "why_suffix_upi_open"))
+    elif txn_anomaly_score >= 0.7:
+        extras.append(literacy_message(language, "why_suffix_anomaly"))
+
+    return " ".join([base, *extras]).strip()
 
 
-def next_action_text(language: str, risk_level: str, reason: str) -> str:
+def next_action_text(
+    language: str,
+    risk_level: str,
+    reason: str,
+    projected_spend: float,
+    daily_safe_limit: float,
+    envelope: dict,
+    financial_context: dict | None,
+    upi_open_flag: bool,
+) -> str:
+    protected_limit = float(envelope.get("protected_limit") or 0.0)
+    goal_names = localized_goal_names(language, envelope)
+    essential_pressure = protected_limit > 0 and projected_spend > protected_limit
+    income_count = int((financial_context or {}).get("income_count") or 0)
+
+    if essential_pressure and income_count > 0:
+        return literacy_message(language, "next_essential_pressure_with_income", goal_names=goal_names)
+    if essential_pressure:
+        return literacy_message(language, "next_essential_pressure", goal_names=goal_names)
     if risk_level in {"high", "critical"}:
         return literacy_message(language, "next_high_risk")
-    if reason == "upi_open_after_threshold_warning":
+    if upi_open_flag or reason == "upi_open_after_threshold_warning":
         return literacy_message(language, "next_upi_open")
     return literacy_message(language, "next_default")

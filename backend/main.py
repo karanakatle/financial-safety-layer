@@ -32,11 +32,11 @@ from backend.literacy import (
     essential_goal_envelope,
     infer_goal_context,
     goal_impact_text,
-    localized_label,
     localize_alert,
     next_action_text,
     policy_for_participant,
     persist_literacy_monitor,
+    primary_cashflow_message,
     recent_financial_context,
     auto_recalibrate_policy,
     resolve_experiment_variant,
@@ -246,6 +246,11 @@ def _apply_contextual_alert_intensity(
         category=category,
         profile=essential_profile,
     )
+    financial_context = recent_financial_context(
+        participant_id=participant_id,
+        pilot_storage=pilot_storage,
+        limit=10,
+    )
     non_essential_confidence = (
         float(goal_context["confidence"])
         if goal_context["gated_goal"] == GOAL_NON_ESSENTIAL
@@ -300,15 +305,36 @@ def _apply_contextual_alert_intensity(
     risk_level = risk_level_from_score(float(features["risk_score"]))
     goal_impact = goal_impact_text(language, envelope, projected_spend)
     reason = str(localized_alert.get("reason") or "")
+    primary_message = primary_cashflow_message(
+        language=language,
+        reason=reason,
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        upi_open_flag=upi_open_flag,
+    )
     why_this = why_text(
         language=language,
         reason=reason,
         risk_level=risk_level,
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        financial_context=financial_context,
         spend_ratio=float(features["spend_ratio"]),
         txn_anomaly_score=float(features["txn_anomaly_score"]),
         upi_open_flag=upi_open_flag,
     )
-    next_action = next_action_text(language=language, risk_level=risk_level, reason=reason)
+    next_action = next_action_text(
+        language=language,
+        risk_level=risk_level,
+        reason=reason,
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        financial_context=financial_context,
+        upi_open_flag=upi_open_flag,
+    )
 
     contextual_alert = dict(localized_alert)
     contextual_alert["alert_id"] = alert_id
@@ -334,15 +360,7 @@ def _apply_contextual_alert_intensity(
     contextual_alert["txn_goal_confidence"] = goal_context["confidence"]
     contextual_alert["txn_goal_confidence_gate_passed"] = goal_context["gate_passed"]
     contextual_alert["txn_goal_inference_source"] = goal_context["source"]
-    message = contextual_alert.get("message") or ""
-    appended_lines = [
-        f"{localized_label(language, 'risk')}: {localized_label(language, risk_level)}",
-        f"{localized_label(language, 'why')}: {why_this}",
-        f"{localized_label(language, 'next')}: {next_action}",
-    ]
-    if goal_impact:
-        appended_lines.append(f"{localized_label(language, 'goal_impact')}: {goal_impact}")
-    contextual_alert["message"] = "\n".join([message, *appended_lines]).strip()
+    contextual_alert["message"] = primary_message
     contextual_alert["priority"] = {
         "hard": "critical",
         "medium": "high",

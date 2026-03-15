@@ -100,9 +100,113 @@ def test_sms_ingest_localizes_hindi_alert_message(tmp_path, monkeypatch):
     payload = res.json()
     assert payload["literacy_alerts"]
     alert = payload["literacy_alerts"][0]
-    assert "दैनिक सुरक्षित" in alert["message"]
-    assert "जोखिम स्तर" in alert["message"]
-    assert "अगला सुरक्षित कदम" in alert["message"]
+    assert "सुरक्षित खर्च" in alert["message"] or "जरूरी जरूरतों" in alert["message"]
+    assert "आज का खर्च" in alert["why_this_alert"] or "पैसा अलग" in alert["why_this_alert"]
+    assert "जरूरी" in alert["next_best_action"] or "अलग रखें" in alert["next_best_action"]
+
+
+def test_cashflow_guidance_explains_essential_pressure_with_goal_names(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    client.post(
+        "/api/literacy/essential-goals",
+        json={
+            "participant_id": "cashflow_goals_p1",
+            "cohort": "women_led_household",
+            "essential_goals": ["ration", "school"],
+            "language": "en",
+            "setup_skipped": False,
+        },
+    )
+    res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "cashflow_goals_p1",
+            "language": "en",
+            "amount": 1100,
+            "category": "upi",
+            "note": "grocery transfer",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["literacy_alerts"]
+    alert = payload["literacy_alerts"][0]
+    assert "money needed for essentials" in alert["message"].lower()
+    assert "keeping aside money for ration, school fees" in alert["why_this_alert"].lower()
+    assert "keep money aside for ration, school fees first" in alert["next_best_action"].lower()
+    assert "ration, school fees" in alert["essential_goal_impact"].lower()
+
+
+def test_cashflow_guidance_uses_recent_income_context_in_next_action(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    income_res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "cashflow_income_p1",
+            "language": "en",
+            "signal_type": "income",
+            "signal_confidence": "confirmed",
+            "amount": 4000,
+            "category": "bank_sms",
+            "note": "salary credited",
+        },
+    )
+    assert income_res.status_code == 200
+
+    expense_res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "cashflow_income_p1",
+            "language": "en",
+            "amount": 1100,
+            "category": "upi",
+            "note": "merchant payment",
+        },
+    )
+
+    assert expense_res.status_code == 200
+    payload = expense_res.json()
+    assert payload["literacy_alerts"]
+    alert = payload["literacy_alerts"][0]
+    assert "recent money-in message" in alert["why_this_alert"].lower()
+    assert "recent money received" in alert["next_best_action"].lower()
+
+
+def test_cashflow_guidance_localizes_goal_aware_copy_in_hindi(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    client.post(
+        "/api/literacy/essential-goals",
+        json={
+            "participant_id": "cashflow_hi_goals",
+            "cohort": "women_led_household",
+            "essential_goals": ["ration", "school"],
+            "language": "hi",
+            "setup_skipped": False,
+        },
+    )
+    res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "cashflow_hi_goals",
+            "language": "hi",
+            "amount": 1100,
+            "category": "upi",
+            "note": "merchant payment",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["literacy_alerts"]
+    alert = payload["literacy_alerts"][0]
+    assert "जरूरी जरूरतों" in alert["message"]
+    assert "राशन" in alert["why_this_alert"] or "स्कूल फीस" in alert["why_this_alert"]
+    assert "पहले अलग रखें" in alert["next_best_action"]
+    assert "राशन" in alert["essential_goal_impact"] or "स्कूल फीस" in alert["essential_goal_impact"]
 
 
 def test_sms_income_ingest_updates_context_without_expense_alert_path(tmp_path, monkeypatch):
