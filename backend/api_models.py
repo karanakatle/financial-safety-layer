@@ -94,6 +94,7 @@ class LiteracyPolicyUpsertIn(BaseModel):
 
 
 class LiteracyAlertFeedbackIn(BaseModel):
+    event_id: Optional[str] = None
     alert_id: str
     participant_id: str
     action: str
@@ -119,6 +120,7 @@ class PilotFeedbackIn(BaseModel):
 
 
 class PilotAppLogIn(BaseModel):
+    event_id: Optional[str] = None
     participant_id: str
     level: str = "info"
     message: str

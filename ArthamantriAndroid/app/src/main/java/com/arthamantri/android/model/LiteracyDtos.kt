@@ -148,6 +148,7 @@ data class PilotFeedbackResponse(
 )
 
 data class PilotAppLogRequest(
+    val event_id: String? = null,
     val participant_id: String,
     val level: String = AppConstants.Domain.PILOT_LOG_LEVEL_INFO,
     val message: String,
@@ -160,6 +161,7 @@ data class PilotAppLogResponse(
 )
 
 data class LiteracyAlertFeedbackRequest(
+    val event_id: String? = null,
     val alert_id: String,
     val participant_id: String,
     val action: String,

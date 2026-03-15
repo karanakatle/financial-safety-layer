@@ -27,6 +27,13 @@ object AlertFeedbackReporter {
                     title = title,
                     message = message,
                 )
+            }.onSuccess { result ->
+                if (result.queued) {
+                    Log.w(
+                        AppConstants.LogTags.MAIN_ACTIVITY,
+                        "Alert feedback queued for later sync",
+                    )
+                }
             }.onFailure {
                 Log.e(
                     AppConstants.LogTags.MAIN_ACTIVITY,

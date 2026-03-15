@@ -22,7 +22,9 @@ class AlertDisplayActivity : AppCompatActivity() {
     private lateinit var alertTitle: String
     private lateinit var alertBody: String
     private lateinit var alertSeverity: String
+    private lateinit var alertFamily: String
     private var alertPauseSeconds: Int = 0
+    private var showUsefulnessFeedback: Boolean = false
     private var useFocusedPaymentActions: Boolean = false
     private lateinit var whyThisAlert: String
     private lateinit var nextSafeAction: String
@@ -35,6 +37,8 @@ class AlertDisplayActivity : AppCompatActivity() {
     private lateinit var notUsefulBtn: Button
     private lateinit var trustedPersonBtn: Button
     private lateinit var supportBtn: Button
+    private lateinit var usefulnessHint: TextView
+    private lateinit var feedbackRow: View
     private lateinit var pauseHint: TextView
     private lateinit var proceedConfirmGroup: View
     private lateinit var confirmProceedBtn: Button
@@ -108,6 +112,8 @@ class AlertDisplayActivity : AppCompatActivity() {
         notUsefulBtn = findViewById(R.id.notUsefulBtn)
         trustedPersonBtn = findViewById(R.id.trustedPersonBtn)
         supportBtn = findViewById(R.id.supportBtn)
+        usefulnessHint = findViewById(R.id.alertUsefulnessHint)
+        feedbackRow = findViewById(R.id.alertFeedbackRow)
         pauseHint = findViewById(R.id.alertPauseHint)
         proceedConfirmGroup = findViewById(R.id.alertProceedConfirmGroup)
         confirmProceedBtn = findViewById(R.id.confirmProceedBtn)
@@ -127,10 +133,12 @@ class AlertDisplayActivity : AppCompatActivity() {
         alertBody = intent.getStringExtra(EXTRA_MESSAGE) ?: getString(R.string.alert_body_default)
         alertPauseSeconds = intent.getIntExtra(EXTRA_PAUSE_SECONDS, 0)
         alertSeverity = intent.getStringExtra(EXTRA_SEVERITY).orEmpty()
+        alertFamily = intent.getStringExtra(EXTRA_ALERT_FAMILY).orEmpty()
         whyThisAlert = intent.getStringExtra(EXTRA_WHY_THIS_ALERT).orEmpty()
         nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
         essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
         primaryActionLabel = intent.getStringExtra(EXTRA_PRIMARY_ACTION_LABEL).orEmpty()
+        showUsefulnessFeedback = intent.getBooleanExtra(EXTRA_SHOW_USEFULNESS_FEEDBACK, false)
         useFocusedPaymentActions = intent.getBooleanExtra(EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, false)
         reportMessage = buildReportMessage(alertBody, whyThisAlert, nextSafeAction, essentialGoalImpact)
     }
@@ -183,16 +191,16 @@ class AlertDisplayActivity : AppCompatActivity() {
                 finish()
             }
         } else {
+            dismissBtn.setOnClickListener {
+                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_DISMISSED)
+                finish()
+            }
             usefulBtn.setOnClickListener {
                 reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_USEFUL)
                 finish()
             }
             notUsefulBtn.setOnClickListener {
                 reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_NOT_USEFUL)
-                finish()
-            }
-            dismissBtn.setOnClickListener {
-                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_DISMISSED)
                 finish()
             }
             trustedPersonBtn.visibility = View.GONE
@@ -249,6 +257,8 @@ class AlertDisplayActivity : AppCompatActivity() {
             dismissBtn.text = getString(R.string.alert_action_pause)
             usefulBtn.text = getString(R.string.alert_action_decline)
             notUsefulBtn.text = getString(R.string.alert_action_proceed)
+            usefulnessHint.visibility = View.GONE
+            feedbackRow.visibility = View.VISIBLE
             trustedPersonBtn.visibility = View.VISIBLE
             trustedPersonBtn.text = getString(R.string.alert_action_trusted_person)
             supportBtn.visibility = View.VISIBLE
@@ -268,6 +278,10 @@ class AlertDisplayActivity : AppCompatActivity() {
             notUsefulBtn.text = getString(R.string.alert_feedback_not_useful)
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_secondary)
             notUsefulBtn.setTextColor(ContextCompat.getColor(this, R.color.btn_secondary_text))
+            val shouldShowFeedback = showUsefulnessFeedback ||
+                alertFamily == AppConstants.Domain.ALERT_FAMILY_CASHFLOW
+            usefulnessHint.visibility = if (shouldShowFeedback) View.VISIBLE else View.GONE
+            feedbackRow.visibility = if (shouldShowFeedback) View.VISIBLE else View.GONE
         }
     }
 
@@ -358,6 +372,8 @@ class AlertDisplayActivity : AppCompatActivity() {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
             primaryActionLabel = primaryActionLabel,
+            alertFamily = alertFamily,
+            showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
         )
     }
@@ -432,10 +448,12 @@ class AlertDisplayActivity : AppCompatActivity() {
         const val EXTRA_ALERT_ID = AppConstants.IntentExtras.ALERT_ID
         const val EXTRA_PAUSE_SECONDS = AppConstants.IntentExtras.ALERT_PAUSE_SECONDS
         const val EXTRA_SEVERITY = AppConstants.IntentExtras.ALERT_SEVERITY
+        const val EXTRA_ALERT_FAMILY = AppConstants.IntentExtras.ALERT_FAMILY
         const val EXTRA_WHY_THIS_ALERT = AppConstants.IntentExtras.ALERT_WHY_THIS_ALERT
         const val EXTRA_NEXT_SAFE_ACTION = AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION
         const val EXTRA_ESSENTIAL_GOAL_IMPACT = AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT
         const val EXTRA_PRIMARY_ACTION_LABEL = AppConstants.IntentExtras.ALERT_PRIMARY_ACTION_LABEL
+        const val EXTRA_SHOW_USEFULNESS_FEEDBACK = AppConstants.IntentExtras.ALERT_SHOW_USEFULNESS_FEEDBACK
         const val EXTRA_USE_FOCUSED_PAYMENT_ACTIONS = AppConstants.IntentExtras.ALERT_USE_FOCUSED_PAYMENT_ACTIONS
     }
 }

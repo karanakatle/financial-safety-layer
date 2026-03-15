@@ -13,6 +13,10 @@ def _client_with_temp_db(tmp_path, monkeypatch) -> TestClient:
     return TestClient(module.app)
 
 
+def _admin_headers() -> dict[str, str]:
+    return {"x-pilot-admin-key": "pilot-admin-local"}
+
+
 def test_upi_request_inspect_returns_structured_contract(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 
@@ -124,3 +128,50 @@ def test_upi_request_inspect_falls_back_safely_for_partial_payload(tmp_path, mon
     assert "पुष्टि" in payload["next_best_action"] or "जांच" in payload["next_best_action"]
     assert payload["actions"] == ["pause", "decline", "proceed"]
     assert isinstance(payload["alert_id"], str) and payload["alert_id"]
+
+
+def test_upi_request_inspect_persists_unified_payment_telemetry(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    inspect_res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_review",
+            "language": "en",
+            "app_name": "PhonePe",
+            "request_kind": "collect",
+            "amount": 3200,
+            "payee_label": "Merchant Desk",
+            "payee_handle": "merchant@upi",
+            "raw_text": "Approve collect request of Rs 3200",
+            "source": "notification",
+            "timestamp": "2026-03-14T10:20:00Z",
+        },
+    )
+    assert inspect_res.status_code == 200
+    alert_id = inspect_res.json()["alert_id"]
+
+    feedback_res = client.post(
+        "/api/literacy/alert-feedback",
+        json={
+            "alert_id": alert_id,
+            "participant_id": "p_payment_review",
+            "action": "declined",
+            "channel": "notification",
+            "title": "Declined",
+            "message": "participant declined the request",
+            "timestamp": "2026-03-14T10:21:00Z",
+        },
+    )
+    assert feedback_res.status_code == 200
+
+    summary_res = client.get(
+        "/api/pilot/summary",
+        params={"participant_id": "p_payment_review", "limit": 10},
+        headers=_admin_headers(),
+    )
+    assert summary_res.status_code == 200
+    summary = summary_res.json()
+    assert summary["telemetry_comparison"]["payment_warning"]["generated_count"] >= 1
+    assert summary["telemetry_comparison"]["payment_warning"]["action_count"] >= 1
+    assert summary["recent_unified_telemetry"][0]["telemetry_family"] == "payment_warning"

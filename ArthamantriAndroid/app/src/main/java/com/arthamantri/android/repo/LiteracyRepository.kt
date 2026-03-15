@@ -18,12 +18,20 @@ import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.UpiRequestInspectRequest
 import com.arthamantri.android.model.UpiRequestInspectResponse
 import com.arthamantri.android.model.UpiOpenRequest
+import java.time.Instant
+import java.util.UUID
 
 object LiteracyRepository {
     data class SmsSendResult(
         val alerts: List<LiteracyAlert>,
         val state: LiteracyState?,
         val participantId: String?,
+    )
+
+    data class DeliveryResult(
+        val delivered: Boolean,
+        val queued: Boolean,
+        val flushedCount: Int = 0,
     )
 
     suspend fun sendSmsSignal(
@@ -48,6 +56,7 @@ object LiteracyRepository {
                 note = note,
             )
         )
+        flushQueuedTelemetry(context)
         return SmsSendResult(
             alerts = response.literacy_alerts,
             state = response.literacy_state,
@@ -63,7 +72,7 @@ object LiteracyRepository {
         val participantId = resolveParticipantId(context)
         val language = resolveLanguage(context)
         val api = ApiClient.literacyApi(context)
-        return api.upiOpen(
+        val alert = api.upiOpen(
             UpiOpenRequest(
                 participant_id = participantId,
                 language = language,
@@ -71,6 +80,8 @@ object LiteracyRepository {
                 intent_amount = intentAmount,
             )
         ).alert
+        flushQueuedTelemetry(context)
+        return alert
     }
 
     suspend fun inspectUpiRequest(
@@ -87,7 +98,7 @@ object LiteracyRepository {
         val participantId = resolveParticipantId(context)
         val language = resolveLanguage(context)
         val api = ApiClient.literacyApi(context)
-        return api.upiRequestInspect(
+        val response = api.upiRequestInspect(
             UpiRequestInspectRequest(
                 participant_id = participantId,
                 language = language,
@@ -101,6 +112,8 @@ object LiteracyRepository {
                 timestamp = timestamp,
             )
         )
+        flushQueuedTelemetry(context)
+        return response
     }
 
     suspend fun status(context: Context): LiteracyState {
@@ -145,19 +158,31 @@ object LiteracyRepository {
 
     suspend fun submitAppLog(
         context: Context,
-        participantId: String,
+        participantId: String = resolveParticipantId(context),
         level: String,
         message: String,
         language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
-    ) {
-        ApiClient.literacyApi(context).pilotAppLog(
-            PilotAppLogRequest(
+    ): DeliveryResult {
+        val request = PilotAppLogRequest(
+                event_id = UUID.randomUUID().toString(),
                 participant_id = participantId,
                 level = level,
                 message = message,
                 language = language,
+                timestamp = currentTimestamp(),
             )
-        )
+        return runCatching {
+            val ok = ApiClient.literacyApi(context).pilotAppLog(request).ok
+            if (ok) {
+                DeliveryResult(delivered = true, queued = false, flushedCount = flushQueuedTelemetry(context))
+            } else {
+                OfflineTelemetryQueue.enqueueAppLog(context, request)
+                DeliveryResult(delivered = false, queued = true)
+            }
+        }.getOrElse {
+            OfflineTelemetryQueue.enqueueAppLog(context, request)
+            DeliveryResult(delivered = false, queued = true)
+        }
     }
 
     suspend fun submitAlertFeedback(
@@ -167,18 +192,30 @@ object LiteracyRepository {
         channel: String,
         title: String,
         message: String,
-    ): Boolean {
+    ): DeliveryResult {
         val participantId = resolveParticipantId(context)
-        return ApiClient.literacyApi(context).alertFeedback(
-            LiteracyAlertFeedbackRequest(
+        val request = LiteracyAlertFeedbackRequest(
+                event_id = UUID.randomUUID().toString(),
                 alert_id = alertId,
                 participant_id = participantId,
                 action = action,
                 channel = channel,
                 title = title,
                 message = message,
+                timestamp = currentTimestamp(),
             )
-        ).ok
+        return runCatching {
+            val ok = ApiClient.literacyApi(context).alertFeedback(request).ok
+            if (ok) {
+                DeliveryResult(delivered = true, queued = false, flushedCount = flushQueuedTelemetry(context))
+            } else {
+                OfflineTelemetryQueue.enqueueAlertFeedback(context, request)
+                DeliveryResult(delivered = false, queued = true)
+            }
+        }.getOrElse {
+            OfflineTelemetryQueue.enqueueAlertFeedback(context, request)
+            DeliveryResult(delivered = false, queued = true)
+        }
     }
 
     suspend fun getEssentialGoals(context: Context): EssentialGoalProfileResponse {
@@ -218,6 +255,18 @@ object LiteracyRepository {
         ).variant ?: "adaptive"
     }
 
+    suspend fun flushQueuedTelemetry(context: Context): Int {
+        return OfflineTelemetryQueue.flush(context)
+    }
+
+    fun participantId(context: Context): String {
+        return resolveParticipantId(context)
+    }
+
+    fun language(context: Context): String {
+        return resolveLanguage(context)
+    }
+
     private fun resolveParticipantId(context: Context): String {
         val deviceId = Settings.Secure.getString(
             context.contentResolver,
@@ -234,5 +283,9 @@ object LiteracyRepository {
         } else {
             AppConstants.Locale.DEFAULT_LANGUAGE
         }
+    }
+
+    private fun currentTimestamp(): String {
+        return Instant.now().toString()
     }
 }

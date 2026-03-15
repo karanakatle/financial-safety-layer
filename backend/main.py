@@ -4,7 +4,7 @@ from pathlib import Path
 from threading import Lock
 
 load_dotenv()
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
@@ -45,6 +45,13 @@ from backend.literacy import (
 )
 from backend.literacy.payment_inspection import inspect_payment_request
 from backend.pilot import PilotStorage
+from backend.pilot.admin import require_pilot_admin
+from backend.pilot.telemetry import (
+    record_alert_feedback_telemetry,
+    record_cashflow_alert_generated,
+    record_cashflow_fallback,
+    record_payment_warning_generated,
+)
 from backend.config import load_literacy_policy
 from backend.nlp.pipeline import process_text
 from backend.interaction_manager import orchestrate_response
@@ -377,6 +384,7 @@ app.include_router(
             experiment_name=experiment_name,
             pilot_storage=pilot_storage,
         ),
+        require_admin=require_pilot_admin,
     )
 )
 app.include_router(
@@ -469,30 +477,56 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
     )
     literacy_alerts: list[dict] = []
     if signal_type == "expense" and amount is not None:
-        literacy_alerts = monitor.ingest_expense(
+        base_alerts = monitor.ingest_expense(
             amount=amount,
             source="bank_sms",
             timestamp=event_timestamp,
         )
-        literacy_alerts = [
-            contextual
-            for alert in literacy_alerts
-            if (
-                contextual := _apply_contextual_alert_intensity(
+        for alert in base_alerts:
+            contextual = _apply_contextual_alert_intensity(
+                participant_id=participant_id,
+                alert=alert,
+                amount=amount,
+                note=payload.note or "bank_sms",
+                source="bank_sms",
+                category=payload.category,
+                timestamp=event_timestamp,
+                upi_open_flag=False,
+                warmup_active=monitor.warmup_active,
+                language=language,
+                essential_profile=profile,
+            )
+            if contextual is None:
+                record_cashflow_fallback(
+                    pilot_storage=pilot_storage,
                     participant_id=participant_id,
+                    source_route="/api/literacy/sms-ingest",
+                    source="bank_sms",
+                    timestamp=event_timestamp,
+                    fallback_reason="contextual_suppressed",
+                    summary_text="Cashflow alert suppressed after contextual scoring.",
                     alert=alert,
                     amount=amount,
-                    note=payload.note or "bank_sms",
-                    source="bank_sms",
                     category=payload.category,
-                    timestamp=event_timestamp,
-                    upi_open_flag=False,
-                    warmup_active=monitor.warmup_active,
-                    language=language,
-                    essential_profile=profile,
+                    signal_type=signal_type,
+                    signal_confidence=signal_confidence,
+                    extensions={"note": payload.note or "", "language": language, "experiment_variant": variant},
                 )
+                continue
+            record_cashflow_alert_generated(
+                pilot_storage=pilot_storage,
+                participant_id=participant_id,
+                source_route="/api/literacy/sms-ingest",
+                source="bank_sms",
+                timestamp=event_timestamp,
+                alert=contextual,
+                amount=amount,
+                category=payload.category,
+                signal_type=signal_type,
+                signal_confidence=signal_confidence,
+                extensions={"note": payload.note or "", "language": language, "experiment_variant": variant},
             )
-        ]
+            literacy_alerts.append(contextual)
     persist_literacy_monitor(participant_id=participant_id, monitor=monitor, pilot_storage=pilot_storage)
     policy_recalibrated = auto_recalibrate_policy(
         participant_id=participant_id,
@@ -579,15 +613,16 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
         daily_safe_limit=monitor.status().get("daily_safe_limit"),
         timestamp=event_timestamp,
     )
-    alert = monitor.on_upi_app_open(
+    base_alert = monitor.on_upi_app_open(
         app_name=payload.app_name,
         intent_amount=payload.intent_amount,
         timestamp=event_timestamp,
     )
-    if alert:
+    alert = None
+    if base_alert:
         alert = _apply_contextual_alert_intensity(
             participant_id=participant_id,
-            alert=alert,
+            alert=base_alert,
             amount=payload.intent_amount,
             note=payload.app_name,
             source="upi_open",
@@ -598,6 +633,34 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
             language=language,
             essential_profile=profile,
         )
+        if alert:
+            record_cashflow_alert_generated(
+                pilot_storage=pilot_storage,
+                participant_id=participant_id,
+                source_route="/api/literacy/upi-open",
+                source="upi_open",
+                timestamp=event_timestamp,
+                alert=alert,
+                amount=payload.intent_amount,
+                category="upi_open",
+                app_name=payload.app_name,
+                extensions={"language": language, "experiment_variant": variant},
+            )
+        else:
+            record_cashflow_fallback(
+                pilot_storage=pilot_storage,
+                participant_id=participant_id,
+                source_route="/api/literacy/upi-open",
+                source="upi_open",
+                timestamp=event_timestamp,
+                fallback_reason="contextual_suppressed",
+                summary_text="UPI-open alert suppressed after contextual scoring.",
+                alert=base_alert,
+                amount=payload.intent_amount,
+                category="upi_open",
+                app_name=payload.app_name,
+                extensions={"language": language, "experiment_variant": variant},
+            )
     persist_literacy_monitor(participant_id=participant_id, monitor=monitor, pilot_storage=pilot_storage)
     if alert:
         participant_agent.alerts.append(alert)
@@ -642,13 +705,22 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
 def literacy_upi_request_inspect(payload: UPIRequestInspectIn) -> dict:
     participant_id = _normalized_participant_id(payload.participant_id)
     language = _normalized_language(payload.language)
+    event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
     inspection = inspect_payment_request(
         payload,
         participant_id=participant_id,
         language=language,
         alert_id=str(uuid4()),
     )
-    return inspection.model_dump()
+    inspection_payload = inspection.model_dump()
+    record_payment_warning_generated(
+        pilot_storage=pilot_storage,
+        participant_id=participant_id,
+        payload=payload,
+        inspection=inspection_payload,
+        timestamp=event_timestamp,
+    )
+    return inspection_payload
 
 
 @app.get("/api/literacy/status")
@@ -757,7 +829,8 @@ def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> di
 
 
 @app.get("/api/literacy/debug-trace")
-def literacy_debug_trace(participant_id: str = "global_user", limit: int = 20) -> dict:
+def literacy_debug_trace(request: Request, participant_id: str = "global_user", limit: int = 20) -> dict:
+    require_pilot_admin(request)
     safe_limit = max(1, min(limit, 200))
     profile = pilot_storage.get_essential_goal_profile(participant_id)
     policy = pilot_storage.get_participant_policy(participant_id)
@@ -788,11 +861,20 @@ def literacy_debug_trace(participant_id: str = "global_user", limit: int = 20) -
         "recent_alert_features": pilot_storage.recent_alert_features(participant_id, safe_limit),
         "recent_alert_feedback": pilot_storage.recent_alert_feedback(participant_id, safe_limit),
         "recent_goal_feedback": pilot_storage.recent_goal_feedback(participant_id, safe_limit),
+        "recent_unified_telemetry": pilot_storage.recent_unified_telemetry(
+            participant_id=participant_id,
+            limit=safe_limit,
+        ),
+        "telemetry_comparison": pilot_storage.unified_telemetry_comparison(
+            participant_id=participant_id,
+            limit=safe_limit * 4,
+        ),
     }
 
 
 @app.get("/api/literacy/storage-health")
-def literacy_storage_health() -> dict:
+def literacy_storage_health(request: Request) -> dict:
+    require_pilot_admin(request)
     db_path = str(pilot_storage.db_path)
     return {
         "ok": True,
@@ -803,7 +885,8 @@ def literacy_storage_health() -> dict:
 
 
 @app.post("/api/literacy/reset")
-def literacy_reset(participant_id: str = "global_user") -> dict:
+def literacy_reset(request: Request, participant_id: str = "global_user") -> dict:
+    require_pilot_admin(request)
     pilot_storage.reset_literacy_state(participant_id)
     monitor = build_literacy_monitor(
         participant_id=participant_id,
@@ -819,7 +902,8 @@ def literacy_reset(participant_id: str = "global_user") -> dict:
 
 
 @app.post("/api/literacy/reset-hard")
-def literacy_reset_hard(participant_id: str = "global_user") -> dict:
+def literacy_reset_hard(request: Request, participant_id: str = "global_user") -> dict:
+    require_pilot_admin(request)
     pilot_storage.reset_literacy_profile(participant_id)
     monitor = build_literacy_monitor(
         participant_id=participant_id,
@@ -838,16 +922,34 @@ def literacy_reset_hard(participant_id: str = "global_user") -> dict:
 def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"
     event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    normalized_alert_id = payload.alert_id.strip()
+    normalized_action = payload.action.strip().lower()
+    normalized_channel = payload.channel.strip().lower() or "overlay"
+    inserted = pilot_storage.add_alert_feedback(
+        event_id=payload.event_id,
+        alert_id=normalized_alert_id,
+        participant_id=participant_id,
+        action=normalized_action,
+        channel=normalized_channel,
+        title=payload.title.strip(),
+        message=payload.message.strip(),
+        timestamp=event_timestamp,
+    )
+    if not inserted:
+        return {"ok": True, "deduplicated": True}
+
     variant = resolve_experiment_variant(
         participant_id=participant_id,
         experiment_name="adaptive_alerts_v1",
         pilot_storage=pilot_storage,
     )
-    pilot_storage.add_alert_feedback(
-        alert_id=payload.alert_id.strip(),
+    record_alert_feedback_telemetry(
+        pilot_storage=pilot_storage,
         participant_id=participant_id,
-        action=payload.action.strip().lower(),
-        channel=payload.channel.strip().lower() or "overlay",
+        event_id=payload.event_id,
+        alert_id=normalized_alert_id,
+        action=normalized_action,
+        channel=normalized_channel,
         title=payload.title.strip(),
         message=payload.message.strip(),
         timestamp=event_timestamp,
@@ -856,15 +958,16 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
         participant_id=participant_id,
         experiment_name="adaptive_alerts_v1",
         variant=variant,
-        event_type=f"alert_feedback_{payload.action.strip().lower()}",
+        event_type=f"alert_feedback_{normalized_action}",
         payload={
-            "alert_id": payload.alert_id.strip(),
-            "channel": payload.channel.strip().lower() or "overlay",
+            "alert_id": normalized_alert_id,
+            "channel": normalized_channel,
             "title": payload.title.strip(),
+            "event_id": payload.event_id,
         },
         timestamp=event_timestamp,
     )
-    return {"ok": True}
+    return {"ok": True, "deduplicated": False}
 
 
 @app.post("/api/literacy/essential-feedback")

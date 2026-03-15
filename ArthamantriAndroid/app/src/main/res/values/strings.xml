@@ -274,6 +274,7 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_ack_long">Okay, I understand</string>
     <string name="alert_feedback_useful">Useful</string>
     <string name="alert_feedback_not_useful">Not useful</string>
+    <string name="alert_feedback_optional_hint">Optional: tell us if this cashflow guidance was useful.</string>
     <string name="alert_action_pause">Pause</string>
     <string name="alert_action_decline">Decline</string>
     <string name="alert_action_proceed">Proceed</string>
@@ -314,6 +315,12 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_payment_fallback_body">Arthamantri could not confirm this payment in time. Treat it as risky until you verify it.</string>
     <string name="alert_payment_fallback_why">Live analysis is unavailable or delayed, so the app is showing a cautious fallback instead of saying the request is safe.</string>
     <string name="alert_payment_fallback_next">Do not approve yet. Verify the sender, payee, and reason on a separate channel.</string>
+    <string name="alert_cashflow_fallback_body">Live cashflow guidance is unavailable right now. Treat this as a cautious reminder before spending more today.</string>
+    <string name="alert_cashflow_fallback_partial_body">This money message may matter, but Arthamantri does not have enough live context right now. Treat this as a cautious reminder.</string>
+    <string name="alert_cashflow_fallback_why">This guidance is based only on this message, not your full cashflow for today.</string>
+    <string name="alert_cashflow_fallback_why_amount">This guidance is based only on this message, which mentions about Rs %1$s, not your full cashflow for today.</string>
+    <string name="alert_cashflow_fallback_next_expense">Pause, review this message in your bank or payment app, and protect money needed for essentials first.</string>
+    <string name="alert_cashflow_fallback_next_partial">Pause, check whether this message means money is going out, and protect money needed for essentials until you verify it.</string>
     <string name="alert_spending_threshold">Your spending is crossing a safe threshold.</string>
     <string name="alert_txn_risk">Spending risk detected from transaction notification.</string>
     <string name="alert_setup_verification_title">Setup check: sample alert</string>

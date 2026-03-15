@@ -110,7 +110,7 @@ class AppUsageForegroundService : Service() {
             if (alert != null) {
                 AlertNotifier.show(
                     this,
-                    title = getString(R.string.alert_payment_risk_title),
+                    title = getString(R.string.alert_title_default),
                     body = alert.message ?: getString(R.string.alert_body_default),
                     alertId = alert.alert_id,
                     severity = alert.severity ?: "medium",
@@ -118,7 +118,8 @@ class AppUsageForegroundService : Service() {
                     whyThisAlert = alert.why_this_alert,
                     nextSafeAction = alert.next_best_action,
                     essentialGoalImpact = alert.essential_goal_impact,
-                    useFocusedPaymentActions = true,
+                    alertFamily = AppConstants.Domain.ALERT_FAMILY_CASHFLOW,
+                    showUsefulnessFeedback = true,
                 )
             }
         } catch (e: Exception) {
