@@ -60,6 +60,7 @@ object AppConstants {
         const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
         const val ALERT_PRIMARY_ACTION_LABEL = "extra_alert_primary_action_label"
         const val ALERT_USE_FOCUSED_PAYMENT_ACTIONS = "extra_alert_use_focused_payment_actions"
+        const val ALERT_OPEN_SUPPORT_PATH = "extra_alert_open_support_path"
     }
 
     object NotificationExtras {
@@ -90,6 +91,15 @@ object AppConstants {
         const val ALERT_ACTION_PAUSE = "pause"
         const val ALERT_ACTION_DECLINE = "decline"
         const val ALERT_ACTION_PROCEED = "proceed"
+        const val ALERT_ACTION_BACKED_OUT = "backed_out"
+        const val ALERT_ACTION_BACKGROUNDED = "backgrounded"
+        const val ALERT_ACTION_REPLACED = "replaced"
+        const val ALERT_ACTION_TRUSTED_PERSON_REQUESTED = "trusted_person_requested"
+        const val ALERT_ACTION_TRUSTED_PERSON_LAUNCHED = "trusted_person_launched"
+        const val ALERT_ACTION_TRUSTED_PERSON_FAILED = "trusted_person_failed"
+        const val ALERT_ACTION_SUPPORT_REQUESTED = "support_requested"
+        const val ALERT_ACTION_SUPPORT_OPENED = "support_opened"
+        const val ALERT_ACTION_SUPPORT_FAILED = "support_failed"
     }
 
     object PaymentInspection {

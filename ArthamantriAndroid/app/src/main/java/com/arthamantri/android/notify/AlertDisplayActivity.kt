@@ -1,11 +1,14 @@
 package com.arthamantri.android.notify
 
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.arthamantri.android.R
@@ -15,121 +18,64 @@ import java.util.UUID
 class AlertDisplayActivity : AppCompatActivity() {
     private var pauseTimer: CountDownTimer? = null
 
+    private lateinit var alertId: String
+    private lateinit var alertTitle: String
+    private lateinit var alertBody: String
+    private lateinit var alertSeverity: String
+    private var alertPauseSeconds: Int = 0
+    private var useFocusedPaymentActions: Boolean = false
+    private lateinit var whyThisAlert: String
+    private lateinit var nextSafeAction: String
+    private lateinit var essentialGoalImpact: String
+    private lateinit var primaryActionLabel: String
+    private lateinit var reportMessage: String
+
+    private lateinit var dismissBtn: Button
+    private lateinit var usefulBtn: Button
+    private lateinit var notUsefulBtn: Button
+    private lateinit var trustedPersonBtn: Button
+    private lateinit var supportBtn: Button
+    private lateinit var pauseHint: TextView
+    private lateinit var proceedConfirmGroup: View
+    private lateinit var confirmProceedBtn: Button
+
+    private var terminalOutcomeReported = false
+    private var userLeaving = false
+    private var helperHandoffInProgress = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_alert_display)
 
-        val alertId = intent.getStringExtra(EXTRA_ALERT_ID) ?: UUID.randomUUID().toString()
-        val title = intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.alert_title_default)
-        val message = intent.getStringExtra(EXTRA_MESSAGE)
-            ?: getString(R.string.alert_body_default)
-        val pauseSeconds = intent.getIntExtra(EXTRA_PAUSE_SECONDS, 0)
-        val severity = intent.getStringExtra(EXTRA_SEVERITY).orEmpty()
-        val whyThisAlert = intent.getStringExtra(EXTRA_WHY_THIS_ALERT).orEmpty()
-        val nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
-        val essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
-        val primaryActionLabel = intent.getStringExtra(EXTRA_PRIMARY_ACTION_LABEL).orEmpty()
-        val useFocusedPaymentActions = intent.getBooleanExtra(EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, false)
+        bindViews()
+        bindBackPress()
+        applyAlertIntent(intent, shouldResetTransientState = false)
+    }
 
-        findViewById<TextView>(R.id.alertTitle).text = title
-        findViewById<TextView>(R.id.alertMessage).text = message
-        bindExplainability(whyThisAlert, nextSafeAction, essentialGoalImpact)
-        val dismissBtn = findViewById<Button>(R.id.dismissBtn)
-        val usefulBtn = findViewById<Button>(R.id.usefulBtn)
-        val notUsefulBtn = findViewById<Button>(R.id.notUsefulBtn)
-        val pauseHint = findViewById<TextView>(R.id.alertPauseHint)
-        val proceedConfirmGroup = findViewById<View>(R.id.alertProceedConfirmGroup)
-        val confirmProceedBtn = findViewById<Button>(R.id.confirmProceedBtn)
-        val reportMessage = buildReportMessage(message, whyThisAlert, nextSafeAction, essentialGoalImpact)
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        applyAlertIntent(intent, shouldResetTransientState = true)
+    }
 
-        configureActionMode(
-            useFocusedPaymentActions = useFocusedPaymentActions,
-            primaryActionLabel = primaryActionLabel,
-            dismissBtn = dismissBtn,
-            usefulBtn = usefulBtn,
-            notUsefulBtn = notUsefulBtn,
-        )
-        applySeverityStyle(severity)
-        setupPause(
-            pauseSeconds = pauseSeconds,
-            pauseHint = pauseHint,
-            dismissBtn = dismissBtn,
-            usefulBtn = usefulBtn,
-            notUsefulBtn = notUsefulBtn,
-            confirmProceedBtn = confirmProceedBtn,
-            proceedConfirmGroup = proceedConfirmGroup,
-        )
+    override fun onResume() {
+        super.onResume()
+        userLeaving = false
+        helperHandoffInProgress = false
+    }
 
-        if (useFocusedPaymentActions) {
-            dismissBtn.setOnClickListener {
-                hideProceedConfirmation(proceedConfirmGroup)
-                reportAction(
-                    alertId = alertId,
-                    action = AppConstants.Domain.ALERT_ACTION_PAUSE,
-                    title = title,
-                    message = reportMessage,
-                )
-                startManualPause(
-                    pauseSeconds = pauseSeconds,
-                    pauseHint = pauseHint,
-                    dismissBtn = dismissBtn,
-                    usefulBtn = usefulBtn,
-                    notUsefulBtn = notUsefulBtn,
-                    confirmProceedBtn = confirmProceedBtn,
-                    proceedConfirmGroup = proceedConfirmGroup,
-                )
-            }
-            usefulBtn.setOnClickListener {
-                hideProceedConfirmation(proceedConfirmGroup)
-                reportAction(
-                    alertId = alertId,
-                    action = AppConstants.Domain.ALERT_ACTION_DECLINE,
-                    title = title,
-                    message = reportMessage,
-                )
-                finish()
-            }
-            notUsefulBtn.setOnClickListener {
-                proceedConfirmGroup.visibility = View.VISIBLE
-                confirmProceedBtn.isEnabled = dismissBtn.isEnabled
-            }
-            confirmProceedBtn.setOnClickListener {
-                reportAction(
-                    alertId = alertId,
-                    action = AppConstants.Domain.ALERT_ACTION_PROCEED,
-                    title = title,
-                    message = reportMessage,
-                )
-                finish()
-            }
-        } else {
-            usefulBtn.setOnClickListener {
-                reportAction(
-                    alertId = alertId,
-                    action = AppConstants.Domain.ALERT_ACTION_USEFUL,
-                    title = title,
-                    message = reportMessage,
-                )
-                finish()
-            }
-            notUsefulBtn.setOnClickListener {
-                reportAction(
-                    alertId = alertId,
-                    action = AppConstants.Domain.ALERT_ACTION_NOT_USEFUL,
-                    title = title,
-                    message = reportMessage,
-                )
-                finish()
-            }
-            dismissBtn.setOnClickListener {
-                reportAction(
-                    alertId = alertId,
-                    action = AppConstants.Domain.ALERT_ACTION_DISMISSED,
-                    title = title,
-                    message = reportMessage,
-                )
-                finish()
-            }
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        userLeaving = true
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations && !terminalOutcomeReported && userLeaving && !helperHandoffInProgress) {
+            userLeaving = false
+            reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_BACKGROUNDED)
+            postReturnPathNotification()
+            finish()
         }
     }
 
@@ -139,38 +85,131 @@ class AlertDisplayActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    private fun setupPause(
-        pauseSeconds: Int,
-        pauseHint: TextView,
-        dismissBtn: Button,
-        usefulBtn: Button,
-        notUsefulBtn: Button,
-        confirmProceedBtn: Button,
-        proceedConfirmGroup: View,
-    ) {
+    private fun bindBackPress() {
+        onBackPressedDispatcher.addCallback(
+            this,
+            object : OnBackPressedCallback(true) {
+                override fun handleOnBackPressed() {
+                    if (proceedConfirmGroup.visibility == View.VISIBLE) {
+                        hideProceedConfirmation()
+                        return
+                    }
+                    reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_BACKED_OUT)
+                    postReturnPathNotification()
+                    finish()
+                }
+            },
+        )
+    }
+
+    private fun bindViews() {
+        dismissBtn = findViewById(R.id.dismissBtn)
+        usefulBtn = findViewById(R.id.usefulBtn)
+        notUsefulBtn = findViewById(R.id.notUsefulBtn)
+        trustedPersonBtn = findViewById(R.id.trustedPersonBtn)
+        supportBtn = findViewById(R.id.supportBtn)
+        pauseHint = findViewById(R.id.alertPauseHint)
+        proceedConfirmGroup = findViewById(R.id.alertProceedConfirmGroup)
+        confirmProceedBtn = findViewById(R.id.confirmProceedBtn)
+    }
+
+    private fun applyAlertIntent(intent: Intent, shouldResetTransientState: Boolean) {
+        loadAlertState(intent)
+        if (shouldResetTransientState) {
+            resetTransientUiState()
+        }
+        renderAlert()
+    }
+
+    private fun loadAlertState(intent: Intent) {
+        alertId = intent.getStringExtra(EXTRA_ALERT_ID) ?: UUID.randomUUID().toString()
+        alertTitle = intent.getStringExtra(EXTRA_TITLE) ?: getString(R.string.alert_title_default)
+        alertBody = intent.getStringExtra(EXTRA_MESSAGE) ?: getString(R.string.alert_body_default)
+        alertPauseSeconds = intent.getIntExtra(EXTRA_PAUSE_SECONDS, 0)
+        alertSeverity = intent.getStringExtra(EXTRA_SEVERITY).orEmpty()
+        whyThisAlert = intent.getStringExtra(EXTRA_WHY_THIS_ALERT).orEmpty()
+        nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
+        essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
+        primaryActionLabel = intent.getStringExtra(EXTRA_PRIMARY_ACTION_LABEL).orEmpty()
+        useFocusedPaymentActions = intent.getBooleanExtra(EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, false)
+        reportMessage = buildReportMessage(alertBody, whyThisAlert, nextSafeAction, essentialGoalImpact)
+    }
+
+    private fun resetTransientUiState() {
+        pauseTimer?.cancel()
+        pauseTimer = null
+        terminalOutcomeReported = false
+        userLeaving = false
+        helperHandoffInProgress = false
+        hideProceedConfirmation()
+    }
+
+    private fun renderAlert() {
+        findViewById<TextView>(R.id.alertTitle).text = alertTitle
+        findViewById<TextView>(R.id.alertMessage).text = alertBody
+        bindExplainability(whyThisAlert, nextSafeAction, essentialGoalImpact)
+        bindActionListeners()
+        configureActionMode()
+        applySeverityStyle(alertSeverity)
+        setupPause(alertPauseSeconds)
+    }
+
+    private fun bindActionListeners() {
+        if (useFocusedPaymentActions) {
+            dismissBtn.setOnClickListener {
+                hideProceedConfirmation()
+                reportFeedback(AppConstants.Domain.ALERT_ACTION_PAUSE)
+                startManualPause()
+            }
+            usefulBtn.setOnClickListener {
+                hideProceedConfirmation()
+                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_DECLINE)
+                finish()
+            }
+            trustedPersonBtn.setOnClickListener {
+                hideProceedConfirmation()
+                launchTrustedPersonHandoff()
+            }
+            supportBtn.setOnClickListener {
+                hideProceedConfirmation()
+                launchSupportPath()
+            }
+            notUsefulBtn.setOnClickListener {
+                proceedConfirmGroup.visibility = View.VISIBLE
+                confirmProceedBtn.isEnabled = dismissBtn.isEnabled
+            }
+            confirmProceedBtn.setOnClickListener {
+                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_PROCEED)
+                finish()
+            }
+        } else {
+            usefulBtn.setOnClickListener {
+                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_USEFUL)
+                finish()
+            }
+            notUsefulBtn.setOnClickListener {
+                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_NOT_USEFUL)
+                finish()
+            }
+            dismissBtn.setOnClickListener {
+                reportTerminalOutcome(AppConstants.Domain.ALERT_ACTION_DISMISSED)
+                finish()
+            }
+            trustedPersonBtn.visibility = View.GONE
+            supportBtn.visibility = View.GONE
+        }
+    }
+
+    private fun setupPause(pauseSeconds: Int) {
         pauseTimer?.cancel()
         pauseTimer = null
         if (pauseSeconds <= 0) {
             pauseHint.text = ""
-            setActionEnabledState(
-                enabled = true,
-                dismissBtn = dismissBtn,
-                usefulBtn = usefulBtn,
-                notUsefulBtn = notUsefulBtn,
-                confirmProceedBtn = confirmProceedBtn,
-                proceedConfirmGroup = proceedConfirmGroup,
-            )
+            setActionEnabledState(true)
             return
         }
 
-        setActionEnabledState(
-            enabled = false,
-            dismissBtn = dismissBtn,
-            usefulBtn = usefulBtn,
-            notUsefulBtn = notUsefulBtn,
-            confirmProceedBtn = confirmProceedBtn,
-            proceedConfirmGroup = proceedConfirmGroup,
-        )
+        setActionEnabledState(false)
         pauseHint.text = getString(R.string.alert_pause_countdown, pauseSeconds)
 
         pauseTimer = object : CountDownTimer((pauseSeconds * 1000L), 1000L) {
@@ -181,75 +220,45 @@ class AlertDisplayActivity : AppCompatActivity() {
 
             override fun onFinish() {
                 pauseHint.text = ""
-                setActionEnabledState(
-                    enabled = true,
-                    dismissBtn = dismissBtn,
-                    usefulBtn = usefulBtn,
-                    notUsefulBtn = notUsefulBtn,
-                    confirmProceedBtn = confirmProceedBtn,
-                    proceedConfirmGroup = proceedConfirmGroup,
-                )
+                setActionEnabledState(true)
             }
         }.start()
     }
 
-    private fun startManualPause(
-        pauseSeconds: Int,
-        pauseHint: TextView,
-        dismissBtn: Button,
-        usefulBtn: Button,
-        notUsefulBtn: Button,
-        confirmProceedBtn: Button,
-        proceedConfirmGroup: View,
-    ) {
-        val resolvedPauseSeconds = if (pauseSeconds > 0) {
-            pauseSeconds
+    private fun startManualPause() {
+        val resolvedPauseSeconds = if (alertPauseSeconds > 0) {
+            alertPauseSeconds
         } else {
             AppConstants.Timing.PAYMENT_DECISION_PAUSE_SECONDS
         }
-        setupPause(
-            pauseSeconds = resolvedPauseSeconds,
-            pauseHint = pauseHint,
-            dismissBtn = dismissBtn,
-            usefulBtn = usefulBtn,
-            notUsefulBtn = notUsefulBtn,
-            confirmProceedBtn = confirmProceedBtn,
-            proceedConfirmGroup = proceedConfirmGroup,
-        )
+        setupPause(resolvedPauseSeconds)
     }
 
-    private fun setActionEnabledState(
-        enabled: Boolean,
-        dismissBtn: Button,
-        usefulBtn: Button,
-        notUsefulBtn: Button,
-        confirmProceedBtn: Button,
-        proceedConfirmGroup: View,
-    ) {
+    private fun setActionEnabledState(enabled: Boolean) {
         dismissBtn.isEnabled = enabled
         usefulBtn.isEnabled = enabled
         notUsefulBtn.isEnabled = enabled
+        trustedPersonBtn.isEnabled = enabled
+        supportBtn.isEnabled = enabled
         confirmProceedBtn.isEnabled = enabled && proceedConfirmGroup.visibility == View.VISIBLE
     }
 
-    private fun configureActionMode(
-        useFocusedPaymentActions: Boolean,
-        primaryActionLabel: String,
-        dismissBtn: Button,
-        usefulBtn: Button,
-        notUsefulBtn: Button,
-    ) {
-        val proceedConfirmGroup = findViewById<View>(R.id.alertProceedConfirmGroup)
-        val confirmProceedBtn = findViewById<Button>(R.id.confirmProceedBtn)
+    private fun configureActionMode() {
         proceedConfirmGroup.visibility = View.GONE
         if (useFocusedPaymentActions) {
             dismissBtn.text = getString(R.string.alert_action_pause)
             usefulBtn.text = getString(R.string.alert_action_decline)
             notUsefulBtn.text = getString(R.string.alert_action_proceed)
+            trustedPersonBtn.visibility = View.VISIBLE
+            trustedPersonBtn.text = getString(R.string.alert_action_trusted_person)
+            supportBtn.visibility = View.VISIBLE
+            supportBtn.text = getString(R.string.alert_action_support)
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_low_emphasis)
             notUsefulBtn.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
             confirmProceedBtn.text = getString(R.string.alert_proceed_confirmation_confirm)
         } else {
+            trustedPersonBtn.visibility = View.GONE
+            supportBtn.visibility = View.GONE
             dismissBtn.text = if (primaryActionLabel.isNotBlank()) {
                 primaryActionLabel
             } else {
@@ -262,23 +271,94 @@ class AlertDisplayActivity : AppCompatActivity() {
         }
     }
 
-    private fun hideProceedConfirmation(proceedConfirmGroup: View) {
+    private fun hideProceedConfirmation() {
         proceedConfirmGroup.visibility = View.GONE
+        confirmProceedBtn.isEnabled = false
     }
 
-    private fun reportAction(
-        alertId: String,
-        action: String,
-        title: String,
-        message: String,
-    ) {
+    private fun launchTrustedPersonHandoff() {
+        reportFeedback(AppConstants.Domain.ALERT_ACTION_TRUSTED_PERSON_REQUESTED)
+        helperHandoffInProgress = true
+
+        val launched = TrustedPersonHandoffLauncher.launch(
+            context = this,
+            title = alertTitle,
+            body = alertBody,
+            nextSafeAction = nextSafeAction,
+        )
+
+        if (!launched) {
+            helperHandoffInProgress = false
+            reportFeedback(AppConstants.Domain.ALERT_ACTION_TRUSTED_PERSON_FAILED)
+            Toast.makeText(this, getString(R.string.alert_trusted_person_launch_failed), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        reportFeedback(AppConstants.Domain.ALERT_ACTION_TRUSTED_PERSON_LAUNCHED)
+    }
+
+    private fun launchSupportPath() {
+        reportFeedback(AppConstants.Domain.ALERT_ACTION_SUPPORT_REQUESTED)
+        helperHandoffInProgress = true
+
+        val launched = SupportEscalationLauncher.launch(
+            context = this,
+            alertId = alertId,
+            title = alertTitle,
+            body = alertBody,
+            severity = alertSeverity,
+            pauseSeconds = alertPauseSeconds,
+            whyThisAlert = whyThisAlert,
+            nextSafeAction = nextSafeAction,
+            essentialGoalImpact = essentialGoalImpact,
+            primaryActionLabel = primaryActionLabel,
+            useFocusedPaymentActions = useFocusedPaymentActions,
+        )
+
+        if (!launched) {
+            helperHandoffInProgress = false
+            reportFeedback(AppConstants.Domain.ALERT_ACTION_SUPPORT_FAILED)
+            Toast.makeText(this, getString(R.string.alert_support_launch_failed), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        reportFeedback(AppConstants.Domain.ALERT_ACTION_SUPPORT_OPENED)
+        postReturnPathNotification()
+        finish()
+    }
+
+    private fun reportTerminalOutcome(action: String) {
+        if (terminalOutcomeReported) {
+            return
+        }
+        terminalOutcomeReported = true
+        reportFeedback(action)
+    }
+
+    private fun reportFeedback(action: String) {
         AlertFeedbackReporter.report(
             context = this,
             alertId = alertId,
             action = action,
             channel = "fullscreen_activity",
-            title = title,
-            message = message,
+            title = alertTitle,
+            message = reportMessage,
+        )
+    }
+
+    private fun postReturnPathNotification() {
+        AlertNotifier.postReturnPathNotification(
+            context = this,
+            alertId = alertId,
+            title = alertTitle,
+            body = alertBody,
+            severity = alertSeverity,
+            pauseSeconds = alertPauseSeconds,
+            whyThisAlert = whyThisAlert,
+            nextSafeAction = nextSafeAction,
+            essentialGoalImpact = essentialGoalImpact,
+            primaryActionLabel = primaryActionLabel,
+            useFocusedPaymentActions = useFocusedPaymentActions,
         )
     }
 
@@ -337,7 +417,6 @@ class AlertDisplayActivity : AppCompatActivity() {
         val scrim = findViewById<View>(R.id.alertScrim)
         val tag = findViewById<TextView>(R.id.alertTag)
         val title = findViewById<TextView>(R.id.alertTitle)
-        val dismissBtn = findViewById<Button>(R.id.dismissBtn)
 
         scrim.setBackgroundColor(ContextCompat.getColor(this, style.scrimColorRes))
         tag.text = getString(style.tagTextRes)

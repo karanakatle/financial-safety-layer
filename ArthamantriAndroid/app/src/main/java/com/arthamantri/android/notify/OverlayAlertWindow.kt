@@ -12,6 +12,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
@@ -21,11 +22,15 @@ object OverlayAlertWindow {
     private var overlayView: View? = null
     private var pauseTimer: CountDownTimer? = null
     private var currentAlertId: String? = null
+    private var currentTerminalOutcomeReported: Boolean = false
     private var currentTitle: String = ""
     private var currentMessage: String = ""
     private var currentWhyThisAlert: String = ""
     private var currentNextSafeAction: String = ""
     private var currentEssentialGoalImpact: String = ""
+    private var currentSeverity: String = "medium"
+    private var currentPrimaryActionLabel: String = ""
+    private var currentUseFocusedPaymentActions: Boolean = false
     private var currentPauseSeconds: Int = 0
 
     fun show(
@@ -49,6 +54,9 @@ object OverlayAlertWindow {
         val wm = appContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
 
         if (overlayView != null) {
+            if (currentAlertId != null && currentAlertId != alertId) {
+                reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_REPLACED)
+            }
             updateContent(
                 alertId = alertId,
                 title = title,
@@ -76,11 +84,15 @@ object OverlayAlertWindow {
         )
 
         currentAlertId = alertId
+        currentTerminalOutcomeReported = false
         currentTitle = title
         currentMessage = message
         currentWhyThisAlert = whyThisAlert.orEmpty()
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
+        currentSeverity = severity
+        currentPrimaryActionLabel = primaryActionLabel.orEmpty()
+        currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
 
         bindActionMode(
@@ -121,13 +133,7 @@ object OverlayAlertWindow {
         val wm = appContext.getSystemService(Context.WINDOW_SERVICE) as WindowManager
         runCatching { wm.removeView(view) }
         overlayView = null
-        currentAlertId = null
-        currentTitle = ""
-        currentMessage = ""
-        currentWhyThisAlert = ""
-        currentNextSafeAction = ""
-        currentEssentialGoalImpact = ""
-        currentPauseSeconds = 0
+        resetCurrentAlertState()
     }
 
     private fun updateContent(
@@ -143,12 +149,19 @@ object OverlayAlertWindow {
         useFocusedPaymentActions: Boolean,
     ) {
         val view = overlayView ?: return
+        val isNewAlert = currentAlertId != alertId
         currentAlertId = alertId
+        if (isNewAlert) {
+            currentTerminalOutcomeReported = false
+        }
         currentTitle = title
         currentMessage = message
         currentWhyThisAlert = whyThisAlert.orEmpty()
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
+        currentSeverity = severity
+        currentPrimaryActionLabel = primaryActionLabel.orEmpty()
+        currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
         view.findViewById<TextView>(R.id.overlayAlertMessage).text = message
@@ -221,6 +234,8 @@ object OverlayAlertWindow {
         val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
         val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
         val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
+        val trustedPersonBtn = view.findViewById<Button>(R.id.overlayTrustedPersonBtn)
+        val supportBtn = view.findViewById<Button>(R.id.overlaySupportBtn)
         val proceedConfirmGroup = view.findViewById<View>(R.id.overlayProceedConfirmGroup)
         val confirmProceedBtn = view.findViewById<Button>(R.id.overlayConfirmProceedBtn)
         proceedConfirmGroup.visibility = View.GONE
@@ -229,6 +244,10 @@ object OverlayAlertWindow {
             dismissBtn.text = view.context.getString(R.string.alert_action_pause)
             usefulBtn.text = view.context.getString(R.string.alert_action_decline)
             notUsefulBtn.text = view.context.getString(R.string.alert_action_proceed)
+            trustedPersonBtn.visibility = View.VISIBLE
+            trustedPersonBtn.text = view.context.getString(R.string.alert_action_trusted_person)
+            supportBtn.visibility = View.VISIBLE
+            supportBtn.text = view.context.getString(R.string.alert_action_support)
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_low_emphasis)
             notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.text_secondary))
             confirmProceedBtn.text = view.context.getString(R.string.alert_proceed_confirmation_confirm)
@@ -245,15 +264,23 @@ object OverlayAlertWindow {
             }
             usefulBtn.setOnClickListener {
                 proceedConfirmGroup.visibility = View.GONE
-                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_DECLINE)
+                reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_DECLINE)
                 dismiss(appContext)
+            }
+            trustedPersonBtn.setOnClickListener {
+                proceedConfirmGroup.visibility = View.GONE
+                launchTrustedPersonHandoff(appContext, view.context)
+            }
+            supportBtn.setOnClickListener {
+                proceedConfirmGroup.visibility = View.GONE
+                launchSupportPath(appContext, view.context)
             }
             notUsefulBtn.setOnClickListener {
                 proceedConfirmGroup.visibility = View.VISIBLE
                 confirmProceedBtn.isEnabled = dismissBtn.isEnabled
             }
             confirmProceedBtn.setOnClickListener {
-                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_PROCEED)
+                reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_PROCEED)
                 dismiss(appContext)
             }
         } else {
@@ -264,19 +291,21 @@ object OverlayAlertWindow {
             }
             usefulBtn.text = view.context.getString(R.string.alert_feedback_useful)
             notUsefulBtn.text = view.context.getString(R.string.alert_feedback_not_useful)
+            trustedPersonBtn.visibility = View.GONE
+            supportBtn.visibility = View.GONE
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_secondary)
             notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.btn_secondary_text))
 
             dismissBtn.setOnClickListener {
-                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_DISMISSED)
+                reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_DISMISSED)
                 dismiss(appContext)
             }
             usefulBtn.setOnClickListener {
-                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_USEFUL)
+                reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_USEFUL)
                 dismiss(appContext)
             }
             notUsefulBtn.setOnClickListener {
-                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_NOT_USEFUL)
+                reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_NOT_USEFUL)
                 dismiss(appContext)
             }
         }
@@ -289,6 +318,8 @@ object OverlayAlertWindow {
         val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
         val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
         val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
+        val trustedPersonBtn = view.findViewById<Button>(R.id.overlayTrustedPersonBtn)
+        val supportBtn = view.findViewById<Button>(R.id.overlaySupportBtn)
         val confirmProceedBtn = view.findViewById<Button>(R.id.overlayConfirmProceedBtn)
         val proceedConfirmGroup = view.findViewById<View>(R.id.overlayProceedConfirmGroup)
 
@@ -299,6 +330,8 @@ object OverlayAlertWindow {
                 dismissBtn = dismissBtn,
                 usefulBtn = usefulBtn,
                 notUsefulBtn = notUsefulBtn,
+                trustedPersonBtn = trustedPersonBtn,
+                supportBtn = supportBtn,
                 confirmProceedBtn = confirmProceedBtn,
                 proceedConfirmGroup = proceedConfirmGroup,
             )
@@ -310,6 +343,8 @@ object OverlayAlertWindow {
             dismissBtn = dismissBtn,
             usefulBtn = usefulBtn,
             notUsefulBtn = notUsefulBtn,
+            trustedPersonBtn = trustedPersonBtn,
+            supportBtn = supportBtn,
             confirmProceedBtn = confirmProceedBtn,
             proceedConfirmGroup = proceedConfirmGroup,
         )
@@ -329,6 +364,8 @@ object OverlayAlertWindow {
                     dismissBtn = dismissBtn,
                     usefulBtn = usefulBtn,
                     notUsefulBtn = notUsefulBtn,
+                    trustedPersonBtn = trustedPersonBtn,
+                    supportBtn = supportBtn,
                     confirmProceedBtn = confirmProceedBtn,
                     proceedConfirmGroup = proceedConfirmGroup,
                 )
@@ -341,13 +378,74 @@ object OverlayAlertWindow {
         dismissBtn: Button,
         usefulBtn: Button,
         notUsefulBtn: Button,
+        trustedPersonBtn: Button,
+        supportBtn: Button,
         confirmProceedBtn: Button,
         proceedConfirmGroup: View,
     ) {
         dismissBtn.isEnabled = enabled
         usefulBtn.isEnabled = enabled
         notUsefulBtn.isEnabled = enabled
+        trustedPersonBtn.isEnabled = enabled
+        supportBtn.isEnabled = enabled
         confirmProceedBtn.isEnabled = enabled && proceedConfirmGroup.visibility == View.VISIBLE
+    }
+
+    private fun launchTrustedPersonHandoff(appContext: Context, viewContext: Context) {
+        reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_TRUSTED_PERSON_REQUESTED)
+
+        val launched = TrustedPersonHandoffLauncher.launch(
+            context = appContext,
+            title = currentTitle,
+            body = currentMessage,
+            nextSafeAction = currentNextSafeAction,
+        )
+
+        if (!launched) {
+            reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_TRUSTED_PERSON_FAILED)
+            Toast.makeText(
+                viewContext,
+                viewContext.getString(R.string.alert_trusted_person_launch_failed),
+                Toast.LENGTH_SHORT,
+            ).show()
+            return
+        }
+
+        reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_TRUSTED_PERSON_LAUNCHED)
+        postReturnPathNotification(appContext)
+        dismiss(appContext)
+    }
+
+    private fun launchSupportPath(appContext: Context, viewContext: Context) {
+        reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_SUPPORT_REQUESTED)
+
+        val launched = SupportEscalationLauncher.launch(
+            context = appContext,
+            alertId = currentAlertId ?: UUID.randomUUID().toString(),
+            title = currentTitle,
+            body = currentMessage,
+            severity = currentSeverity,
+            pauseSeconds = currentPauseSeconds,
+            whyThisAlert = currentWhyThisAlert,
+            nextSafeAction = currentNextSafeAction,
+            essentialGoalImpact = currentEssentialGoalImpact,
+            primaryActionLabel = currentPrimaryActionLabel,
+            useFocusedPaymentActions = currentUseFocusedPaymentActions,
+        )
+
+        if (!launched) {
+            reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_SUPPORT_FAILED)
+            Toast.makeText(
+                viewContext,
+                viewContext.getString(R.string.alert_support_launch_failed),
+                Toast.LENGTH_SHORT,
+            ).show()
+            return
+        }
+
+        reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_SUPPORT_OPENED)
+        postReturnPathNotification(appContext)
+        dismiss(appContext)
     }
 
     private fun reportFeedback(context: Context, action: String) {
@@ -357,12 +455,55 @@ object OverlayAlertWindow {
             action = action,
             channel = "overlay_window",
             title = currentTitle,
-            message = listOf(
-                currentMessage,
-                currentWhyThisAlert,
-                currentNextSafeAction,
-                currentEssentialGoalImpact,
-            ).filter { it.isNotBlank() }.joinToString("\n"),
+            message = buildCurrentReportMessage(),
+        )
+    }
+
+    private fun reportTerminalOutcome(context: Context, action: String) {
+        if (currentTerminalOutcomeReported) {
+            return
+        }
+        currentTerminalOutcomeReported = true
+        reportFeedback(context, action)
+    }
+
+    private fun buildCurrentReportMessage(): String {
+        return listOf(
+            currentMessage,
+            currentWhyThisAlert,
+            currentNextSafeAction,
+            currentEssentialGoalImpact,
+        ).filter { it.isNotBlank() }.joinToString("\n")
+    }
+
+    private fun resetCurrentAlertState() {
+        currentAlertId = null
+        currentTerminalOutcomeReported = false
+        currentTitle = ""
+        currentMessage = ""
+        currentWhyThisAlert = ""
+        currentNextSafeAction = ""
+        currentEssentialGoalImpact = ""
+        currentSeverity = "medium"
+        currentPrimaryActionLabel = ""
+        currentUseFocusedPaymentActions = false
+        currentPauseSeconds = 0
+    }
+
+    private fun postReturnPathNotification(context: Context) {
+        val alertId = currentAlertId ?: return
+        AlertNotifier.postReturnPathNotification(
+            context = context,
+            alertId = alertId,
+            title = currentTitle,
+            body = currentMessage,
+            severity = currentSeverity,
+            pauseSeconds = currentPauseSeconds,
+            whyThisAlert = currentWhyThisAlert,
+            nextSafeAction = currentNextSafeAction,
+            essentialGoalImpact = currentEssentialGoalImpact,
+            primaryActionLabel = currentPrimaryActionLabel,
+            useFocusedPaymentActions = currentUseFocusedPaymentActions,
         )
     }
 
