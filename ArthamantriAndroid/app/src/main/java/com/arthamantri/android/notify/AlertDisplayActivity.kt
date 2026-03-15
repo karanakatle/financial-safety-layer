@@ -25,17 +25,22 @@ class AlertDisplayActivity : AppCompatActivity() {
             ?: getString(R.string.alert_body_default)
         val pauseSeconds = intent.getIntExtra(EXTRA_PAUSE_SECONDS, 0)
         val severity = intent.getStringExtra(EXTRA_SEVERITY).orEmpty()
+        val whyThisAlert = intent.getStringExtra(EXTRA_WHY_THIS_ALERT).orEmpty()
         val nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
         val essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
+        val primaryActionLabel = intent.getStringExtra(EXTRA_PRIMARY_ACTION_LABEL).orEmpty()
 
         findViewById<TextView>(R.id.alertTitle).text = title
         findViewById<TextView>(R.id.alertMessage).text = message
         applySeverityStyle(severity)
-        bindExplainability(nextSafeAction, essentialGoalImpact)
+        bindExplainability(whyThisAlert, nextSafeAction, essentialGoalImpact)
         val dismissBtn = findViewById<Button>(R.id.dismissBtn)
         val usefulBtn = findViewById<Button>(R.id.usefulBtn)
         val notUsefulBtn = findViewById<Button>(R.id.notUsefulBtn)
         val pauseHint = findViewById<TextView>(R.id.alertPauseHint)
+        if (primaryActionLabel.isNotBlank()) {
+            dismissBtn.text = primaryActionLabel
+        }
 
         setupPause(
             pauseSeconds = pauseSeconds,
@@ -52,7 +57,7 @@ class AlertDisplayActivity : AppCompatActivity() {
                 action = AppConstants.Domain.ALERT_ACTION_USEFUL,
                 channel = "fullscreen_activity",
                 title = title,
-                message = listOf(message, nextSafeAction, essentialGoalImpact)
+                message = listOf(message, whyThisAlert, nextSafeAction, essentialGoalImpact)
                     .filter { it.isNotBlank() }
                     .joinToString("\n"),
             )
@@ -65,7 +70,7 @@ class AlertDisplayActivity : AppCompatActivity() {
                 action = AppConstants.Domain.ALERT_ACTION_NOT_USEFUL,
                 channel = "fullscreen_activity",
                 title = title,
-                message = listOf(message, nextSafeAction, essentialGoalImpact)
+                message = listOf(message, whyThisAlert, nextSafeAction, essentialGoalImpact)
                     .filter { it.isNotBlank() }
                     .joinToString("\n"),
             )
@@ -78,7 +83,7 @@ class AlertDisplayActivity : AppCompatActivity() {
                 action = AppConstants.Domain.ALERT_ACTION_DISMISSED,
                 channel = "fullscreen_activity",
                 title = title,
-                message = listOf(message, nextSafeAction, essentialGoalImpact)
+                message = listOf(message, whyThisAlert, nextSafeAction, essentialGoalImpact)
                     .filter { it.isNotBlank() }
                     .joinToString("\n"),
             )
@@ -129,11 +134,23 @@ class AlertDisplayActivity : AppCompatActivity() {
         }.start()
     }
 
-    private fun bindExplainability(nextSafeAction: String, essentialGoalImpact: String) {
+    private fun bindExplainability(whyThisAlert: String, nextSafeAction: String, essentialGoalImpact: String) {
+        val whyHeading = findViewById<TextView>(R.id.alertWhyHeading)
+        val whyBody = findViewById<TextView>(R.id.alertWhyBody)
         val nextActionHeading = findViewById<TextView>(R.id.alertNextActionHeading)
         val nextActionBody = findViewById<TextView>(R.id.alertNextActionBody)
         val goalImpactHeading = findViewById<TextView>(R.id.alertGoalImpactHeading)
         val goalImpactBody = findViewById<TextView>(R.id.alertGoalImpactBody)
+
+        if (whyThisAlert.isNotBlank()) {
+            whyHeading.text = getString(R.string.alert_why_this_alert_label)
+            whyHeading.visibility = View.VISIBLE
+            whyBody.text = whyThisAlert
+            whyBody.visibility = View.VISIBLE
+        } else {
+            whyHeading.visibility = View.GONE
+            whyBody.visibility = View.GONE
+        }
 
         if (nextSafeAction.isNotBlank()) {
             nextActionHeading.text = getString(R.string.alert_next_safe_action_label)
@@ -177,7 +194,9 @@ class AlertDisplayActivity : AppCompatActivity() {
         const val EXTRA_ALERT_ID = AppConstants.IntentExtras.ALERT_ID
         const val EXTRA_PAUSE_SECONDS = AppConstants.IntentExtras.ALERT_PAUSE_SECONDS
         const val EXTRA_SEVERITY = AppConstants.IntentExtras.ALERT_SEVERITY
+        const val EXTRA_WHY_THIS_ALERT = AppConstants.IntentExtras.ALERT_WHY_THIS_ALERT
         const val EXTRA_NEXT_SAFE_ACTION = AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION
         const val EXTRA_ESSENTIAL_GOAL_IMPACT = AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT
+        const val EXTRA_PRIMARY_ACTION_LABEL = AppConstants.IntentExtras.ALERT_PRIMARY_ACTION_LABEL
     }
 }

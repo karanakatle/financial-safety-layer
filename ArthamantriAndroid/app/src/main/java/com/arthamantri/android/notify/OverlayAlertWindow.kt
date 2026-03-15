@@ -23,6 +23,7 @@ object OverlayAlertWindow {
     private var currentAlertId: String? = null
     private var currentTitle: String = ""
     private var currentMessage: String = ""
+    private var currentWhyThisAlert: String = ""
     private var currentNextSafeAction: String = ""
     private var currentEssentialGoalImpact: String = ""
 
@@ -33,8 +34,10 @@ object OverlayAlertWindow {
         message: String,
         severity: String = "medium",
         pauseSeconds: Int = 0,
+        whyThisAlert: String? = null,
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
+        primaryActionLabel: String? = null,
     ): Boolean {
         if (!canShowOverlay(context)) {
             return false
@@ -50,8 +53,10 @@ object OverlayAlertWindow {
                 message = message,
                 severity = severity,
                 pauseSeconds = pauseSeconds,
+                whyThisAlert = whyThisAlert,
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
+                primaryActionLabel = primaryActionLabel,
             )
             return true
         }
@@ -62,15 +67,20 @@ object OverlayAlertWindow {
         applySeverityStyle(view, severity)
         bindExplainability(
             view = view,
+            whyThisAlert = whyThisAlert,
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
         )
         val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
         val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
         val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
+        if (!primaryActionLabel.isNullOrBlank()) {
+            dismissBtn.text = primaryActionLabel
+        }
         currentAlertId = alertId
         currentTitle = title
         currentMessage = message
+        currentWhyThisAlert = whyThisAlert.orEmpty()
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
         dismissBtn.setOnClickListener {
@@ -120,6 +130,7 @@ object OverlayAlertWindow {
         currentAlertId = null
         currentTitle = ""
         currentMessage = ""
+        currentWhyThisAlert = ""
         currentNextSafeAction = ""
         currentEssentialGoalImpact = ""
     }
@@ -130,13 +141,16 @@ object OverlayAlertWindow {
         message: String,
         severity: String,
         pauseSeconds: Int,
+        whyThisAlert: String?,
         nextSafeAction: String?,
         essentialGoalImpact: String?,
+        primaryActionLabel: String?,
     ) {
         val view = overlayView ?: return
         currentAlertId = alertId
         currentTitle = title
         currentMessage = message
+        currentWhyThisAlert = whyThisAlert.orEmpty()
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
@@ -144,24 +158,41 @@ object OverlayAlertWindow {
         applySeverityStyle(view, severity)
         bindExplainability(
             view = view,
+            whyThisAlert = whyThisAlert,
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
         )
         val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
         val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
         val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
+        if (!primaryActionLabel.isNullOrBlank()) {
+            dismissBtn.text = primaryActionLabel
+        }
         setupPause(view, pauseSeconds, dismissBtn, usefulBtn, notUsefulBtn)
     }
 
     private fun bindExplainability(
         view: View,
+        whyThisAlert: String?,
         nextSafeAction: String?,
         essentialGoalImpact: String?,
     ) {
+        val whyHeading = view.findViewById<TextView>(R.id.overlayWhyHeading)
+        val whyBody = view.findViewById<TextView>(R.id.overlayWhyBody)
         val nextActionHeading = view.findViewById<TextView>(R.id.overlayNextActionHeading)
         val nextActionBody = view.findViewById<TextView>(R.id.overlayNextActionBody)
         val goalImpactHeading = view.findViewById<TextView>(R.id.overlayGoalImpactHeading)
         val goalImpactBody = view.findViewById<TextView>(R.id.overlayGoalImpactBody)
+
+        val whyValue = whyThisAlert?.trim().orEmpty()
+        if (whyValue.isNotEmpty()) {
+            whyHeading.visibility = View.VISIBLE
+            whyBody.visibility = View.VISIBLE
+            whyBody.text = whyValue
+        } else {
+            whyHeading.visibility = View.GONE
+            whyBody.visibility = View.GONE
+        }
 
         val nextActionValue = nextSafeAction?.trim().orEmpty()
         if (nextActionValue.isNotEmpty()) {
@@ -232,6 +263,7 @@ object OverlayAlertWindow {
             title = currentTitle,
             message = listOf(
                 currentMessage,
+                currentWhyThisAlert,
                 currentNextSafeAction,
                 currentEssentialGoalImpact,
             ).filter { it.isNotBlank() }.joinToString("\n"),

@@ -43,10 +43,6 @@
 
     <string name="home_card_monitor_title">Live Monitoring</string>
     <string name="home_card_monitor_desc">Observes SMS/UPI activity in the background and triggers risk alerts.</string>
-    <string name="home_status_section_title">Confidence status</string>
-    <string name="home_status_label">Current status</string>
-    <string name="home_money_setup_label">Money setup</string>
-    <string name="home_info_hint">Warnings appear during risky moments. This home screen is only for setup and status.</string>
     <string name="facilitator_badge">Facilitator view</string>
     <string name="facilitator_steps_section_title">Setup steps</string>
     <string name="facilitator_script_section_title">Helper script</string>
@@ -73,6 +69,18 @@
     <string name="dialog_setup_step_item_consent">Record consent</string>
     <string name="dialog_setup_step_item_permissions">Enable permissions</string>
     <string name="dialog_setup_step_item_monitoring">Start monitoring</string>
+    <string name="dialog_perm_tracker_step_1_title">Step 1 of 4: Enable SMS and notifications</string>
+    <string name="dialog_perm_tracker_step_1_subtitle">Allow the basic in-app prompts before moving to settings screens.</string>
+    <string name="dialog_perm_tracker_step_2_title">Step 2 of 4: Enable usage access</string>
+    <string name="dialog_perm_tracker_step_2_subtitle">Let Arthamantri notice when you open a payment app.</string>
+    <string name="dialog_perm_tracker_step_3_title">Step 3 of 4: Enable overlay access</string>
+    <string name="dialog_perm_tracker_step_3_subtitle">Allow on-screen warnings at the right moment.</string>
+    <string name="dialog_perm_tracker_step_4_title">Step 4 of 4: Money Setup Lite</string>
+    <string name="dialog_perm_tracker_step_4_subtitle">Choose your profile and essential goals before monitoring starts.</string>
+    <string name="dialog_perm_tracker_item_sms_notifications">Enable SMS &amp; notifications</string>
+    <string name="dialog_perm_tracker_item_usage">Enable usage access</string>
+    <string name="dialog_perm_tracker_item_overlay">Enable overlay access</string>
+    <string name="dialog_perm_tracker_item_monitoring">Money Setup Lite</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">Hindi</string>
 
@@ -117,6 +125,7 @@
     <string name="goal_loan_repayment">Loan Repayment</string>
     <string name="money_setup_pending">Money setup: pending</string>
     <string name="money_setup_skipped">Money setup: skipped</string>
+    <string name="money_setup_local_summary">Money setup: %1$s • Goals: %2$s</string>
     <string name="money_setup_summary">Money setup: %1$s • Goals: %2$s • Reserve: %3$d%% • Protected limit: ₹%4$d</string>
     <string name="toast_money_setup_saved">Money setup saved.</string>
     <string name="toast_money_setup_failed">Money setup could not be synced. Continuing with defaults.</string>
@@ -182,6 +191,7 @@
 
     <string name="dialog_perm_title">Permission Setup</string>
     <string name="dialog_perm_subtitle">Complete the required access steps so monitoring works reliably.</string>
+    <string name="dialog_perm_intro_title">Enable SMS &amp; notifications</string>
     <string name="dialog_perm_step_title">Enable %1$s</string>
     <string name="dialog_perm_step_subtitle">Step %1$d of %2$d</string>
     <string name="dialog_perm_review_title">%1$s is on</string>
@@ -201,6 +211,10 @@ Follow the system prompts to complete setup.</string>
     <string name="dialog_perm_bullet_usage">Usage Access</string>
     <string name="dialog_perm_bullet_overlay">Overlay access</string>
     <string name="dialog_perm_followup">Follow the system prompts to complete setup.</string>
+    <string name="dialog_perm_intro_step_1">Allow the Android prompts for SMS and notifications on this screen.</string>
+    <string name="dialog_perm_followup_step_1">After that, Arthamantri will guide you to Usage Access.</string>
+    <string name="dialog_perm_followup_usage">After that, Arthamantri will guide you to Overlay Access.</string>
+    <string name="dialog_perm_followup_overlay">After that, Arthamantri will guide you to Money Setup Lite.</string>
     <string name="dialog_perm_bullet_helps">This helps Arthamantri %1$s.</string>
     <string name="dialog_perm_bullet_not_access">It does not access OTP, UPI PIN, or bank password.</string>
     <string name="dialog_perm_bullet_if_off">If this stays off, %1$s.</string>
@@ -260,12 +274,18 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_ack_long">Okay, I understand</string>
     <string name="alert_feedback_useful">Useful</string>
     <string name="alert_feedback_not_useful">Not useful</string>
+    <string name="alert_why_this_alert_label">Why This Alert</string>
     <string name="alert_next_safe_action_label">Next Safe Action</string>
     <string name="alert_essential_goal_impact_label">Essential Goal Impact</string>
     <string name="alert_pause_countdown">Please wait %1$d seconds, then confirm.</string>
     <string name="service_notif_title">Arthamantri is running</string>
     <string name="service_notif_text">Monitoring UPI app open events</string>
     <string name="alert_payment_risk_title">Payment Risk Warning</string>
+    <string name="alert_payment_uncertain_title">Pause And Verify</string>
+    <string name="alert_payment_ack_long">Pause and check first</string>
+    <string name="alert_payment_fallback_body">Arthamantri could not confirm this payment in time. Treat it as risky until you verify it.</string>
+    <string name="alert_payment_fallback_why">Live analysis is unavailable or delayed, so the app is showing a cautious fallback instead of saying the request is safe.</string>
+    <string name="alert_payment_fallback_next">Do not approve yet. Verify the sender, payee, and reason on a separate channel.</string>
     <string name="alert_spending_threshold">Your spending is crossing a safe threshold.</string>
     <string name="alert_txn_risk">Spending risk detected from transaction notification.</string>
     <string name="alert_setup_verification_title">Setup check: sample alert</string>

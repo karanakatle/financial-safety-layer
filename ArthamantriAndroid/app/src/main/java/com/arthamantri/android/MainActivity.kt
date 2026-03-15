@@ -64,6 +64,13 @@ class MainActivity : AppCompatActivity() {
         val badgeText: String,
     )
 
+    private data class GuidedTrackerCopy(
+        val currentStep: Int,
+        val title: String,
+        val subtitle: String,
+        val itemLabels: List<String>,
+    )
+
     private enum class FacilitatorStepProgress {
         PENDING,
         IN_PROGRESS,
@@ -249,7 +256,7 @@ class MainActivity : AppCompatActivity() {
         loadPilotMeta()
         loadEssentialGoalSummary()
         animateDashboardCards()
-        continueOnboardingFlow()
+        mainContentContainer.post { continueOnboardingFlow() }
         maybeRestoreHelpDialogAfterLanguageSwitch()
 
         if (shouldRestoreDrawerState) {
@@ -344,14 +351,12 @@ class MainActivity : AppCompatActivity() {
         val secondaryButton = contentView.findViewById<Button>(R.id.languageDialogSecondaryButton)
 
         spinner.adapter = ArrayAdapter(
-            this,
+            this@MainActivity,
             android.R.layout.simple_spinner_item,
             options,
         ).also { a -> a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         spinner.setSelection(selectedIndex)
         secondaryButton.text = if (force) getString(R.string.help_close) else getString(R.string.consent_exit)
-        primaryButton.setTextColor(ContextCompat.getColor(this, R.color.btn_primary_text))
-        secondaryButton.setTextColor(ContextCompat.getColor(this, R.color.btn_secondary_text))
         primaryButton.backgroundTintList = null
         secondaryButton.backgroundTintList = null
 
@@ -364,32 +369,44 @@ class MainActivity : AppCompatActivity() {
             primaryButton.setOnClickListener {
                 val langCode = languageOptions.getOrNull(spinner.selectedItemPosition)?.code
                     ?: AppConstants.Locale.DEFAULT_LANGUAGE
+                dialog.dismiss()
                 applyLanguage(langCode, markSelected = true)
             }
             secondaryButton.setOnClickListener {
                 dialog.dismiss()
-                if (!force) finish()
+                if (!force) {
+                    finish()
+                }
             }
         }
-        showManagedFlowDialog(dialog, transparentBackground = false)
+        showManagedFlowDialog(dialog)
     }
 
     private fun showConsentDialog(allowExit: Boolean = true) {
-        val dialog = buildInfoBoxDialog(
-            title = getString(R.string.dialog_consent_title),
-            subtitle = getString(R.string.dialog_consent_subtitle),
-            guidedStep = 2,
-            body = buildBulletedDialogMessage(
-                bullets = listOf(
-                    getString(R.string.dialog_consent_bullet_1),
-                    getString(R.string.dialog_consent_bullet_2),
-                    getString(R.string.dialog_consent_bullet_3),
-                ),
+        val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_consent_review, null)
+        val bodyView = contentView.findViewById<TextView>(R.id.consentDialogBody)
+        val primaryButton = contentView.findViewById<Button>(R.id.consentDialogPrimaryButton)
+        val secondaryButton = contentView.findViewById<Button>(R.id.consentDialogSecondaryButton)
+
+        bodyView.text = buildBulletedDialogMessage(
+            bullets = listOf(
+                getString(R.string.dialog_consent_bullet_1),
+                getString(R.string.dialog_consent_bullet_2),
+                getString(R.string.dialog_consent_bullet_3),
             ),
-            positiveLabel = getString(R.string.consent_accept),
-            negativeLabel = if (allowExit) getString(R.string.consent_not_now) else getString(R.string.help_close),
-            cancelable = false,
-            onPositive = {
+        )
+        primaryButton.backgroundTintList = null
+        secondaryButton.backgroundTintList = null
+        secondaryButton.text = if (allowExit) getString(R.string.consent_not_now) else getString(R.string.help_close)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(contentView)
+            .setCancelable(false)
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setOnShowListener {
+            primaryButton.setOnClickListener {
+                dialog.dismiss()
                 val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
                 prefs.edit()
                     .putBoolean(AppConstants.Prefs.KEY_CONSENT_ACCEPTED, true)
@@ -407,43 +424,49 @@ class MainActivity : AppCompatActivity() {
                 }
                 sendAppLog("info", "consent_accepted")
                 continueOnboardingFlow()
-            },
-            onNegative = { dialogInterface ->
+            }
+            secondaryButton.setOnClickListener {
+                dialog.dismiss()
                 if (allowExit) {
-                    dialogInterface.dismiss()
                     deferConsent()
-                } else {
-                    dialogInterface.dismiss()
                 }
             }
-        )
-        showManagedFlowDialog(dialog, transparentBackground = false)
+        }
+        showManagedFlowDialog(dialog)
     }
 
     private fun showPurposeDialog() {
-        val dialog = buildInfoBoxDialog(
-            title = getString(R.string.dialog_purpose_title),
-            subtitle = getString(R.string.dialog_purpose_subtitle),
-            guidedStep = 2,
-            body = buildBulletedDialogMessage(
-                bullets = listOf(
-                    getString(R.string.dialog_purpose_bullet_1),
-                    getString(R.string.dialog_purpose_bullet_2),
-                    getString(R.string.dialog_purpose_bullet_3),
-                ),
+        val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_purpose_review, null)
+        val bodyView = contentView.findViewById<TextView>(R.id.purposeDialogBody)
+        val primaryButton = contentView.findViewById<Button>(R.id.purposeDialogPrimaryButton)
+        val secondaryButton = contentView.findViewById<Button>(R.id.purposeDialogSecondaryButton)
+
+        bodyView.text = buildBulletedDialogMessage(
+            bullets = listOf(
+                getString(R.string.dialog_purpose_bullet_1),
+                getString(R.string.dialog_purpose_bullet_2),
+                getString(R.string.dialog_purpose_bullet_3),
             ),
-            positiveLabel = getString(R.string.purpose_continue),
-            negativeLabel = getString(R.string.purpose_not_now),
-            cancelable = false,
-            onPositive = {
-                showConsentDialog()
-            },
-            onNegative = { dialogInterface ->
-                dialogInterface.dismiss()
-                deferConsent()
-            },
         )
-        showManagedFlowDialog(dialog, transparentBackground = false)
+        primaryButton.backgroundTintList = null
+        secondaryButton.backgroundTintList = null
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(contentView)
+            .setCancelable(false)
+            .create()
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setOnShowListener {
+            primaryButton.setOnClickListener {
+                dialog.dismiss()
+                showConsentDialog()
+            }
+            secondaryButton.setOnClickListener {
+                dialog.dismiss()
+                deferConsent()
+            }
+        }
+        showManagedFlowDialog(dialog)
     }
 
     private fun showMoneySetupDialog() {
@@ -465,7 +488,8 @@ class MainActivity : AppCompatActivity() {
         val cohortSpinner = contentView.findViewById<Spinner>(R.id.moneySetupCohortSpinner)
         val goalOneSpinner = contentView.findViewById<Spinner>(R.id.moneySetupGoalOneSpinner)
         val goalTwoSpinner = contentView.findViewById<Spinner>(R.id.moneySetupGoalTwoSpinner)
-
+        val primaryButton = contentView.findViewById<Button>(R.id.moneySetupPrimaryButton)
+        val secondaryButton = contentView.findViewById<Button>(R.id.moneySetupSecondaryButton)
         cohortSpinner.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
@@ -482,26 +506,25 @@ class MainActivity : AppCompatActivity() {
             goalLabels,
         ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
 
+        primaryButton.backgroundTintList = null
+        secondaryButton.backgroundTintList = null
+        var moneySetupHandled = false
+
         val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.dialog_money_setup_title))
-            .setMessage(getString(R.string.dialog_money_setup_message))
             .setView(contentView)
             .setCancelable(false)
-            .setPositiveButton(getString(R.string.money_setup_save_continue), null)
-            .setNegativeButton(getString(R.string.money_setup_skip), null)
             .create()
         dialog.setCanceledOnTouchOutside(false)
 
         dialog.setOnShowListener {
-            val saveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            val skipButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
             val setButtonsEnabled = { enabled: Boolean ->
-                saveButton.isEnabled = enabled
-                skipButton.isEnabled = enabled
+                primaryButton.isEnabled = enabled
+                secondaryButton.isEnabled = enabled
             }
 
-            saveButton.setOnClickListener {
+            primaryButton.setOnClickListener {
                 setButtonsEnabled(false)
+                moneySetupHandled = true
                 val cohort = cohortCodes.getOrNull(cohortSpinner.selectedItemPosition) ?: "daily_cashflow_worker"
                 val selectedGoals = listOf(
                     goalCodes.getOrNull(goalOneSpinner.selectedItemPosition).orEmpty(),
@@ -515,8 +538,9 @@ class MainActivity : AppCompatActivity() {
                 )
             }
 
-            skipButton.setOnClickListener {
+            secondaryButton.setOnClickListener {
                 setButtonsEnabled(false)
+                moneySetupHandled = true
                 persistMoneySetup(
                     cohort = "daily_cashflow_worker",
                     goals = emptyList(),
@@ -525,6 +549,166 @@ class MainActivity : AppCompatActivity() {
                 )
             }
         }
+        showManagedFlowDialog(dialog, onDismissExtra = {
+            if (!moneySetupHandled) {
+                setStatus(getString(R.string.status_onboarding_resume))
+                refreshPrimaryActionState()
+            }
+        })
+    }
+
+    private fun showPermissionSetupDialog(
+        permissionStepOverride: PermissionStep? = null,
+        fromReview: Boolean = false,
+    ) {
+        val currentPermissionState = permissionOnboardingState()
+        if (!fromReview && permissionStepOverride == null) {
+            when (currentPermissionState.nextStep()) {
+                PermissionStep.USAGE, PermissionStep.OVERLAY -> {
+                    showPermissionSetupDialog(permissionStepOverride = currentPermissionState.nextStep())
+                    return
+                }
+                else -> Unit
+            }
+        }
+
+        if (!fromReview && permissionStepOverride == null) {
+            val dialog = buildInfoBoxDialog(
+                title = getString(R.string.dialog_perm_intro_title),
+                subtitle = getString(R.string.dialog_perm_step_subtitle, 1, 4),
+                guidedStep = 1,
+                guidedTrackerCopy = permissionGuidedTrackerCopy(PermissionStep.SMS),
+                body = buildBulletedDialogMessage(
+                    bullets = listOf(
+                        getString(R.string.dialog_perm_bullet_helps, getString(R.string.permission_help_sms)),
+                        getString(R.string.dialog_perm_bullet_helps, getString(R.string.permission_help_notifications)),
+                        getString(R.string.dialog_perm_bullet_not_access),
+                        getString(R.string.dialog_perm_bullet_next, getString(R.string.menu_access_usage)),
+                    ),
+                    intro = getString(R.string.dialog_perm_intro_step_1),
+                    outro = getString(R.string.dialog_perm_followup_step_1),
+                ),
+                positiveLabel = getString(R.string.perm_continue),
+                negativeLabel = getString(R.string.consent_not_now),
+                cancelable = false,
+                onPositive = {
+                    setGuidedPermissionFlowActive(true)
+                    sendAppLog("info", "permission_onboarding_prompted")
+                    val runtimePermissionsPending = !hasSmsRuntimePermissions() || !hasNotificationPermissionForOnboarding()
+                    if (runtimePermissionsPending) {
+                        requestRuntimePermissions()
+                    } else {
+                        showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                    }
+                },
+                onNegative = { dialogInterface ->
+                    dialogInterface.dismiss()
+                    setGuidedPermissionFlowActive(false)
+                    setStatus(getString(R.string.status_onboarding_resume))
+                    refreshPrimaryActionState()
+                    toast(getString(R.string.toast_setup_paused))
+                },
+            )
+            showManagedFlowDialog(dialog, transparentBackground = false)
+            return
+        }
+
+        val state = currentPermissionState
+        syncPermissionOnboardingDone()
+
+        if (!fromReview) {
+            setGuidedPermissionFlowActive(true)
+        }
+
+        if (!fromReview && state.isComplete()) {
+            setGuidedPermissionFlowActive(false)
+            continueOnboardingFlow()
+            return
+        }
+
+        val step = permissionStepOverride ?: state.nextStep()
+        if (step == PermissionStep.COMPLETE) {
+            val dialog = buildInfoBoxDialog(
+                title = getString(R.string.dialog_perm_complete_title),
+                subtitle = getString(R.string.dialog_perm_complete_subtitle),
+                guidedStep = 4,
+                guidedTrackerCopy = if (!fromReview) permissionGuidedTrackerCopy(PermissionStep.COMPLETE) else null,
+                body = buildBulletedDialogMessage(
+                    bullets = listOf(
+                        getString(R.string.dialog_perm_complete_bullet_1),
+                        getString(R.string.dialog_perm_complete_bullet_2),
+                    ),
+                ),
+                positiveLabel = getString(R.string.help_close),
+                negativeLabel = null,
+                cancelable = true,
+                onPositive = {
+                    refreshPrimaryActionState()
+                },
+            )
+            dialog.show()
+            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+            return
+        }
+
+        val currentGranted = isPermissionStepGranted(step, state)
+        val remainingLabels = state.remainingSteps()
+            .filter { it != step }
+            .joinToString(separator = ", ") { permissionStepLabel(it) }
+            .ifBlank { getString(R.string.dialog_money_setup_title) }
+        val followupText = if (!fromReview && !currentGranted) {
+            when (step) {
+                PermissionStep.USAGE -> getString(R.string.dialog_perm_followup_usage)
+                PermissionStep.OVERLAY -> getString(R.string.dialog_perm_followup_overlay)
+                else -> getString(R.string.dialog_perm_bullet_next, remainingLabels)
+            }
+        } else {
+            getString(R.string.dialog_perm_bullet_next, remainingLabels)
+        }
+
+        val dialog = buildInfoBoxDialog(
+            title = if (currentGranted && fromReview) {
+                getString(R.string.dialog_perm_review_title, permissionStepLabel(step))
+            } else {
+                getString(R.string.dialog_perm_step_title, permissionStepLabel(step))
+            },
+            subtitle = if (currentGranted && fromReview) {
+                getString(R.string.dialog_perm_review_subtitle)
+            } else {
+                getString(
+                    R.string.dialog_perm_step_subtitle,
+                    permissionFlowStepNumber(step),
+                    4,
+                )
+            },
+            guidedStep = 3,
+            guidedTrackerCopy = if (!fromReview) permissionGuidedTrackerCopy(step) else null,
+            body = buildBulletedDialogMessage(
+                bullets = listOf(
+                    getString(R.string.dialog_perm_bullet_helps, permissionStepHelpText(step)),
+                    getString(R.string.dialog_perm_bullet_not_access),
+                    if (currentGranted && fromReview) {
+                        getString(R.string.dialog_perm_bullet_currently_on)
+                    } else {
+                        getString(R.string.dialog_perm_bullet_if_off, permissionStepOffText(step))
+                    },
+                ),
+                outro = followupText,
+            ),
+            positiveLabel = permissionStepActionLabel(step),
+            negativeLabel = if (!fromReview) getString(R.string.consent_not_now) else getString(R.string.help_close),
+            cancelable = true,
+            onPositive = {
+                openPermissionStep(step, continueGuidedFlow = !fromReview)
+            },
+            onNegative = { dialogInterface ->
+                dialogInterface.dismiss()
+                if (!fromReview) {
+                    setGuidedPermissionFlowActive(false)
+                }
+                refreshPrimaryActionState()
+            },
+        )
         showManagedFlowDialog(dialog, transparentBackground = false)
     }
 
@@ -898,6 +1082,16 @@ class MainActivity : AppCompatActivity() {
         setupSkipped: Boolean,
         dialog: AlertDialog,
     ) {
+        cacheMoneySetupSelection(
+            cohort = cohort,
+            goals = goals,
+            done = true,
+            skipped = setupSkipped,
+        )
+        applyLocalMoneySetupFallback()
+        dialog.dismiss()
+        continueOnboardingFlow()
+
         CoroutineScope(Dispatchers.IO).launch {
             val response = runCatching {
                 LiteracyRepository.saveEssentialGoals(
@@ -909,7 +1103,9 @@ class MainActivity : AppCompatActivity() {
             }
             runOnUiThread {
                 response.onSuccess { saved ->
-                    setMoneySetupState(
+                    cacheMoneySetupSelection(
+                        cohort = saved.profile?.cohort ?: cohort,
+                        goals = saved.profile?.essential_goals?.filter { it.isNotBlank() } ?: goals,
                         done = true,
                         skipped = saved.profile?.setup_skipped == true || setupSkipped,
                     )
@@ -919,21 +1115,10 @@ class MainActivity : AppCompatActivity() {
                     }
                     sendAppLog("info", "money_setup_saved:$cohort:${goals.joinToString("|")}")
                 }.onFailure { error ->
-                    setMoneySetupState(
-                        done = setupSkipped,
-                        skipped = setupSkipped,
-                    )
-                    if (setupSkipped) {
-                        moneySetupLine.text = getString(R.string.money_setup_skipped)
-                    } else {
-                        moneySetupLine.text = getString(R.string.money_setup_pending)
-                    }
+                    applyLocalMoneySetupFallback()
                     toast(getString(R.string.toast_money_setup_failed))
                     sendAppLog("error", "money_setup_save_failed:${error.message}")
                 }
-
-                dialog.dismiss()
-                continueOnboardingFlow()
             }
         }
     }
@@ -1005,98 +1190,6 @@ class MainActivity : AppCompatActivity() {
             "loan_repayment" -> getString(R.string.goal_loan_repayment)
             else -> goalCode
         }
-    }
-
-    private fun showPermissionSetupDialog(
-        permissionStepOverride: PermissionStep? = null,
-        fromReview: Boolean = false,
-    ) {
-        val state = permissionOnboardingState()
-        syncPermissionOnboardingDone()
-
-        if (!fromReview) {
-            setGuidedPermissionFlowActive(true)
-        }
-
-        if (!fromReview && state.isComplete()) {
-            setGuidedPermissionFlowActive(false)
-            refreshPrimaryActionState()
-            return
-        }
-
-        val step = permissionStepOverride ?: state.nextStep()
-        if (step == PermissionStep.COMPLETE) {
-            val dialog = buildInfoBoxDialog(
-                title = getString(R.string.dialog_perm_complete_title),
-                subtitle = getString(R.string.dialog_perm_complete_subtitle),
-                guidedStep = 4,
-                body = buildBulletedDialogMessage(
-                    bullets = listOf(
-                        getString(R.string.dialog_perm_complete_bullet_1),
-                        getString(R.string.dialog_perm_complete_bullet_2),
-                    ),
-                ),
-                positiveLabel = getString(R.string.help_close),
-                negativeLabel = null,
-                cancelable = true,
-                onPositive = {
-                    refreshPrimaryActionState()
-                },
-            )
-            dialog.show()
-            dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-            return
-        }
-
-        val currentGranted = isPermissionStepGranted(step, state)
-        val remainingLabels = state.remainingSteps()
-            .filter { it != step }
-            .joinToString(separator = ", ") { permissionStepLabel(it) }
-            .ifBlank { getString(R.string.dialog_perm_next_ready) }
-
-        val dialog = buildInfoBoxDialog(
-            title = if (currentGranted && fromReview) {
-                getString(R.string.dialog_perm_review_title, permissionStepLabel(step))
-            } else {
-                getString(R.string.dialog_perm_step_title, permissionStepLabel(step))
-            },
-            subtitle = if (currentGranted && fromReview) {
-                getString(R.string.dialog_perm_review_subtitle)
-            } else {
-                getString(
-                    R.string.dialog_perm_step_subtitle,
-                    state.completedCount() + 1,
-                    state.totalCount(),
-                )
-            },
-            guidedStep = 3,
-            body = buildBulletedDialogMessage(
-                bullets = listOf(
-                    getString(R.string.dialog_perm_bullet_helps, permissionStepHelpText(step)),
-                    getString(R.string.dialog_perm_bullet_not_access),
-                    if (currentGranted && fromReview) {
-                        getString(R.string.dialog_perm_bullet_currently_on)
-                    } else {
-                        getString(R.string.dialog_perm_bullet_if_off, permissionStepOffText(step))
-                    },
-                    getString(R.string.dialog_perm_bullet_next, remainingLabels),
-                ),
-            ),
-            positiveLabel = permissionStepActionLabel(step),
-            negativeLabel = getString(R.string.help_close),
-            cancelable = true,
-            onPositive = {
-                openPermissionStep(step, continueGuidedFlow = !fromReview)
-            },
-            onNegative = { dialogInterface ->
-                dialogInterface.dismiss()
-                if (!fromReview) {
-                    setGuidedPermissionFlowActive(false)
-                }
-                refreshPrimaryActionState()
-            },
-        )
-        showManagedFlowDialog(dialog)
     }
 
     private fun permissionOnboardingState(): PermissionOnboardingState {
@@ -1237,6 +1330,7 @@ class MainActivity : AppCompatActivity() {
         title: String,
         subtitle: String?,
         guidedStep: Int? = null,
+        guidedTrackerCopy: GuidedTrackerCopy? = null,
         body: CharSequence,
         positiveLabel: String,
         negativeLabel: String?,
@@ -1280,7 +1374,7 @@ class MainActivity : AppCompatActivity() {
             stepSubtitleView = stepSubtitleView,
             stepNumViews = stepNumViews,
             stepTextViews = stepTextViews,
-            currentStep = guidedStep,
+            trackerCopy = guidedTrackerCopy ?: defaultGuidedTrackerCopy(guidedStep),
         )
         bodyView.text = body
 
@@ -1322,44 +1416,26 @@ class MainActivity : AppCompatActivity() {
         stepSubtitleView: TextView,
         stepNumViews: List<TextView>,
         stepTextViews: List<TextView>,
-        currentStep: Int?,
+        trackerCopy: GuidedTrackerCopy?,
     ) {
-        if (currentStep == null) {
+        if (trackerCopy == null) {
             stepCard.visibility = View.GONE
             return
         }
 
         stepCard.visibility = View.VISIBLE
-        val stepTitleRes = when (currentStep) {
-            1 -> R.string.dialog_setup_step_1_title
-            2 -> R.string.dialog_setup_step_2_title
-            3 -> R.string.dialog_setup_step_3_title
-            else -> R.string.dialog_setup_step_4_title
-        }
-        val stepSubtitleRes = when (currentStep) {
-            1 -> R.string.dialog_setup_step_1_subtitle
-            2 -> R.string.dialog_setup_step_2_subtitle
-            3 -> R.string.dialog_setup_step_3_subtitle
-            else -> R.string.dialog_setup_step_4_subtitle
-        }
-        val itemLabels = listOf(
-            getString(R.string.dialog_setup_step_item_language),
-            getString(R.string.dialog_setup_step_item_consent),
-            getString(R.string.dialog_setup_step_item_permissions),
-            getString(R.string.dialog_setup_step_item_monitoring),
-        )
-        stepTitleView.text = getString(stepTitleRes)
-        stepSubtitleView.text = getString(stepSubtitleRes)
+        stepTitleView.text = trackerCopy.title
+        stepSubtitleView.text = trackerCopy.subtitle
 
         stepNumViews.forEachIndexed { index, textView ->
             val stepNumber = index + 1
             when {
-                stepNumber < currentStep -> {
+                stepNumber < trackerCopy.currentStep -> {
                     textView.setBackgroundResource(R.drawable.bg_step_circle_done)
                     textView.setTextColor(ContextCompat.getColor(this, R.color.color_semantic_safe_text))
                     stepTextViews[index].setTextColor(ContextCompat.getColor(this, R.color.text_primary))
                 }
-                stepNumber == currentStep -> {
+                stepNumber == trackerCopy.currentStep -> {
                     textView.setBackgroundResource(R.drawable.bg_step_circle_active)
                     textView.setTextColor(ContextCompat.getColor(this, android.R.color.white))
                     stepTextViews[index].setTextColor(ContextCompat.getColor(this, R.color.text_primary))
@@ -1370,17 +1446,87 @@ class MainActivity : AppCompatActivity() {
                     stepTextViews[index].setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
                 }
             }
-            stepTextViews[index].text = itemLabels[index]
+            stepTextViews[index].text = trackerCopy.itemLabels.getOrElse(index) { "" }
         }
     }
 
-    private fun showManagedFlowDialog(dialog: AlertDialog, transparentBackground: Boolean = true) {
+    private fun defaultGuidedTrackerCopy(currentStep: Int?): GuidedTrackerCopy? {
+        if (currentStep == null) {
+            return null
+        }
+        val title = when (currentStep) {
+            1 -> getString(R.string.dialog_setup_step_1_title)
+            2 -> getString(R.string.dialog_setup_step_2_title)
+            3 -> getString(R.string.dialog_setup_step_3_title)
+            else -> getString(R.string.dialog_setup_step_4_title)
+        }
+        val subtitle = when (currentStep) {
+            1 -> getString(R.string.dialog_setup_step_1_subtitle)
+            2 -> getString(R.string.dialog_setup_step_2_subtitle)
+            3 -> getString(R.string.dialog_setup_step_3_subtitle)
+            else -> getString(R.string.dialog_setup_step_4_subtitle)
+        }
+        return GuidedTrackerCopy(
+            currentStep = currentStep,
+            title = title,
+            subtitle = subtitle,
+            itemLabels = listOf(
+                getString(R.string.dialog_setup_step_item_language),
+                getString(R.string.dialog_setup_step_item_consent),
+                getString(R.string.dialog_setup_step_item_permissions),
+                getString(R.string.dialog_setup_step_item_monitoring),
+            ),
+        )
+    }
+
+    private fun permissionGuidedTrackerCopy(step: PermissionStep): GuidedTrackerCopy {
+        val currentStep = permissionFlowStepNumber(step)
+        val title = when (currentStep) {
+            1 -> getString(R.string.dialog_perm_tracker_step_1_title)
+            2 -> getString(R.string.dialog_perm_tracker_step_2_title)
+            3 -> getString(R.string.dialog_perm_tracker_step_3_title)
+            else -> getString(R.string.dialog_perm_tracker_step_4_title)
+        }
+        val subtitle = when (currentStep) {
+            1 -> getString(R.string.dialog_perm_tracker_step_1_subtitle)
+            2 -> getString(R.string.dialog_perm_tracker_step_2_subtitle)
+            3 -> getString(R.string.dialog_perm_tracker_step_3_subtitle)
+            else -> getString(R.string.dialog_perm_tracker_step_4_subtitle)
+        }
+        return GuidedTrackerCopy(
+            currentStep = currentStep,
+            title = title,
+            subtitle = subtitle,
+            itemLabels = listOf(
+                getString(R.string.dialog_perm_tracker_item_sms_notifications),
+                getString(R.string.dialog_perm_tracker_item_usage),
+                getString(R.string.dialog_perm_tracker_item_overlay),
+                getString(R.string.dialog_perm_tracker_item_monitoring),
+            ),
+        )
+    }
+
+    private fun permissionFlowStepNumber(step: PermissionStep): Int {
+        return when (step) {
+            PermissionStep.SMS, PermissionStep.NOTIFICATIONS -> 1
+            PermissionStep.USAGE -> 2
+            PermissionStep.OVERLAY -> 3
+            PermissionStep.COMPLETE -> 4
+        }
+    }
+
+    private fun showManagedFlowDialog(
+        dialog: AlertDialog,
+        transparentBackground: Boolean = true,
+        onDismissExtra: (() -> Unit)? = null,
+    ) {
         activeFlowDialog?.dismiss()
         activeFlowDialog = dialog
         dialog.setOnDismissListener {
             if (activeFlowDialog === dialog) {
                 activeFlowDialog = null
             }
+            onDismissExtra?.invoke()
         }
         dialog.show()
         if (transparentBackground) {
@@ -1396,6 +1542,26 @@ class MainActivity : AppCompatActivity() {
         }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             needed.add(Manifest.permission.READ_SMS)
+        }
+
+        if (needed.isNotEmpty()) {
+            ActivityCompat.requestPermissions(this, needed.toTypedArray(), AppConstants.RequestCodes.RUNTIME_PERMISSIONS)
+        }
+    }
+
+    private fun requestRuntimePermissions() {
+        val needed = mutableListOf<String>()
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
+            needed.add(Manifest.permission.RECEIVE_SMS)
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            needed.add(Manifest.permission.READ_SMS)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            needed.add(Manifest.permission.POST_NOTIFICATIONS)
         }
 
         if (needed.isNotEmpty()) {
@@ -2030,12 +2196,40 @@ class MainActivity : AppCompatActivity() {
             .apply()
     }
 
+    private fun cacheMoneySetupSelection(
+        cohort: String,
+        goals: List<String>,
+        done: Boolean,
+        skipped: Boolean,
+    ) {
+        getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, done)
+            .putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, skipped)
+            .putString(AppConstants.Prefs.KEY_MONEY_SETUP_COHORT, cohort)
+            .putString(AppConstants.Prefs.KEY_MONEY_SETUP_GOALS, goals.joinToString("|"))
+            .apply()
+    }
+
     private fun applyLocalMoneySetupFallback() {
         val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
-        moneySetupLine.text = if (prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, false)) {
-            getString(R.string.money_setup_skipped)
-        } else {
-            getString(R.string.money_setup_pending)
+        val done = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_DONE, false)
+        val skipped = prefs.getBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, false)
+        val cohort = prefs.getString(AppConstants.Prefs.KEY_MONEY_SETUP_COHORT, null).orEmpty()
+        val goals = prefs.getString(AppConstants.Prefs.KEY_MONEY_SETUP_GOALS, null)
+            .orEmpty()
+            .split("|")
+            .filter { it.isNotBlank() }
+
+        moneySetupLine.text = when {
+            !done -> getString(R.string.money_setup_pending)
+            skipped -> getString(R.string.money_setup_skipped)
+            cohort.isNotBlank() && goals.isNotEmpty() -> getString(
+                R.string.money_setup_local_summary,
+                cohortDisplayName(cohort),
+                goals.joinToString(", ") { goalDisplayName(it) },
+            )
+            else -> getString(R.string.money_setup_pending)
         }
     }
 
@@ -2087,8 +2281,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         clearPendingPermissionSettingsStep()
-        if (onboardingEntryState(prefs).nextStep() != OnboardingStep.PERMISSIONS) {
-            return
+        val nextOnboardingStep = onboardingEntryState(prefs).nextStep()
+        when (pendingStep) {
+            PermissionStep.USAGE -> if (nextOnboardingStep != OnboardingStep.PERMISSIONS) return
+            PermissionStep.OVERLAY -> if (
+                nextOnboardingStep != OnboardingStep.PERMISSIONS &&
+                nextOnboardingStep != OnboardingStep.MONEY_SETUP
+            ) return
+            else -> return
         }
 
         when (pendingStep) {
@@ -2109,7 +2309,7 @@ class MainActivity : AppCompatActivity() {
                 if (overlayGranted) {
                     syncPermissionOnboardingDone(prefs)
                     setGuidedPermissionFlowActive(false)
-                    refreshPrimaryActionState(onboardingEntryState(prefs))
+                    showMoneySetupDialog()
                 } else {
                     showPermissionSetupDialog(permissionStepOverride = PermissionStep.OVERLAY)
                 }

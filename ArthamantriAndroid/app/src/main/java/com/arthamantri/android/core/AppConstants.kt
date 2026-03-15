@@ -14,6 +14,8 @@ object AppConstants {
         const val KEY_CONSENT_DEFERRED = "consent_deferred"
         const val KEY_MONEY_SETUP_DONE = "money_setup_done"
         const val KEY_MONEY_SETUP_SKIPPED = "money_setup_skipped"
+        const val KEY_MONEY_SETUP_COHORT = "money_setup_cohort"
+        const val KEY_MONEY_SETUP_GOALS = "money_setup_goals"
         const val KEY_PERMISSION_ONBOARDING_DONE = "permission_onboarding_done"
         const val KEY_GUIDED_PERMISSION_FLOW_ACTIVE = "guided_permission_flow_active"
         const val KEY_MONITORING_ACTIVE = "monitoring_active"
@@ -52,8 +54,10 @@ object AppConstants {
         const val ALERT_ID = "extra_alert_id"
         const val ALERT_PAUSE_SECONDS = "extra_alert_pause_seconds"
         const val ALERT_SEVERITY = "extra_alert_severity"
+        const val ALERT_WHY_THIS_ALERT = "extra_alert_why_this_alert"
         const val ALERT_NEXT_SAFE_ACTION = "extra_next_safe_action"
         const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
+        const val ALERT_PRIMARY_ACTION_LABEL = "extra_alert_primary_action_label"
     }
 
     object NotificationExtras {

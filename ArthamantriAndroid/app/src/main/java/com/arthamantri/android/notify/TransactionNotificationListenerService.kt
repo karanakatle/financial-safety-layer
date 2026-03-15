@@ -63,7 +63,7 @@ class TransactionNotificationListenerService : NotificationListenerService() {
         serviceScope.launch {
             try {
                 paymentSignal?.let { signal ->
-                    LiteracyRepository.inspectUpiRequest(
+                    val inspection = LiteracyRepository.inspectUpiRequest(
                         context = this@TransactionNotificationListenerService,
                         appName = signal.appName,
                         requestKind = signal.requestKind,
@@ -74,6 +74,18 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                         source = signal.source,
                         timestamp = Instant.ofEpochMilli(sbn.postTime).toString(),
                     )
+                    val warningShown = PaymentInspectionAlertPresenter.maybeShow(
+                        context = this@TransactionNotificationListenerService,
+                        inspection = inspection,
+                        requestKind = signal.requestKind,
+                        amount = signal.amount,
+                        payeeLabel = signal.payeeLabel,
+                        payeeHandle = signal.payeeHandle,
+                        rawText = signal.rawText,
+                    )
+                    if (warningShown) {
+                        return@launch
+                    }
                 }
 
                 if (parsed == null || category == null) {
@@ -100,9 +112,23 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                     )
                 }
             } catch (e: Exception) {
+                val localFallbackShown = paymentSignal?.let { signal ->
+                    PaymentInspectionAlertPresenter.showLocalFallback(
+                        context = this@TransactionNotificationListenerService,
+                        requestKind = signal.requestKind,
+                        amount = signal.amount,
+                        payeeLabel = signal.payeeLabel,
+                        payeeHandle = signal.payeeHandle,
+                        rawText = signal.rawText,
+                    )
+                } ?: false
                 Log.e(
                     AppConstants.LogTags.TXN_NOTIFICATION_LISTENER,
-                    AppConstants.LogMessages.TXN_NOTIFICATION_PROCESS_FAILED,
+                    if (localFallbackShown) {
+                        "${AppConstants.LogMessages.TXN_NOTIFICATION_PROCESS_FAILED} - fallback_shown"
+                    } else {
+                        AppConstants.LogMessages.TXN_NOTIFICATION_PROCESS_FAILED
+                    },
                     e,
                 )
             }
@@ -116,7 +142,6 @@ class TransactionNotificationListenerService : NotificationListenerService() {
 
         val lower = payload.lowercase()
         val hasTxnKeywords = AppConstants.Parsing.NOTIFICATION_TXN_KEYWORDS.any { lower.contains(it) }
-
         val hasMoneyMarker = AppConstants.Parsing.MONEY_MARKERS.any { lower.contains(it) }
         return hasTxnKeywords && hasMoneyMarker
     }
