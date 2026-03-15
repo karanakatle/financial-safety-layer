@@ -68,6 +68,7 @@ object AlertNotifier {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        useFocusedPaymentActions: Boolean = false,
     ) {
         ensureChannel(context)
         val resolvedSeverity = normalizeSeverity(severity)
@@ -98,6 +99,7 @@ object AlertNotifier {
                     nextSafeAction = nextSafeAction,
                     essentialGoalImpact = essentialGoalImpact,
                     primaryActionLabel = primaryActionLabel,
+                    useFocusedPaymentActions = useFocusedPaymentActions,
                 )
             } else {
                 false
@@ -113,6 +115,7 @@ object AlertNotifier {
                 putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
                 putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
                 putExtra(AlertDisplayActivity.EXTRA_PRIMARY_ACTION_LABEL, primaryActionLabel)
+                putExtra(AlertDisplayActivity.EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
 

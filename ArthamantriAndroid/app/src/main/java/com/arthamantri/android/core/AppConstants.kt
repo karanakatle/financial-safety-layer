@@ -46,6 +46,7 @@ object AppConstants {
         const val FOREGROUND_QUERY_WINDOW_MS = 15_000L
         const val UPI_SIGNAL_DEBOUNCE_MS = 60_000L
         const val NOTIFICATION_DEDUPE_WINDOW_MS = 15_000L
+        const val PAYMENT_DECISION_PAUSE_SECONDS = 3
     }
 
     object IntentExtras {
@@ -58,6 +59,7 @@ object AppConstants {
         const val ALERT_NEXT_SAFE_ACTION = "extra_next_safe_action"
         const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
         const val ALERT_PRIMARY_ACTION_LABEL = "extra_alert_primary_action_label"
+        const val ALERT_USE_FOCUSED_PAYMENT_ACTIONS = "extra_alert_use_focused_payment_actions"
     }
 
     object NotificationExtras {
@@ -85,6 +87,9 @@ object AppConstants {
         const val ALERT_ACTION_USEFUL = "useful"
         const val ALERT_ACTION_NOT_USEFUL = "not_useful"
         const val ALERT_ACTION_DISMISSED = "dismissed"
+        const val ALERT_ACTION_PAUSE = "pause"
+        const val ALERT_ACTION_DECLINE = "decline"
+        const val ALERT_ACTION_PROCEED = "proceed"
     }
 
     object PaymentInspection {

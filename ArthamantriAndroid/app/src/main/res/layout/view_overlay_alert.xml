@@ -171,6 +171,49 @@
                 android:backgroundTint="@null"
                 app:backgroundTint="@null" />
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/overlayProceedConfirmGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_help_steps"
+            android:orientation="vertical"
+            android:padding="10dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/overlayProceedConfirmTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/alert_proceed_confirmation_title"
+                android:textColor="@color/text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/overlayProceedConfirmBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/alert_proceed_confirmation_body"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+
+            <Button
+                android:id="@+id/overlayConfirmProceedBtn"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_btn_low_emphasis"
+                android:text="@string/alert_proceed_confirmation_confirm"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
+        </LinearLayout>
     </LinearLayout>
 
 </FrameLayout>

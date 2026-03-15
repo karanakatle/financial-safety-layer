@@ -274,10 +274,16 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_ack_long">Okay, I understand</string>
     <string name="alert_feedback_useful">Useful</string>
     <string name="alert_feedback_not_useful">Not useful</string>
+    <string name="alert_action_pause">Pause</string>
+    <string name="alert_action_decline">Decline</string>
+    <string name="alert_action_proceed">Proceed</string>
     <string name="alert_why_this_alert_label">Why This Alert</string>
     <string name="alert_next_safe_action_label">Next Safe Action</string>
     <string name="alert_essential_goal_impact_label">Essential Goal Impact</string>
-    <string name="alert_pause_countdown">Please wait %1$d seconds, then confirm.</string>
+    <string name="alert_pause_countdown">Take %1$d seconds, then choose.</string>
+    <string name="alert_proceed_confirmation_title">Before you continue</string>
+    <string name="alert_proceed_confirmation_body">This payment may still be risky. Continue only if you checked the sender, payee, and reason yourself.</string>
+    <string name="alert_proceed_confirmation_confirm">I understand, continue</string>
     <string name="service_notif_title">Arthamantri is running</string>
     <string name="service_notif_text">Monitoring UPI app open events</string>
     <string name="alert_payment_risk_title">Payment Risk Warning</string>

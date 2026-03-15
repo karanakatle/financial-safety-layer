@@ -2,9 +2,9 @@ package com.arthamantri.android.notify
 
 import android.content.Context
 import android.content.res.ColorStateList
-import android.os.CountDownTimer
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.CountDownTimer
 import android.provider.Settings
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -26,6 +26,7 @@ object OverlayAlertWindow {
     private var currentWhyThisAlert: String = ""
     private var currentNextSafeAction: String = ""
     private var currentEssentialGoalImpact: String = ""
+    private var currentPauseSeconds: Int = 0
 
     fun show(
         context: Context,
@@ -38,6 +39,7 @@ object OverlayAlertWindow {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        useFocusedPaymentActions: Boolean = false,
     ): Boolean {
         if (!canShowOverlay(context)) {
             return false
@@ -57,6 +59,7 @@ object OverlayAlertWindow {
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
                 primaryActionLabel = primaryActionLabel,
+                useFocusedPaymentActions = useFocusedPaymentActions,
             )
             return true
         }
@@ -71,31 +74,22 @@ object OverlayAlertWindow {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
         )
-        val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
-        val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
-        val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
-        if (!primaryActionLabel.isNullOrBlank()) {
-            dismissBtn.text = primaryActionLabel
-        }
+
         currentAlertId = alertId
         currentTitle = title
         currentMessage = message
         currentWhyThisAlert = whyThisAlert.orEmpty()
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
-        dismissBtn.setOnClickListener {
-            reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_DISMISSED)
-            dismiss(appContext)
-        }
-        usefulBtn.setOnClickListener {
-            reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_USEFUL)
-            dismiss(appContext)
-        }
-        notUsefulBtn.setOnClickListener {
-            reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_NOT_USEFUL)
-            dismiss(appContext)
-        }
-        setupPause(view, pauseSeconds, dismissBtn, usefulBtn, notUsefulBtn)
+        currentPauseSeconds = pauseSeconds
+
+        bindActionMode(
+            view = view,
+            appContext = appContext,
+            primaryActionLabel = primaryActionLabel,
+            useFocusedPaymentActions = useFocusedPaymentActions,
+        )
+        setupPause(view, pauseSeconds)
 
         val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -133,6 +127,7 @@ object OverlayAlertWindow {
         currentWhyThisAlert = ""
         currentNextSafeAction = ""
         currentEssentialGoalImpact = ""
+        currentPauseSeconds = 0
     }
 
     private fun updateContent(
@@ -145,6 +140,7 @@ object OverlayAlertWindow {
         nextSafeAction: String?,
         essentialGoalImpact: String?,
         primaryActionLabel: String?,
+        useFocusedPaymentActions: Boolean,
     ) {
         val view = overlayView ?: return
         currentAlertId = alertId
@@ -153,6 +149,7 @@ object OverlayAlertWindow {
         currentWhyThisAlert = whyThisAlert.orEmpty()
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
+        currentPauseSeconds = pauseSeconds
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
         view.findViewById<TextView>(R.id.overlayAlertMessage).text = message
         applySeverityStyle(view, severity)
@@ -162,13 +159,13 @@ object OverlayAlertWindow {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
         )
-        val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
-        val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
-        val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
-        if (!primaryActionLabel.isNullOrBlank()) {
-            dismissBtn.text = primaryActionLabel
-        }
-        setupPause(view, pauseSeconds, dismissBtn, usefulBtn, notUsefulBtn)
+        bindActionMode(
+            view = view,
+            appContext = view.context.applicationContext,
+            primaryActionLabel = primaryActionLabel,
+            useFocusedPaymentActions = useFocusedPaymentActions,
+        )
+        setupPause(view, pauseSeconds)
     }
 
     private fun bindExplainability(
@@ -215,27 +212,107 @@ object OverlayAlertWindow {
         }
     }
 
-    private fun setupPause(
+    private fun bindActionMode(
         view: View,
-        pauseSeconds: Int,
-        dismissBtn: Button,
-        usefulBtn: Button,
-        notUsefulBtn: Button,
+        appContext: Context,
+        primaryActionLabel: String?,
+        useFocusedPaymentActions: Boolean,
     ) {
+        val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
+        val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
+        val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
+        val proceedConfirmGroup = view.findViewById<View>(R.id.overlayProceedConfirmGroup)
+        val confirmProceedBtn = view.findViewById<Button>(R.id.overlayConfirmProceedBtn)
+        proceedConfirmGroup.visibility = View.GONE
+
+        if (useFocusedPaymentActions) {
+            dismissBtn.text = view.context.getString(R.string.alert_action_pause)
+            usefulBtn.text = view.context.getString(R.string.alert_action_decline)
+            notUsefulBtn.text = view.context.getString(R.string.alert_action_proceed)
+            notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_low_emphasis)
+            notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.text_secondary))
+            confirmProceedBtn.text = view.context.getString(R.string.alert_proceed_confirmation_confirm)
+
+            dismissBtn.setOnClickListener {
+                proceedConfirmGroup.visibility = View.GONE
+                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_PAUSE)
+                val resolvedPauseSeconds = if (currentPauseSeconds > 0) {
+                    currentPauseSeconds
+                } else {
+                    AppConstants.Timing.PAYMENT_DECISION_PAUSE_SECONDS
+                }
+                setupPause(view, resolvedPauseSeconds)
+            }
+            usefulBtn.setOnClickListener {
+                proceedConfirmGroup.visibility = View.GONE
+                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_DECLINE)
+                dismiss(appContext)
+            }
+            notUsefulBtn.setOnClickListener {
+                proceedConfirmGroup.visibility = View.VISIBLE
+                confirmProceedBtn.isEnabled = dismissBtn.isEnabled
+            }
+            confirmProceedBtn.setOnClickListener {
+                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_PROCEED)
+                dismiss(appContext)
+            }
+        } else {
+            dismissBtn.text = if (!primaryActionLabel.isNullOrBlank()) {
+                primaryActionLabel
+            } else {
+                view.context.getString(R.string.alert_ack_short)
+            }
+            usefulBtn.text = view.context.getString(R.string.alert_feedback_useful)
+            notUsefulBtn.text = view.context.getString(R.string.alert_feedback_not_useful)
+            notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_secondary)
+            notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.btn_secondary_text))
+
+            dismissBtn.setOnClickListener {
+                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_DISMISSED)
+                dismiss(appContext)
+            }
+            usefulBtn.setOnClickListener {
+                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_USEFUL)
+                dismiss(appContext)
+            }
+            notUsefulBtn.setOnClickListener {
+                reportFeedback(appContext, AppConstants.Domain.ALERT_ACTION_NOT_USEFUL)
+                dismiss(appContext)
+            }
+        }
+    }
+
+    private fun setupPause(view: View, pauseSeconds: Int) {
         pauseTimer?.cancel()
         pauseTimer = null
         val pauseHint = view.findViewById<TextView>(R.id.overlayPauseHint)
+        val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
+        val usefulBtn = view.findViewById<Button>(R.id.overlayUsefulBtn)
+        val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
+        val confirmProceedBtn = view.findViewById<Button>(R.id.overlayConfirmProceedBtn)
+        val proceedConfirmGroup = view.findViewById<View>(R.id.overlayProceedConfirmGroup)
+
         if (pauseSeconds <= 0) {
             pauseHint.visibility = View.GONE
-            dismissBtn.isEnabled = true
-            usefulBtn.isEnabled = true
-            notUsefulBtn.isEnabled = true
+            setActionEnabledState(
+                enabled = true,
+                dismissBtn = dismissBtn,
+                usefulBtn = usefulBtn,
+                notUsefulBtn = notUsefulBtn,
+                confirmProceedBtn = confirmProceedBtn,
+                proceedConfirmGroup = proceedConfirmGroup,
+            )
             return
         }
 
-        dismissBtn.isEnabled = false
-        usefulBtn.isEnabled = false
-        notUsefulBtn.isEnabled = false
+        setActionEnabledState(
+            enabled = false,
+            dismissBtn = dismissBtn,
+            usefulBtn = usefulBtn,
+            notUsefulBtn = notUsefulBtn,
+            confirmProceedBtn = confirmProceedBtn,
+            proceedConfirmGroup = proceedConfirmGroup,
+        )
         pauseHint.visibility = View.VISIBLE
         pauseHint.text = view.context.getString(R.string.alert_pause_countdown, pauseSeconds)
 
@@ -247,11 +324,30 @@ object OverlayAlertWindow {
 
             override fun onFinish() {
                 pauseHint.visibility = View.GONE
-                dismissBtn.isEnabled = true
-                usefulBtn.isEnabled = true
-                notUsefulBtn.isEnabled = true
+                setActionEnabledState(
+                    enabled = true,
+                    dismissBtn = dismissBtn,
+                    usefulBtn = usefulBtn,
+                    notUsefulBtn = notUsefulBtn,
+                    confirmProceedBtn = confirmProceedBtn,
+                    proceedConfirmGroup = proceedConfirmGroup,
+                )
             }
         }.start()
+    }
+
+    private fun setActionEnabledState(
+        enabled: Boolean,
+        dismissBtn: Button,
+        usefulBtn: Button,
+        notUsefulBtn: Button,
+        confirmProceedBtn: Button,
+        proceedConfirmGroup: View,
+    ) {
+        dismissBtn.isEnabled = enabled
+        usefulBtn.isEnabled = enabled
+        notUsefulBtn.isEnabled = enabled
+        confirmProceedBtn.isEnabled = enabled && proceedConfirmGroup.visibility == View.VISIBLE
     }
 
     private fun reportFeedback(context: Context, action: String) {

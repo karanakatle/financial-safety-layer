@@ -117,6 +117,7 @@ class AppUsageForegroundService : Service() {
                     pauseSeconds = alert.pause_seconds ?: 0,
                     nextSafeAction = alert.next_best_action,
                     essentialGoalImpact = alert.essential_goal_impact,
+                    useFocusedPaymentActions = true,
                 )
             }
         } catch (e: Exception) {
