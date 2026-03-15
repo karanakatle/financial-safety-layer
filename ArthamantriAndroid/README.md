@@ -11,6 +11,9 @@ Native Android companion app for the existing FastAPI backend in `Python-OOS-Pro
 - Shows USSD-like full-screen warning overlay plus high-priority notification.
 - Applies pause-and-confirm friction for very high-risk stage-2 alerts (`pause_seconds` from backend).
 - Shows explainable alerts (risk level, why-this-alert, next-safe-action, essential-goal impact) via backend message payload.
+- Keeps payment warnings action-first (`Pause / Decline / Proceed`) for risky approval-style payment requests.
+- Keeps cashflow alerts separate and supports optional `Useful / Not useful` feedback on those alerts.
+- Queues fallback app logs / feedback offline and replays them idempotently with stable `event_id`s.
 - Renders severity-aware alerts from backend payload:
   - `soft`: calmer advisory styling
   - `medium`: caution styling
@@ -33,11 +36,15 @@ This app is plug-and-play with backend endpoints already added in:
   - `POST /api/literacy/alert-feedback`
   - `GET /api/literacy/debug-trace`
   - `GET /api/pilot/meta`
+  - `POST /api/pilot/app-log`
   - `POST /api/pilot/consent`
   - `POST /api/pilot/feedback`
   - `POST /api/pilot/grievance`
   - `GET /api/pilot/grievance`
   - `POST /api/pilot/grievance/status`
+  - `GET /api/pilot/summary`
+  - `GET /api/pilot/analytics`
+  - `GET /api/pilot/review`
   - `POST /api/research/assignment`
   - `POST /api/research/event`
 
@@ -57,7 +64,7 @@ Per-user literacy state:
 5. In app:
    - On first launch, select language and accept pilot consent.
    - App prompts **Money Setup Lite** (cohort + up to 2 essential goals, skip optional).
-   - App then prompts permission onboarding flow (runtime + usage + overlay).
+   - App then prompts permission onboarding flow (runtime + notification access + usage + overlay).
    - Start monitoring from the home dashboard.
    - Use left-swipe menu for Manage Access, feedback, Money Setup Lite, Facilitator Setup Pack, help, and privacy policy.
    - Money Setup Lite can be reopened later from the menu or Help dialog for profile/goal edits without reinstalling.
@@ -165,6 +172,7 @@ Outputs:
 
 ## Important notes
 - Play Store has strict policies around SMS and usage-access permissions.
+- `Notification access` is separate from ordinary app notification permission. Payment-warning monitoring depends on `TransactionNotificationListenerService` being enabled in Android Special App Access.
 - Base URL is configurable at build time using `-PAPI_BASE_URL`.
 - Privacy policy URL is configurable using `-PPRIVACY_POLICY_URL`.
 - `keystore.properties` is required for real release signing (see `PRODUCTION_SETUP.md`).
@@ -181,12 +189,16 @@ Outputs:
 Use the backend participant id for deterministic retesting:
 
 ```bash
-curl -X POST "https://<your-service>.onrender.com/api/literacy/reset?participant_id=<participant_id>"
+curl -X POST \
+  -H "x-pilot-admin-key: pilot-admin-local" \
+  "https://<your-service>.onrender.com/api/literacy/reset?participant_id=<participant_id>"
 ```
 - Soft reset: clears only literacy runtime state.
 
 ```bash
-curl -X POST "https://<your-service>.onrender.com/api/literacy/reset-hard?participant_id=<participant_id>"
+curl -X POST \
+  -H "x-pilot-admin-key: pilot-admin-local" \
+  "https://<your-service>.onrender.com/api/literacy/reset-hard?participant_id=<participant_id>"
 ```
 - Hard reset: clears literacy state + participant policy + spend history + literacy events +
   alert feedback + alert features.

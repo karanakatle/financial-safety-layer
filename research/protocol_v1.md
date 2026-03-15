@@ -16,6 +16,8 @@
 - Next work priority is pilot/readiness planning, not further uncontrolled simulator expansion.
 - Phase-2 learning path is documented in:
   - `research/parameter_learning_plan_v1.md`
+- AI/ML research adoption path is documented in:
+  - `research/ai_adoption_plan_v1.md`
 - Operational rollout checklist is documented in:
   - `research/pilot_rollout_checklist.md`
 

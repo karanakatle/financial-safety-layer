@@ -8,11 +8,31 @@ This is intentionally a **research-oriented prototype** (not a production fintec
 - Alert messaging clarity and trust
 - User response to agent suggestions
 
+## Current MVP Scope
+The current MVP is a **financial safety and comprehension layer**, not a full financial-services product.
+
+Today it focuses on:
+- detecting risky or confusing money moments from phone-native signals
+- showing explainable payment-warning and cashflow guidance
+- capturing whether interventions were useful or noisy
+- supporting pilot/research review with protected telemetry and analytics workflows
+
+It does **not** yet aim to be:
+- a full banking or personal-finance platform
+- a credit/savings/insurance distribution product
+- an autonomous AI financial advisor
+
 ## Features
 - Event input (income/expense)
 - Financial state engine (`balance`, `avg_daily_spend`, `days_to_zero`, `safe_spend_today`)
 - Rule-based intervention engine
 - Explainable alerts with priorities
+- Payment-warning inspection for risky `collect request` / approval-style payment moments
+- Cashflow guidance with explicit usefulness capture (`useful` / `not_useful`)
+- Unified telemetry across payment warnings, cashflow alerts, fallback logs, and alert feedback
+- Protected operator/research review workflows for pilot analysis
+- Comparative analytics for useful vs noisy interventions by family, language, cohort, and variant
+- Extension-safe telemetry metadata for future safety/research modules
 - Voice query endpoint + browser speech interface
 - Alert history for behavior analysis
 - Participant-scoped legacy web state (`participant_id` support on `/api/state|alerts|transaction|voice-query|chat|confirm-savings`)
@@ -223,6 +243,7 @@ If you are shipping the native Android app from `ArthamantriAndroid`:
 - `POST /api/pilot/grievance/status` (mark grievance state for closure workflow)
 - `GET /api/pilot/summary` (pilot aggregate metrics)
 - `GET /api/pilot/analytics` (event and stage analytics for research)
+- `GET /api/pilot/review` (participant-level unified telemetry review for operator/debug use)
 - `POST /api/research/assignment` (A/B assignment: adaptive vs static_baseline)
 - `POST /api/research/event` (structured experiment event ingestion)
 - `GET /api/research/export/experiment-events` (event export for analysis)
@@ -243,6 +264,26 @@ Current logic supports:
    - `soft`
    - `medium`
    - `hard`
+12. Action-first payment warning surfaces with `pause / decline / proceed`.
+13. Optional cashflow usefulness feedback separated from payment actions.
+14. Idempotent offline replay ingestion for app logs and alert feedback via `event_id`.
+15. Protected pilot/research review routes using admin header authentication.
+
+## Protected operator routes
+The following routes are intended for operator/research/debug use and require the pilot admin header:
+- `POST /api/literacy/reset`
+- `POST /api/literacy/reset-hard`
+- `GET /api/literacy/debug-trace`
+- `GET /api/pilot/summary`
+- `GET /api/pilot/analytics`
+- `GET /api/pilot/review`
+- `POST /api/research/assignment`
+- `POST /api/research/event`
+
+Default local header:
+```bash
+x-pilot-admin-key: pilot-admin-local
+```
 
 Policy is configurable via environment variables:
 - `CORS_ALLOWED_ORIGINS` (optional comma-separated list; if unset, backend allows `*` without credentials for research/dev)
