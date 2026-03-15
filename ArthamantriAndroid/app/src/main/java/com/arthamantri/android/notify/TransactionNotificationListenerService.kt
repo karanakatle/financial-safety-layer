@@ -57,7 +57,7 @@ class TransactionNotificationListenerService : NotificationListenerService() {
             bigText = bigText,
             isUpiPackage = isUpiPackage,
         )
-        val parsed = SmsParser.parseExpense(pkg, payload)
+        val parsed = SmsParser.parseSignal(pkg, payload)
         val category = if (isUpiPackage) AppConstants.Domain.CATEGORY_UPI else parsed?.category
 
         serviceScope.launch {
@@ -92,8 +92,10 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                     return@launch
                 }
 
-                val result = LiteracyRepository.sendSmsExpense(
+                val result = LiteracyRepository.sendSmsSignal(
                     context = this@TransactionNotificationListenerService,
+                    signalType = parsed.signalType,
+                    confidence = parsed.confidence,
                     amount = parsed.amount,
                     category = category,
                     note = "${AppConstants.Domain.NOTE_NOTIFICATION_PREFIX} $pkg",

@@ -105,6 +105,65 @@ def test_sms_ingest_localizes_hindi_alert_message(tmp_path, monkeypatch):
     assert "अगला सुरक्षित कदम" in alert["message"]
 
 
+def test_sms_income_ingest_updates_context_without_expense_alert_path(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "income_p1",
+            "language": "en",
+            "signal_type": "income",
+            "signal_confidence": "confirmed",
+            "amount": 2500,
+            "category": "bank_sms",
+            "note": "salary credited",
+        },
+    )
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["literacy_alerts"] == []
+    assert payload["literacy_state"]["daily_spend"] == 0
+    assert payload["transaction_result"]["balance"] == 4500
+
+    trace = client.get("/api/literacy/debug-trace", params={"participant_id": "income_p1", "limit": 10})
+    assert trace.status_code == 200
+    trace_json = trace.json()
+    assert trace_json["recent_literacy_events"][0]["signal_type"] == "income"
+    assert trace_json["recent_financial_context"]["income_count"] == 1
+    assert trace_json["recent_financial_context"]["latest_income_amount"] == 2500.0
+
+
+def test_sms_partial_ingest_preserves_safe_context_without_forcing_certainty(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": "partial_p1",
+            "language": "en",
+            "signal_type": "partial",
+            "signal_confidence": "partial",
+            "amount": 5000,
+            "category": "bank_sms",
+            "note": "transaction alert, direction unclear",
+        },
+    )
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["literacy_alerts"] == []
+    assert payload["literacy_state"]["daily_spend"] == 0
+    assert payload["transaction_result"] is None
+
+    trace = client.get("/api/literacy/debug-trace", params={"participant_id": "partial_p1", "limit": 10})
+    assert trace.status_code == 200
+    trace_json = trace.json()
+    assert trace_json["recent_literacy_events"][0]["event_type"] == "sms_partial_context"
+    assert trace_json["recent_literacy_events"][0]["signal_type"] == "partial"
+    assert trace_json["recent_literacy_events"][0]["signal_confidence"] == "partial"
+    assert trace_json["recent_financial_context"]["partial_count"] == 1
+
+
 def test_goal_confidence_gate_keeps_low_confidence_unknown(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 

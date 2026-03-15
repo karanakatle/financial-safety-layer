@@ -12,7 +12,7 @@ from .decisioning import (
     risk_level_from_score,
     why_text,
 )
-from .context import clamp, compute_contextual_scores, compute_txn_anomaly_score
+from .context import clamp, compute_contextual_scores, compute_txn_anomaly_score, recent_financial_context
 from .goals import (
     apply_goal_feedback_learning,
     goal_from_keywords,
@@ -58,6 +58,7 @@ __all__ = [
     "next_action_text",
     "policy_for_participant",
     "persist_literacy_monitor",
+    "recent_financial_context",
     "resolve_experiment_variant",
     "risk_level_from_score",
     "why_text",

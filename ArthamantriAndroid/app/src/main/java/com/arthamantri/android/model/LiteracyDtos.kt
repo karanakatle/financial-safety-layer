@@ -5,7 +5,9 @@ import com.arthamantri.android.core.AppConstants
 data class SmsIngestRequest(
     val participant_id: String,
     val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
-    val amount: Double,
+    val amount: Double? = null,
+    val signal_type: String = AppConstants.Domain.SMS_SIGNAL_EXPENSE,
+    val signal_confidence: String = AppConstants.Domain.SMS_SIGNAL_CONFIRMED,
     val category: String = AppConstants.Domain.CATEGORY_BANK_SMS,
     val note: String = AppConstants.Domain.NOTE_ANDROID_SMS_LISTENER,
     val timestamp: String? = null,

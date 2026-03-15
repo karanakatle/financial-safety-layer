@@ -78,6 +78,11 @@ object AppConstants {
         const val CATEGORY_UPI = "upi"
         const val CATEGORY_CARD = "card"
         const val CATEGORY_ATM = "atm"
+        const val SMS_SIGNAL_EXPENSE = "expense"
+        const val SMS_SIGNAL_INCOME = "income"
+        const val SMS_SIGNAL_PARTIAL = "partial"
+        const val SMS_SIGNAL_CONFIRMED = "confirmed"
+        const val SMS_SIGNAL_PARTIAL_CONFIDENCE = "partial"
 
         const val PILOT_LOG_LEVEL_INFO = "info"
         const val NOTE_ANDROID_SMS_LISTENER = "Android SMS listener"
@@ -143,7 +148,17 @@ object AppConstants {
         const val DEDUPE_PAYLOAD_MAX_LENGTH = 180
 
         val SMS_DEBIT_KEYWORDS = listOf(
-            "debited", "debit", "spent", "withdrawn", "upi txn", "paid", "purchase", "dr", "txn",
+            "debited", "debit", "spent", "withdrawn", "upi txn", "paid", "purchase", "dr",
+        )
+
+        val SMS_CREDIT_KEYWORDS = listOf(
+            "credited", "credit", "received", "deposited", "salary", "refund", "cashback", "reversal", "cr",
+        )
+
+        val SMS_FINANCIAL_KEYWORDS = listOf(
+            "debited", "debit", "spent", "withdrawn", "credited", "credit", "received", "deposited",
+            "salary", "refund", "cashback", "reversal", "upi", "account", "a/c", "txn", "transaction",
+            "imps", "neft", "rtgs", "payment", "transfer",
         )
 
         val NOTIFICATION_TXN_KEYWORDS = listOf(

@@ -26,9 +26,11 @@ object LiteracyRepository {
         val participantId: String?,
     )
 
-    suspend fun sendSmsExpense(
+    suspend fun sendSmsSignal(
         context: Context,
-        amount: Double,
+        signalType: String,
+        confidence: String,
+        amount: Double?,
         category: String,
         note: String,
     ): SmsSendResult {
@@ -39,6 +41,8 @@ object LiteracyRepository {
             SmsIngestRequest(
                 participant_id = participantId,
                 language = language,
+                signal_type = signalType,
+                signal_confidence = confidence,
                 amount = amount,
                 category = category,
                 note = note,

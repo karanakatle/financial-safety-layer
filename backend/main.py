@@ -37,6 +37,7 @@ from backend.literacy import (
     next_action_text,
     policy_for_participant,
     persist_literacy_monitor,
+    recent_financial_context,
     auto_recalibrate_policy,
     resolve_experiment_variant,
     risk_level_from_score,
@@ -396,20 +397,28 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
     event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
     participant_id = (payload.participant_id or "global_user").strip() or "global_user"
     language = _normalized_language(payload.language)
+    signal_type = payload.signal_type
+    signal_confidence = payload.signal_confidence
+    amount = float(payload.amount) if payload.amount is not None else None
+    if signal_type in {"expense", "income"} and amount is None:
+        signal_type = "partial"
+        signal_confidence = "partial"
     variant = resolve_experiment_variant(
         participant_id=participant_id,
         experiment_name="adaptive_alerts_v1",
         pilot_storage=pilot_storage,
     )
-    event = {
-        "timestamp": event_timestamp,
-        "type": "expense",
-        "amount": payload.amount,
-        "category": payload.category,
-        "note": payload.note or "Bank SMS detected expense",
-    }
     participant_agent = _agent_for_participant(participant_id)
-    transaction_result = participant_agent.process_event(event)
+    transaction_result = None
+    if signal_type in {"expense", "income"} and amount is not None:
+        event = {
+            "timestamp": event_timestamp,
+            "type": signal_type,
+            "amount": amount,
+            "category": payload.category,
+            "note": payload.note or f"Bank SMS detected {signal_type}",
+        }
+        transaction_result = participant_agent.process_event(event)
 
     monitor = build_literacy_monitor(
         participant_id=participant_id,
@@ -422,41 +431,50 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
         ),
     )
     profile = pilot_storage.get_essential_goal_profile(participant_id)
+    current_daily_spend = monitor.daily_spend
+    projected_daily_spend = current_daily_spend + amount if signal_type == "expense" and amount is not None else current_daily_spend
+    event_type = "sms_ingest_event" if signal_type in {"expense", "income"} else "sms_partial_context"
     pilot_storage.add_literacy_event(
         participant_id=participant_id,
-        event_type="sms_ingest_event",
+        event_type=event_type,
         source="bank_sms",
-        amount=payload.amount,
+        signal_type=signal_type,
+        signal_confidence=signal_confidence,
+        category=payload.category,
+        amount=amount,
+        note=payload.note,
         reason=None,
         stage=None,
-        daily_spend=monitor.daily_spend + payload.amount,
+        daily_spend=projected_daily_spend,
         daily_safe_limit=monitor.status().get("daily_safe_limit"),
         timestamp=event_timestamp,
     )
-    literacy_alerts = monitor.ingest_expense(
-        amount=payload.amount,
-        source="bank_sms",
-        timestamp=event_timestamp,
-    )
-    literacy_alerts = [
-        contextual
-        for alert in literacy_alerts
-        if (
-            contextual := _apply_contextual_alert_intensity(
-                participant_id=participant_id,
-                alert=alert,
-                amount=payload.amount,
-                note=payload.note or "bank_sms",
-                source="bank_sms",
-                category=payload.category,
-                timestamp=event_timestamp,
-                upi_open_flag=False,
-                warmup_active=monitor.warmup_active,
-                language=language,
-                essential_profile=profile,
-            )
+    literacy_alerts: list[dict] = []
+    if signal_type == "expense" and amount is not None:
+        literacy_alerts = monitor.ingest_expense(
+            amount=amount,
+            source="bank_sms",
+            timestamp=event_timestamp,
         )
-    ]
+        literacy_alerts = [
+            contextual
+            for alert in literacy_alerts
+            if (
+                contextual := _apply_contextual_alert_intensity(
+                    participant_id=participant_id,
+                    alert=alert,
+                    amount=amount,
+                    note=payload.note or "bank_sms",
+                    source="bank_sms",
+                    category=payload.category,
+                    timestamp=event_timestamp,
+                    upi_open_flag=False,
+                    warmup_active=monitor.warmup_active,
+                    language=language,
+                    essential_profile=profile,
+                )
+            )
+        ]
     persist_literacy_monitor(participant_id=participant_id, monitor=monitor, pilot_storage=pilot_storage)
     policy_recalibrated = auto_recalibrate_policy(
         participant_id=participant_id,
@@ -469,8 +487,10 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
         variant=variant,
         event_type="sms_ingest",
         payload={
-            "amount": payload.amount,
+            "amount": amount,
             "category": payload.category,
+            "signal_type": signal_type,
+            "signal_confidence": signal_confidence,
             "alerts_count": len(literacy_alerts),
             "warmup_active": monitor.warmup_active,
         },
@@ -482,7 +502,11 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
             participant_id=participant_id,
             event_type="sms_ingest_alert",
             source="bank_sms",
-            amount=payload.amount,
+            signal_type="expense",
+            signal_confidence="confirmed",
+            category=payload.category,
+            amount=amount,
+            note=payload.note,
             reason=alert.get("reason"),
             stage=alert.get("stage"),
             daily_spend=alert.get("projected_daily_spend"),
@@ -738,6 +762,11 @@ def literacy_debug_trace(participant_id: str = "global_user", limit: int = 20) -
         ),
         "experiment_assignment": assignment,
         "recent_literacy_events": pilot_storage.recent_literacy_events(participant_id, safe_limit),
+        "recent_financial_context": recent_financial_context(
+            participant_id=participant_id,
+            pilot_storage=pilot_storage,
+            limit=safe_limit,
+        ),
         "recent_alert_features": pilot_storage.recent_alert_features(participant_id, safe_limit),
         "recent_alert_feedback": pilot_storage.recent_alert_feedback(participant_id, safe_limit),
         "recent_goal_feedback": pilot_storage.recent_goal_feedback(participant_id, safe_limit),

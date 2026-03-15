@@ -45,8 +45,12 @@ class PilotStorage:
                     participant_id TEXT NOT NULL DEFAULT 'global_user',
                     event_type TEXT NOT NULL,
                     source TEXT NOT NULL,
+                    signal_type TEXT NOT NULL DEFAULT 'expense',
+                    signal_confidence TEXT NOT NULL DEFAULT 'confirmed',
+                    category TEXT,
                     amount REAL,
                     app_name TEXT,
+                    note TEXT,
                     reason TEXT,
                     stage INTEGER,
                     daily_spend REAL,
@@ -199,6 +203,10 @@ class PilotStorage:
             self._ensure_column(conn, "literacy_state", "warmup_active INTEGER NOT NULL DEFAULT 0")
             self._ensure_column(conn, "literacy_state", "adaptive_daily_safe_limit REAL")
             self._ensure_column(conn, "literacy_events", "participant_id TEXT NOT NULL DEFAULT 'global_user'")
+            self._ensure_column(conn, "literacy_events", "signal_type TEXT NOT NULL DEFAULT 'expense'")
+            self._ensure_column(conn, "literacy_events", "signal_confidence TEXT NOT NULL DEFAULT 'confirmed'")
+            self._ensure_column(conn, "literacy_events", "category TEXT")
+            self._ensure_column(conn, "literacy_events", "note TEXT")
             self._ensure_column(conn, "participant_policy", "daily_safe_limit REAL NOT NULL DEFAULT 1200")
             self._ensure_column(conn, "participant_policy", "warning_ratio REAL NOT NULL DEFAULT 0.9")
             self._ensure_column(conn, "participant_policy", "is_auto INTEGER NOT NULL DEFAULT 1")
@@ -250,8 +258,12 @@ class PilotStorage:
         event_type: str,
         source: str,
         timestamp: str,
+        signal_type: str = "expense",
+        signal_confidence: str = "confirmed",
+        category: str | None = None,
         amount: float | None = None,
         app_name: str | None = None,
+        note: str | None = None,
         reason: str | None = None,
         stage: int | None = None,
         daily_spend: float | None = None,
@@ -261,16 +273,20 @@ class PilotStorage:
             conn.execute(
                 """
                 INSERT INTO literacy_events (
-                    participant_id, event_type, source, amount, app_name, reason, stage, daily_spend, daily_safe_limit, timestamp
+                    participant_id, event_type, source, signal_type, signal_confidence, category, amount, app_name, note, reason, stage, daily_spend, daily_safe_limit, timestamp
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     participant_id,
                     event_type,
                     source,
+                    signal_type,
+                    signal_confidence,
+                    category,
                     amount,
                     app_name,
+                    note,
                     reason,
                     stage,
                     daily_spend,
@@ -646,7 +662,10 @@ class PilotStorage:
                 """
                 SELECT amount
                 FROM literacy_events
-                WHERE participant_id=? AND amount IS NOT NULL AND amount > 0
+                WHERE participant_id=?
+                  AND signal_type='expense'
+                  AND amount IS NOT NULL
+                  AND amount > 0
                 ORDER BY id DESC
                 LIMIT ?
                 """,
@@ -662,11 +681,27 @@ class PilotStorage:
                 FROM literacy_events
                 WHERE participant_id=?
                   AND event_type IN ('sms_ingest_event', 'manual_txn_event')
+                  AND signal_type='expense'
                   AND timestamp >= ?
                 """,
                 (participant_id, since_timestamp),
             ).fetchone()
         return int(row["cnt"]) if row else 0
+
+    def recent_financial_signals(self, participant_id: str, limit: int = 25) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT event_type, source, signal_type, signal_confidence, category, amount, note, timestamp
+                FROM literacy_events
+                WHERE participant_id=?
+                  AND event_type IN ('sms_ingest_event', 'sms_partial_context')
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def count_recent_dismissals(self, participant_id: str, since_timestamp: str) -> int:
         with self._connect() as conn:
@@ -873,7 +908,7 @@ class PilotStorage:
         with self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT event_type, source, amount, app_name, reason, stage, daily_spend, daily_safe_limit, timestamp
+                SELECT event_type, source, signal_type, signal_confidence, category, amount, app_name, note, reason, stage, daily_spend, daily_safe_limit, timestamp
                 FROM literacy_events
                 WHERE participant_id=?
                 ORDER BY id DESC
