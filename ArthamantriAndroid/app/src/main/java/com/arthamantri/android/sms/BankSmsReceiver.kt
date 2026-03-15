@@ -70,6 +70,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                         alertId = alert.alert_id,
                         severity = alert.severity ?: "medium",
                         pauseSeconds = alert.pause_seconds ?: 0,
+                        whyThisAlert = alert.why_this_alert,
                         nextSafeAction = alert.next_best_action,
                         essentialGoalImpact = alert.essential_goal_impact,
                     )
