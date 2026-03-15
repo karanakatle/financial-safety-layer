@@ -20,10 +20,22 @@ object SmsParser {
         val amount = extractAmountValue(message)
         val looksLikeDebit = AppConstants.Parsing.SMS_DEBIT_KEYWORDS.any { body.contains(it) }
         val looksLikeIncome = AppConstants.Parsing.SMS_CREDIT_KEYWORDS.any { body.contains(it) }
+        val hasDebitConfirmation = AppConstants.Parsing.SMS_DEBIT_CONFIRMATION_MARKERS.any { body.contains(it) }
+        val hasCreditConfirmation = AppConstants.Parsing.SMS_CREDIT_CONFIRMATION_MARKERS.any { body.contains(it) }
+        val hasNonCashPromotionalContext = AppConstants.Parsing.SMS_NON_CASH_PROMOTIONAL_KEYWORDS.any {
+            body.contains(it)
+        }
+        val hasAdvisoryDisclaimer = AppConstants.Parsing.SMS_ADVISORY_DISCLAIMER_KEYWORDS.any {
+            body.contains(it)
+        }
         val looksFinancial = AppConstants.Parsing.SMS_FINANCIAL_KEYWORDS.any { body.contains(it) } ||
             (amount != null && AppConstants.Parsing.MONEY_MARKERS.any { body.contains(it) })
 
         if (!looksFinancial && amount == null) {
+            return null
+        }
+
+        if (hasNonCashPromotionalContext && !hasDebitConfirmation && !hasCreditConfirmation) {
             return null
         }
 
@@ -35,8 +47,12 @@ object SmsParser {
         }
 
         val signalType = when {
-            looksLikeDebit && !looksLikeIncome && amount != null -> AppConstants.Domain.SMS_SIGNAL_EXPENSE
-            looksLikeIncome && !looksLikeDebit && amount != null -> AppConstants.Domain.SMS_SIGNAL_INCOME
+            looksLikeDebit && !looksLikeIncome && amount != null &&
+                hasDebitConfirmation && !hasAdvisoryDisclaimer && !hasNonCashPromotionalContext ->
+                AppConstants.Domain.SMS_SIGNAL_EXPENSE
+            looksLikeIncome && !looksLikeDebit && amount != null &&
+                hasCreditConfirmation && !hasAdvisoryDisclaimer && !hasNonCashPromotionalContext ->
+                AppConstants.Domain.SMS_SIGNAL_INCOME
             else -> AppConstants.Domain.SMS_SIGNAL_PARTIAL
         }
         val confidence = if (signalType == AppConstants.Domain.SMS_SIGNAL_PARTIAL) {

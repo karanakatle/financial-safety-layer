@@ -56,4 +56,47 @@ class SmsParserTest {
 
         assertNull(parsed)
     }
+
+    @Test
+    fun `parser ignores wallet and voucher style promotional credits`() {
+        val parsed = SmsParser.parseSignal(
+            sender = "AD-MYNTRA",
+            message = "Rs 1000 credited in your wallet as a gift voucher offer.",
+        )
+
+        assertNull(parsed)
+    }
+
+    @Test
+    fun `parser ignores pay balance promotional credits`() {
+        val parsed = SmsParser.parseSignal(
+            sender = "AD-AMAZON",
+            message = "Rs 500 added to your Amazon Pay balance as a promo offer.",
+        )
+
+        assertNull(parsed)
+    }
+
+    @Test
+    fun `parser ignores reward points style non cash credits`() {
+        val parsed = SmsParser.parseSignal(
+            sender = "AD-STORE",
+            message = "Rs 300 credited as reward points on your shopping account.",
+        )
+
+        assertNull(parsed)
+    }
+
+    @Test
+    fun `parser downgrades debit copy with marketing disclaimer to partial`() {
+        val parsed = SmsParser.parseSignal(
+            sender = "VK-BANK",
+            message = "Rs 900 debited from your account, but can be avoided if you do this thing.",
+        )
+
+        assertNotNull(parsed)
+        assertEquals(AppConstants.Domain.SMS_SIGNAL_PARTIAL, parsed?.signalType)
+        assertEquals(AppConstants.Domain.SMS_SIGNAL_PARTIAL_CONFIDENCE, parsed?.confidence)
+        assertEquals(900.0, parsed?.amount)
+    }
 }

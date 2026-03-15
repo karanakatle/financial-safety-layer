@@ -165,6 +165,27 @@ object AppConstants {
             "debited", "debit", "spent", "upi", "paid", "withdrawn", "transaction",
         )
 
+        val SMS_DEBIT_CONFIRMATION_MARKERS = listOf(
+            "via upi", "from a/c", "from ac", "from account", "account ending", "card ending",
+            "atm", "imps", "neft", "rtgs", "avl bal", "available bal", "utr", "txn id", "ref no",
+        )
+
+        val SMS_CREDIT_CONFIRMATION_MARKERS = listOf(
+            "to a/c", "to ac", "to your account", "credited to a/c", "credited to your account",
+            "deposited in a/c", "deposited in your account", "salary", "refund", "reversal",
+            "imps", "neft", "rtgs", "utr", "txn id", "ref no",
+        )
+
+        val SMS_NON_CASH_PROMOTIONAL_KEYWORDS = listOf(
+            "wallet", "voucher", "gift voucher", "gift card", "store credit", "coupon",
+            "promo", "promotional", "offer", "reward points", "loyalty", "pay balance",
+        )
+
+        val SMS_ADVISORY_DISCLAIMER_KEYWORDS = listOf(
+            "can be avoided", "avoid this", "save more", "click here", "apply now",
+            "know more", "learn more", "offer ends", "limited time",
+        )
+
         val MONEY_MARKERS = listOf("inr", "rs", "₹")
     }
 
