@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:background="@drawable/bg_help_dialog"
@@ -183,22 +184,26 @@
         <Button
             android:id="@+id/infoDialogPositiveButton"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="52dp"
             android:background="@drawable/bg_btn_primary"
             android:backgroundTint="@null"
+            app:backgroundTint="@null"
             android:textAllCaps="false"
             android:textColor="@color/btn_primary_text"
+            android:textSize="17sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/infoDialogNegativeButton"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="50dp"
             android:layout_marginTop="10dp"
             android:background="@drawable/bg_btn_secondary"
             android:backgroundTint="@null"
+            app:backgroundTint="@null"
             android:textAllCaps="false"
             android:textColor="@color/btn_secondary_text"
+            android:textSize="16sp"
             android:textStyle="bold" />
     </LinearLayout>
 

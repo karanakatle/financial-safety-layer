@@ -8,6 +8,8 @@ __pycache__/
 .DS_Store
 agent.log
 data/*.db
+data/*.db-shm
+data/*.db-wal
 
 # Local planning / agent artifacts
 _bmad/

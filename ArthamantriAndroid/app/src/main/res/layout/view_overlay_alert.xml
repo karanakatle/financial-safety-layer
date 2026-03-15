@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/overlayScrim"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -46,6 +47,26 @@
             android:text="@string/alert_body_default"
             android:textColor="@color/text_secondary"
             android:textSize="16sp" />
+
+        <TextView
+            android:id="@+id/overlayWhyHeading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="@string/alert_why_this_alert_label"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/overlayWhyBody"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/overlayNextActionHeading"
@@ -101,12 +122,16 @@
         <Button
             android:id="@+id/overlayDismissBtn"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="52dp"
             android:layout_marginTop="16dp"
             android:background="@drawable/bg_btn_primary"
             android:text="@string/alert_ack_short"
             android:textAllCaps="false"
-            android:textColor="@color/btn_primary_text" />
+            android:textColor="@color/btn_primary_text"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:backgroundTint="@null"
+            app:backgroundTint="@null" />
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -117,12 +142,16 @@
             <Button
                 android:id="@+id/overlayUsefulBtn"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="50dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_btn_secondary"
                 android:text="@string/alert_feedback_useful"
                 android:textAllCaps="false"
-                android:textColor="@color/btn_secondary_text" />
+                android:textColor="@color/btn_secondary_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
 
             <Space
                 android:layout_width="8dp"
@@ -131,12 +160,16 @@
             <Button
                 android:id="@+id/overlayNotUsefulBtn"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="50dp"
                 android:layout_weight="1"
                 android:background="@drawable/bg_btn_secondary"
                 android:text="@string/alert_feedback_not_useful"
                 android:textAllCaps="false"
-                android:textColor="@color/btn_secondary_text" />
+                android:textColor="@color/btn_secondary_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
         </LinearLayout>
     </LinearLayout>
 

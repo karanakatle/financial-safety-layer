@@ -43,10 +43,6 @@
 
     <string name="home_card_monitor_title">तत्काल अनुश्रवण</string>
     <string name="home_card_monitor_desc">बैकग्राउंड में SMS/UPI गतिविधि देखकर जोखिम चेतावनी ट्रिगर करता है।</string>
-    <string name="home_status_section_title">विश्वास स्थिति</string>
-    <string name="home_status_label">अभी की स्थिति</string>
-    <string name="home_money_setup_label">धन सेटअप</string>
-    <string name="home_info_hint">जोखिम के समय चेतावनी अलग से दिखेगी। यह होम स्क्रीन केवल सेटअप और स्थिति दिखाती है।</string>
     <string name="facilitator_badge">सहायक दृश्य</string>
     <string name="facilitator_steps_section_title">सेटअप चरण</string>
     <string name="facilitator_script_section_title">सहायक स्क्रिप्ट</string>
@@ -73,6 +69,18 @@
     <string name="dialog_setup_step_item_consent">सहमति दें</string>
     <string name="dialog_setup_step_item_permissions">अनुमतियां चालू करें</string>
     <string name="dialog_setup_step_item_monitoring">मॉनिटरिंग शुरू करें</string>
+    <string name="dialog_perm_tracker_step_1_title">चरण 1 / 4: SMS और सूचनाएं चालू करें</string>
+    <string name="dialog_perm_tracker_step_1_subtitle">सेटिंग्स स्क्रीन पर जाने से पहले ऐप के अंदर जरूरी प्रॉम्प्ट पूरे करें।</string>
+    <string name="dialog_perm_tracker_step_2_title">चरण 2 / 4: उपयोग-अनुमति चालू करें</string>
+    <string name="dialog_perm_tracker_step_2_subtitle">अर्थमंत्री को भुगतान ऐप खुलने का पता चल सके।</string>
+    <string name="dialog_perm_tracker_step_3_title">चरण 3 / 4: ओवरले अनुमति चालू करें</string>
+    <string name="dialog_perm_tracker_step_3_subtitle">ताकि सही समय पर स्क्रीन पर चेतावनी दिखाई जा सके।</string>
+    <string name="dialog_perm_tracker_step_4_title">चरण 4 / 4: Money Setup Lite</string>
+    <string name="dialog_perm_tracker_step_4_subtitle">मॉनिटरिंग शुरू होने से पहले अपनी प्रोफाइल और आवश्यक लक्ष्य चुनें।</string>
+    <string name="dialog_perm_tracker_item_sms_notifications">SMS और सूचनाएं चालू करें</string>
+    <string name="dialog_perm_tracker_item_usage">उपयोग-अनुमति चालू करें</string>
+    <string name="dialog_perm_tracker_item_overlay">ओवरले अनुमति चालू करें</string>
+    <string name="dialog_perm_tracker_item_monitoring">Money Setup Lite</string>
     <string name="lang_english">English</string>
     <string name="lang_hindi">हिंदी</string>
 
@@ -117,6 +125,7 @@
     <string name="goal_loan_repayment">ऋण भुगतान</string>
     <string name="money_setup_pending">धन सेटअप: लंबित</string>
     <string name="money_setup_skipped">धन सेटअप: छोड़ा गया</string>
+    <string name="money_setup_local_summary">धन सेटअप: %1$s • लक्ष्य: %2$s</string>
     <string name="money_setup_summary">धन सेटअप: %1$s • लक्ष्य: %2$s • आरक्षित: %3$d%% • सुरक्षित सीमा: ₹%4$d</string>
     <string name="toast_money_setup_saved">धन सेटअप सहेज दिया गया।</string>
     <string name="toast_money_setup_failed">धन सेटअप सिंक नहीं हो सका। डिफ़ॉल्ट सेटिंग्स जारी रहेंगी।</string>
@@ -182,6 +191,7 @@
 
     <string name="dialog_perm_title">अनुमति सेटअप</string>
     <string name="dialog_perm_subtitle">निगरानी सही तरह चले, इसके लिए जरूरी अनुमतियां पूरी करें।</string>
+    <string name="dialog_perm_intro_title">SMS और सूचनाएं चालू करें</string>
     <string name="dialog_perm_step_title">%1$s सक्षम करें</string>
     <string name="dialog_perm_step_subtitle">चरण %1$d / %2$d</string>
     <string name="dialog_perm_review_title">%1$s चालू है</string>
@@ -201,6 +211,10 @@
     <string name="dialog_perm_bullet_usage">उपयोग-अनुमति</string>
     <string name="dialog_perm_bullet_overlay">ओवरले अनुमति</string>
     <string name="dialog_perm_followup">सेटअप पूरा करने के लिए सिस्टम निर्देशों का पालन करें।</string>
+    <string name="dialog_perm_intro_step_1">इस स्क्रीन पर SMS और सूचनाओं के लिए आने वाले Android प्रॉम्प्ट पूरे करें।</string>
+    <string name="dialog_perm_followup_step_1">इसके बाद अर्थमंत्री आपको उपयोग-अनुमति वाले अगले चरण पर ले जाएगा।</string>
+    <string name="dialog_perm_followup_usage">इसके बाद अर्थमंत्री आपको ओवरले अनुमति वाले अगले चरण पर ले जाएगा।</string>
+    <string name="dialog_perm_followup_overlay">इसके बाद अर्थमंत्री आपको Money Setup Lite वाले अगले चरण पर ले जाएगा।</string>
     <string name="dialog_perm_bullet_helps">यह अर्थमंत्री को %1$s में मदद करता है।</string>
     <string name="dialog_perm_bullet_not_access">यह OTP, UPI PIN या बैंक पासवर्ड तक पहुंच नहीं लेता।</string>
     <string name="dialog_perm_bullet_if_off">यदि यह बंद रहा, तो %1$s।</string>
@@ -260,12 +274,18 @@
     <string name="alert_ack_long">ठीक है, मैं समझ गया</string>
     <string name="alert_feedback_useful">उपयोगी</string>
     <string name="alert_feedback_not_useful">उपयोगी नहीं</string>
+    <string name="alert_why_this_alert_label">क्यों दिखा</string>
     <string name="alert_next_safe_action_label">अगला सुरक्षित कदम</string>
     <string name="alert_essential_goal_impact_label">आवश्यक लक्ष्य प्रभाव</string>
     <string name="alert_pause_countdown">कृपया %1$d सेकंड रुकें, फिर पुष्टि करें।</string>
     <string name="service_notif_title">अर्थमंत्री सक्रिय है</string>
     <string name="service_notif_text">UPI ऐप खुलने की घटनाओं की निगरानी हो रही है</string>
     <string name="alert_payment_risk_title">भुगतान जोखिम चेतावनी</string>
+    <string name="alert_payment_uncertain_title">रुकें और जांच करें</string>
+    <string name="alert_payment_ack_long">रुककर पहले जांच करता हूँ</string>
+    <string name="alert_payment_fallback_body">अर्थमंत्री इस भुगतान को समय पर पुष्टि नहीं कर सका। जांच होने तक इसे जोखिम वाला मानें।</string>
+    <string name="alert_payment_fallback_why">लाइव विश्लेषण उपलब्ध नहीं है या देर से आ रहा है, इसलिए ऐप इसे सुरक्षित कहने के बजाय सावधानी वाली चेतावनी दिखा रहा है।</string>
+    <string name="alert_payment_fallback_next">अभी मंजूरी न दें। भेजने वाले, प्राप्तकर्ता और कारण की अलग से पुष्टि करें।</string>
     <string name="alert_spending_threshold">आपका खर्च सुरक्षित सीमा को पार कर रहा है।</string>
     <string name="alert_txn_risk">लेन-देन सूचना से खर्च जोखिम पाया गया।</string>
     <string name="alert_setup_verification_title">सेटअप जांच: नमूना चेतावनी</string>

@@ -64,15 +64,19 @@ object AlertNotifier {
         alertId: String? = null,
         severity: String = "medium",
         pauseSeconds: Int = 0,
+        whyThisAlert: String? = null,
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
+        primaryActionLabel: String? = null,
     ) {
         ensureChannel(context)
         val resolvedSeverity = normalizeSeverity(severity)
         val style = styleForSeverity(resolvedSeverity)
         val primaryBody = sanitizeBody(
             body = body,
-            hasExplainabilitySections = !nextSafeAction.isNullOrBlank() || !essentialGoalImpact.isNullOrBlank(),
+            hasExplainabilitySections = !whyThisAlert.isNullOrBlank() ||
+                !nextSafeAction.isNullOrBlank() ||
+                !essentialGoalImpact.isNullOrBlank(),
         )
 
         mainHandler.post {
@@ -90,8 +94,10 @@ object AlertNotifier {
                     message = primaryBody,
                     severity = resolvedSeverity,
                     pauseSeconds = pauseSeconds,
+                    whyThisAlert = whyThisAlert,
                     nextSafeAction = nextSafeAction,
                     essentialGoalImpact = essentialGoalImpact,
+                    primaryActionLabel = primaryActionLabel,
                 )
             } else {
                 false
@@ -103,8 +109,10 @@ object AlertNotifier {
                 putExtra(AlertDisplayActivity.EXTRA_ALERT_ID, resolvedAlertId)
                 putExtra(AlertDisplayActivity.EXTRA_PAUSE_SECONDS, pauseSeconds)
                 putExtra(AlertDisplayActivity.EXTRA_SEVERITY, resolvedSeverity)
+                putExtra(AlertDisplayActivity.EXTRA_WHY_THIS_ALERT, whyThisAlert)
                 putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
                 putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
+                putExtra(AlertDisplayActivity.EXTRA_PRIMARY_ACTION_LABEL, primaryActionLabel)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
 

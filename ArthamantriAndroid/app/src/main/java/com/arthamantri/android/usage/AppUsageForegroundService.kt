@@ -12,6 +12,7 @@ import java.time.Instant
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.notify.AlertNotifier
+import com.arthamantri.android.notify.PaymentInspectionAlertPresenter
 import com.arthamantri.android.repo.LiteracyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -79,7 +80,7 @@ class AppUsageForegroundService : Service() {
 
         try {
             val appName = UpiPackages.displayName(this, packageName)
-            LiteracyRepository.inspectUpiRequest(
+            val inspection = LiteracyRepository.inspectUpiRequest(
                 context = this,
                 appName = appName,
                 requestKind = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
@@ -88,6 +89,18 @@ class AppUsageForegroundService : Service() {
                 source = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
                 timestamp = Instant.ofEpochMilli(now).toString(),
             )
+            val paymentWarningShown = PaymentInspectionAlertPresenter.maybeShow(
+                context = this,
+                inspection = inspection,
+                requestKind = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
+                amount = null,
+                payeeLabel = "",
+                payeeHandle = "",
+                rawText = "",
+            )
+            if (paymentWarningShown) {
+                return
+            }
             val alert = LiteracyRepository.notifyUpiOpen(
                 context = this,
                 appName = appName,
