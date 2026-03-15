@@ -29,7 +29,9 @@ object OverlayAlertWindow {
     private var currentNextSafeAction: String = ""
     private var currentEssentialGoalImpact: String = ""
     private var currentSeverity: String = "medium"
+    private var currentAlertFamily: String = ""
     private var currentPrimaryActionLabel: String = ""
+    private var currentShowUsefulnessFeedback: Boolean = false
     private var currentUseFocusedPaymentActions: Boolean = false
     private var currentPauseSeconds: Int = 0
 
@@ -44,6 +46,8 @@ object OverlayAlertWindow {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        alertFamily: String? = null,
+        showUsefulnessFeedback: Boolean = false,
         useFocusedPaymentActions: Boolean = false,
     ): Boolean {
         if (!canShowOverlay(context)) {
@@ -67,6 +71,8 @@ object OverlayAlertWindow {
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
                 primaryActionLabel = primaryActionLabel,
+                alertFamily = alertFamily,
+                showUsefulnessFeedback = showUsefulnessFeedback,
                 useFocusedPaymentActions = useFocusedPaymentActions,
             )
             return true
@@ -91,7 +97,9 @@ object OverlayAlertWindow {
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
         currentSeverity = severity
+        currentAlertFamily = alertFamily.orEmpty()
         currentPrimaryActionLabel = primaryActionLabel.orEmpty()
+        currentShowUsefulnessFeedback = showUsefulnessFeedback
         currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
 
@@ -99,6 +107,8 @@ object OverlayAlertWindow {
             view = view,
             appContext = appContext,
             primaryActionLabel = primaryActionLabel,
+            alertFamily = alertFamily,
+            showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
         )
         setupPause(view, pauseSeconds)
@@ -146,6 +156,8 @@ object OverlayAlertWindow {
         nextSafeAction: String?,
         essentialGoalImpact: String?,
         primaryActionLabel: String?,
+        alertFamily: String?,
+        showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
     ) {
         val view = overlayView ?: return
@@ -160,7 +172,9 @@ object OverlayAlertWindow {
         currentNextSafeAction = nextSafeAction.orEmpty()
         currentEssentialGoalImpact = essentialGoalImpact.orEmpty()
         currentSeverity = severity
+        currentAlertFamily = alertFamily.orEmpty()
         currentPrimaryActionLabel = primaryActionLabel.orEmpty()
+        currentShowUsefulnessFeedback = showUsefulnessFeedback
         currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
@@ -176,6 +190,8 @@ object OverlayAlertWindow {
             view = view,
             appContext = view.context.applicationContext,
             primaryActionLabel = primaryActionLabel,
+            alertFamily = alertFamily,
+            showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
         )
         setupPause(view, pauseSeconds)
@@ -229,6 +245,8 @@ object OverlayAlertWindow {
         view: View,
         appContext: Context,
         primaryActionLabel: String?,
+        alertFamily: String?,
+        showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
     ) {
         val dismissBtn = view.findViewById<Button>(R.id.overlayDismissBtn)
@@ -236,6 +254,8 @@ object OverlayAlertWindow {
         val notUsefulBtn = view.findViewById<Button>(R.id.overlayNotUsefulBtn)
         val trustedPersonBtn = view.findViewById<Button>(R.id.overlayTrustedPersonBtn)
         val supportBtn = view.findViewById<Button>(R.id.overlaySupportBtn)
+        val usefulnessHint = view.findViewById<TextView>(R.id.overlayUsefulnessHint)
+        val feedbackRow = view.findViewById<View>(R.id.overlayFeedbackRow)
         val proceedConfirmGroup = view.findViewById<View>(R.id.overlayProceedConfirmGroup)
         val confirmProceedBtn = view.findViewById<Button>(R.id.overlayConfirmProceedBtn)
         proceedConfirmGroup.visibility = View.GONE
@@ -248,6 +268,8 @@ object OverlayAlertWindow {
             trustedPersonBtn.text = view.context.getString(R.string.alert_action_trusted_person)
             supportBtn.visibility = View.VISIBLE
             supportBtn.text = view.context.getString(R.string.alert_action_support)
+            usefulnessHint.visibility = View.GONE
+            feedbackRow.visibility = View.VISIBLE
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_low_emphasis)
             notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.text_secondary))
             confirmProceedBtn.text = view.context.getString(R.string.alert_proceed_confirmation_confirm)
@@ -295,6 +317,10 @@ object OverlayAlertWindow {
             supportBtn.visibility = View.GONE
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_secondary)
             notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.btn_secondary_text))
+            val shouldShowFeedback = showUsefulnessFeedback ||
+                alertFamily == AppConstants.Domain.ALERT_FAMILY_CASHFLOW
+            usefulnessHint.visibility = if (shouldShowFeedback) View.VISIBLE else View.GONE
+            feedbackRow.visibility = if (shouldShowFeedback) View.VISIBLE else View.GONE
 
             dismissBtn.setOnClickListener {
                 reportTerminalOutcome(appContext, AppConstants.Domain.ALERT_ACTION_DISMISSED)
@@ -485,7 +511,9 @@ object OverlayAlertWindow {
         currentNextSafeAction = ""
         currentEssentialGoalImpact = ""
         currentSeverity = "medium"
+        currentAlertFamily = ""
         currentPrimaryActionLabel = ""
+        currentShowUsefulnessFeedback = false
         currentUseFocusedPaymentActions = false
         currentPauseSeconds = 0
     }
@@ -503,6 +531,8 @@ object OverlayAlertWindow {
             nextSafeAction = currentNextSafeAction,
             essentialGoalImpact = currentEssentialGoalImpact,
             primaryActionLabel = currentPrimaryActionLabel,
+            alertFamily = currentAlertFamily.ifBlank { null },
+            showUsefulnessFeedback = currentShowUsefulnessFeedback,
             useFocusedPaymentActions = currentUseFocusedPaymentActions,
         )
     }

@@ -25,6 +25,7 @@ object AppConstants {
         const val KEY_MANAGE_ACCESS_EXPANDED = "manage_access_expanded"
         const val KEY_DRAWER_OPEN = "drawer_open"
         const val KEY_RESTORE_DRAWER_ON_RETURN = "restore_drawer_on_return"
+        const val KEY_OFFLINE_TELEMETRY_QUEUE = "offline_telemetry_queue"
 
         const val APP_CONFIG_PREFS = "arthamantri_android_prefs"
         const val KEY_BASE_URL = "base_url"
@@ -47,6 +48,7 @@ object AppConstants {
         const val UPI_SIGNAL_DEBOUNCE_MS = 60_000L
         const val NOTIFICATION_DEDUPE_WINDOW_MS = 15_000L
         const val PAYMENT_DECISION_PAUSE_SECONDS = 3
+        const val OFFLINE_QUEUE_MAX_ITEMS = 30
     }
 
     object IntentExtras {
@@ -60,6 +62,8 @@ object AppConstants {
         const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
         const val ALERT_PRIMARY_ACTION_LABEL = "extra_alert_primary_action_label"
         const val ALERT_USE_FOCUSED_PAYMENT_ACTIONS = "extra_alert_use_focused_payment_actions"
+        const val ALERT_FAMILY = "extra_alert_family"
+        const val ALERT_SHOW_USEFULNESS_FEEDBACK = "extra_alert_show_usefulness_feedback"
         const val ALERT_OPEN_SUPPORT_PATH = "extra_alert_open_support_path"
     }
 
@@ -105,6 +109,13 @@ object AppConstants {
         const val ALERT_ACTION_SUPPORT_REQUESTED = "support_requested"
         const val ALERT_ACTION_SUPPORT_OPENED = "support_opened"
         const val ALERT_ACTION_SUPPORT_FAILED = "support_failed"
+        const val APP_LOG_LEVEL_WARN = "warn"
+        const val OFFLINE_QUEUE_KIND_ALERT_FEEDBACK = "alert_feedback"
+        const val OFFLINE_QUEUE_KIND_APP_LOG = "app_log"
+        const val ALERT_FAMILY_PAYMENT = "payment"
+        const val ALERT_FAMILY_CASHFLOW = "cashflow"
+        const val LOCAL_FALLBACK_ALERT_PREFIX = "local-cashflow-fallback"
+        const val LOCAL_PAYMENT_FALLBACK_ALERT_PREFIX = "local-payment-fallback"
     }
 
     object PaymentInspection {

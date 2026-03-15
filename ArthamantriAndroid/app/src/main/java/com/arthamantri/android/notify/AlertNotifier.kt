@@ -68,6 +68,8 @@ object AlertNotifier {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        alertFamily: String? = null,
+        showUsefulnessFeedback: Boolean = false,
         useFocusedPaymentActions: Boolean = false,
     ) {
         ensureChannel(context)
@@ -97,6 +99,8 @@ object AlertNotifier {
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
                 primaryActionLabel = primaryActionLabel,
+                alertFamily = alertFamily,
+                showUsefulnessFeedback = showUsefulnessFeedback,
                 useFocusedPaymentActions = useFocusedPaymentActions,
             )
 
@@ -112,6 +116,8 @@ object AlertNotifier {
                     nextSafeAction = nextSafeAction,
                     essentialGoalImpact = essentialGoalImpact,
                     primaryActionLabel = primaryActionLabel,
+                    alertFamily = alertFamily,
+                    showUsefulnessFeedback = showUsefulnessFeedback,
                     useFocusedPaymentActions = useFocusedPaymentActions,
                 )
             } else {
@@ -144,6 +150,8 @@ object AlertNotifier {
         nextSafeAction: String,
         essentialGoalImpact: String,
         primaryActionLabel: String,
+        alertFamily: String?,
+        showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
     ) {
         ensureChannel(context)
@@ -166,6 +174,8 @@ object AlertNotifier {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
             primaryActionLabel = primaryActionLabel,
+            alertFamily = alertFamily,
+            showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
         )
         postAlertNotification(
@@ -189,6 +199,8 @@ object AlertNotifier {
         nextSafeAction: String?,
         essentialGoalImpact: String?,
         primaryActionLabel: String?,
+        alertFamily: String?,
+        showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
     ): Intent {
         return Intent(context, AlertDisplayActivity::class.java).apply {
@@ -201,6 +213,8 @@ object AlertNotifier {
             putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
             putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
             putExtra(AlertDisplayActivity.EXTRA_PRIMARY_ACTION_LABEL, primaryActionLabel)
+            putExtra(AlertDisplayActivity.EXTRA_ALERT_FAMILY, alertFamily)
+            putExtra(AlertDisplayActivity.EXTRA_SHOW_USEFULNESS_FEEDBACK, showUsefulnessFeedback)
             putExtra(AlertDisplayActivity.EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }

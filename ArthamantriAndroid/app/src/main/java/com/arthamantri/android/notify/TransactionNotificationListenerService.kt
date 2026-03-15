@@ -112,6 +112,8 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                         whyThisAlert = alert.why_this_alert,
                         nextSafeAction = alert.next_best_action,
                         essentialGoalImpact = alert.essential_goal_impact,
+                        alertFamily = AppConstants.Domain.ALERT_FAMILY_CASHFLOW,
+                        showUsefulnessFeedback = true,
                     )
                 }
             } catch (e: Exception) {

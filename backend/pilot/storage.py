@@ -60,6 +60,7 @@ class PilotStorage:
 
                 CREATE TABLE IF NOT EXISTS app_logs (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT,
                     participant_id TEXT NOT NULL,
                     level TEXT NOT NULL,
                     message TEXT NOT NULL,
@@ -99,6 +100,7 @@ class PilotStorage:
 
                 CREATE TABLE IF NOT EXISTS alert_feedback (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT,
                     alert_id TEXT NOT NULL,
                     participant_id TEXT NOT NULL,
                     action TEXT NOT NULL,
@@ -197,6 +199,39 @@ class PilotStorage:
                     source TEXT NOT NULL,
                     timestamp TEXT NOT NULL
                 );
+
+                CREATE TABLE IF NOT EXISTS unified_telemetry (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    event_id TEXT,
+                    participant_id TEXT NOT NULL,
+                    telemetry_family TEXT NOT NULL,
+                    record_type TEXT NOT NULL,
+                    event_name TEXT NOT NULL,
+                    alert_id TEXT,
+                    source_route TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    timestamp TEXT NOT NULL,
+                    amount REAL,
+                    category TEXT,
+                    app_name TEXT,
+                    scenario TEXT,
+                    risk_level TEXT,
+                    reason TEXT,
+                    stage INTEGER,
+                    action TEXT,
+                    channel TEXT,
+                    signal_type TEXT,
+                    signal_confidence TEXT,
+                    projected_daily_spend REAL,
+                    daily_safe_limit REAL,
+                    risk_score REAL,
+                    confidence_score REAL,
+                    frequency_bucket TEXT,
+                    tone_selected TEXT,
+                    summary_text TEXT,
+                    context_json TEXT NOT NULL DEFAULT '{}',
+                    extensions_json TEXT NOT NULL DEFAULT '{}'
+                );
                 """
             )
             self._ensure_column(conn, "literacy_state", "first_event_date TEXT")
@@ -211,6 +246,32 @@ class PilotStorage:
             self._ensure_column(conn, "participant_policy", "warning_ratio REAL NOT NULL DEFAULT 0.9")
             self._ensure_column(conn, "participant_policy", "is_auto INTEGER NOT NULL DEFAULT 1")
             self._ensure_column(conn, "participant_policy", "updated_at TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "app_logs", "event_id TEXT")
+            self._ensure_column(conn, "alert_feedback", "event_id TEXT")
+            self._ensure_column(conn, "unified_telemetry", "event_id TEXT")
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_app_logs_event_id ON app_logs(event_id) WHERE event_id IS NOT NULL"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_alert_feedback_event_id ON alert_feedback(event_id) WHERE event_id IS NOT NULL"
+            )
+            conn.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS idx_unified_telemetry_event_id ON unified_telemetry(event_id) WHERE event_id IS NOT NULL"
+            )
+
+    def _json_text(self, value: dict | None) -> str:
+        if not isinstance(value, dict):
+            return "{}"
+        return json.dumps(value, ensure_ascii=True, sort_keys=True)
+
+    def _parse_json_object(self, value: str | None) -> dict:
+        if not value:
+            return {}
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
 
     def _ensure_column(self, conn: sqlite3.Connection, table: str, column_def: str) -> None:
         column_name = column_def.split()[0]
@@ -376,15 +437,17 @@ class PilotStorage:
         message: str,
         language: str,
         timestamp: str,
-    ) -> None:
+        event_id: str | None = None,
+    ) -> bool:
         with self._connect() as conn:
-            conn.execute(
+            cursor = conn.execute(
                 """
-                INSERT INTO app_logs (participant_id, level, message, language, timestamp)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO app_logs (event_id, participant_id, level, message, language, timestamp)
+                VALUES (?, ?, ?, ?, ?, ?)
                 """,
-                (participant_id, level, message, language, timestamp),
+                (event_id, participant_id, level, message, language, timestamp),
             )
+        return cursor.rowcount > 0
 
     def get_literacy_state(self, participant_id: str) -> dict | None:
         with self._connect() as conn:
@@ -482,6 +545,7 @@ class PilotStorage:
             conn.execute("DELETE FROM goal_memory WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM goal_feedback WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM alert_goal_context WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM unified_telemetry WHERE participant_id=?", (participant_id,))
 
     def get_participant_policy(self, participant_id: str) -> dict | None:
         with self._connect() as conn:
@@ -561,17 +625,19 @@ class PilotStorage:
         title: str,
         message: str,
         timestamp: str,
-    ) -> None:
+        event_id: str | None = None,
+    ) -> bool:
         with self._connect() as conn:
-            conn.execute(
+            cursor = conn.execute(
                 """
-                INSERT INTO alert_feedback (
-                    alert_id, participant_id, action, channel, title, message, timestamp
+                INSERT OR IGNORE INTO alert_feedback (
+                    event_id, alert_id, participant_id, action, channel, title, message, timestamp
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (alert_id, participant_id, action, channel, title, message, timestamp),
+                (event_id, alert_id, participant_id, action, channel, title, message, timestamp),
             )
+        return cursor.rowcount > 0
 
     def add_alert_features(
         self,
@@ -621,6 +687,85 @@ class PilotStorage:
                     frequency_bucket,
                 ),
             )
+
+    def add_unified_telemetry(
+        self,
+        *,
+        participant_id: str,
+        telemetry_family: str,
+        record_type: str,
+        event_name: str,
+        source_route: str,
+        source: str,
+        timestamp: str,
+        event_id: str | None = None,
+        alert_id: str | None = None,
+        amount: float | None = None,
+        category: str | None = None,
+        app_name: str | None = None,
+        scenario: str | None = None,
+        risk_level: str | None = None,
+        reason: str | None = None,
+        stage: int | None = None,
+        action: str | None = None,
+        channel: str | None = None,
+        signal_type: str | None = None,
+        signal_confidence: str | None = None,
+        projected_daily_spend: float | None = None,
+        daily_safe_limit: float | None = None,
+        risk_score: float | None = None,
+        confidence_score: float | None = None,
+        frequency_bucket: str | None = None,
+        tone_selected: str | None = None,
+        summary_text: str | None = None,
+        context: dict | None = None,
+        extensions: dict | None = None,
+    ) -> bool:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO unified_telemetry (
+                    event_id, participant_id, telemetry_family, record_type, event_name, alert_id,
+                    source_route, source, timestamp, amount, category, app_name, scenario,
+                    risk_level, reason, stage, action, channel, signal_type, signal_confidence,
+                    projected_daily_spend, daily_safe_limit, risk_score, confidence_score,
+                    frequency_bucket, tone_selected, summary_text, context_json, extensions_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    event_id,
+                    participant_id,
+                    telemetry_family,
+                    record_type,
+                    event_name,
+                    alert_id,
+                    source_route,
+                    source,
+                    timestamp,
+                    amount,
+                    category,
+                    app_name,
+                    scenario,
+                    risk_level,
+                    reason,
+                    stage,
+                    action,
+                    channel,
+                    signal_type,
+                    signal_confidence,
+                    projected_daily_spend,
+                    daily_safe_limit,
+                    risk_score,
+                    confidence_score,
+                    frequency_bucket,
+                    tone_selected,
+                    summary_text,
+                    self._json_text(context),
+                    self._json_text(extensions),
+                ),
+            )
+        return cursor.rowcount > 0
 
     def upsert_daily_spend(
         self,
@@ -755,6 +900,285 @@ class PilotStorage:
             "hard_count": int(row["hard_count"] or 0),
             "suppressed_count": int(row["suppressed_count"] or 0),
         }
+
+    def recent_unified_telemetry(
+        self,
+        participant_id: str | None = None,
+        telemetry_family: str | None = None,
+        record_type: str | None = None,
+        limit: int = 25,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        if telemetry_family:
+            clauses.append("telemetry_family=?")
+            params.append(telemetry_family)
+        if record_type:
+            clauses.append("record_type=?")
+            params.append(record_type)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT event_id, participant_id, telemetry_family, record_type, event_name, alert_id,
+                       source_route, source, timestamp, amount, category, app_name, scenario,
+                       risk_level, reason, stage, action, channel, signal_type,
+                       signal_confidence, projected_daily_spend, daily_safe_limit,
+                       risk_score, confidence_score, frequency_bucket, tone_selected,
+                       summary_text, context_json, extensions_json
+                FROM unified_telemetry
+                {where_sql}
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        records: list[dict] = []
+        for row in rows:
+            data = dict(row)
+            data["context"] = self._parse_json_object(data.pop("context_json"))
+            data["extensions"] = self._parse_json_object(data.pop("extensions_json"))
+            records.append(data)
+        return records
+
+    def latest_unified_telemetry_for_alert(
+        self,
+        alert_id: str,
+        participant_id: str | None = None,
+    ) -> dict | None:
+        clauses = ["alert_id=?"]
+        params: list[object] = [alert_id]
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        where_sql = " AND ".join(clauses)
+        with self._connect() as conn:
+            row = conn.execute(
+                f"""
+                SELECT event_id, participant_id, telemetry_family, record_type, event_name, alert_id,
+                       source_route, source, timestamp, amount, category, app_name, scenario,
+                       risk_level, reason, stage, action, channel, signal_type,
+                       signal_confidence, projected_daily_spend, daily_safe_limit,
+                       risk_score, confidence_score, frequency_bucket, tone_selected,
+                       summary_text, context_json, extensions_json
+                FROM unified_telemetry
+                WHERE {where_sql}
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                tuple(params),
+            ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        data["context"] = self._parse_json_object(data.pop("context_json"))
+        data["extensions"] = self._parse_json_object(data.pop("extensions_json"))
+        return data
+
+    def unified_telemetry_comparison(
+        self,
+        participant_id: str | None = None,
+        limit: int = 200,
+    ) -> dict:
+        records = self.recent_unified_telemetry(participant_id=participant_id, limit=limit)
+        participant_ids = {
+            str(record.get("participant_id") or "").strip()
+            for record in records
+            if str(record.get("participant_id") or "").strip()
+        }
+        participant_metadata = self._participant_analysis_metadata(participant_ids)
+
+        def empty_bucket() -> dict:
+            return {
+                "total_records": 0,
+                "generated_count": 0,
+                "action_count": 0,
+                "fallback_count": 0,
+                "usefulness_count": 0,
+                "high_risk_count": 0,
+                "critical_risk_count": 0,
+                "dismissed_count": 0,
+                "helpful_count": 0,
+                "not_useful_count": 0,
+                "latest_timestamp": None,
+                "action_breakdown": {},
+                "scenario_breakdown": {},
+                "trace_sample": [],
+                "noise_indicators": {
+                    "dismissal_ratio": 0.0,
+                    "negative_feedback_ratio": None,
+                    "fallback_ratio": 0.0,
+                },
+            }
+
+        families: dict[str, dict] = {
+            "payment_warning": empty_bucket(),
+            "cashflow": empty_bucket(),
+        }
+        language_slices: dict[str, dict] = {}
+        cohort_slices: dict[str, dict] = {}
+        variant_slices: dict[str, dict] = {}
+        for record in records:
+            family = str(record.get("telemetry_family") or "unknown")
+            bucket = families.setdefault(family, empty_bucket())
+            bucket["total_records"] += 1
+            record_type = str(record.get("record_type") or "").lower()
+            if record_type == "generated":
+                bucket["generated_count"] += 1
+            elif record_type == "action":
+                bucket["action_count"] += 1
+            elif record_type == "fallback":
+                bucket["fallback_count"] += 1
+            elif record_type == "usefulness":
+                bucket["usefulness_count"] += 1
+            risk_level = str(record.get("risk_level") or "").lower()
+            if risk_level == "high":
+                bucket["high_risk_count"] += 1
+            elif risk_level == "critical":
+                bucket["critical_risk_count"] += 1
+            action = str(record.get("action") or "").strip().lower()
+            if action:
+                bucket["action_breakdown"][action] = bucket["action_breakdown"].get(action, 0) + 1
+            if action == "dismissed":
+                bucket["dismissed_count"] += 1
+            if action == "useful":
+                bucket["helpful_count"] += 1
+            if action == "not_useful":
+                bucket["not_useful_count"] += 1
+            scenario_key = (
+                str(record.get("scenario") or "").strip()
+                or str(record.get("reason") or "").strip()
+                or str(record.get("event_name") or "").strip()
+            )
+            bucket["scenario_breakdown"][scenario_key] = bucket["scenario_breakdown"].get(scenario_key, 0) + 1
+            timestamp = record.get("timestamp")
+            if timestamp and (
+                bucket["latest_timestamp"] is None or str(timestamp) > str(bucket["latest_timestamp"])
+            ):
+                bucket["latest_timestamp"] = timestamp
+            if len(bucket["trace_sample"]) < 5:
+                bucket["trace_sample"].append(
+                    {
+                        "event_id": record.get("event_id"),
+                        "alert_id": record.get("alert_id"),
+                        "timestamp": timestamp,
+                        "event_name": record.get("event_name"),
+                        "record_type": record_type,
+                        "action": record.get("action"),
+                    }
+                )
+
+            metadata = participant_metadata.get(str(record.get("participant_id") or "").strip(), {})
+            extensions = record.get("extensions") or {}
+            language_key = str(
+                extensions.get("language") or metadata.get("language") or "unknown"
+            ).strip() or "unknown"
+            cohort_key = str(metadata.get("cohort") or "unknown").strip() or "unknown"
+            variant_key = str(
+                extensions.get("experiment_variant") or metadata.get("variant") or "unknown"
+            ).strip() or "unknown"
+            self._accumulate_slice(language_slices, language_key, family, action)
+            self._accumulate_slice(cohort_slices, cohort_key, family, action)
+            self._accumulate_slice(variant_slices, variant_key, family, action)
+
+        for bucket in families.values():
+            generated_count = int(bucket["generated_count"])
+            usefulness_count = int(bucket["usefulness_count"])
+            trigger_count = generated_count + int(bucket["fallback_count"])
+            bucket["noise_indicators"] = {
+                "dismissal_ratio": round(bucket["dismissed_count"] / generated_count, 4)
+                if generated_count
+                else 0.0,
+                "negative_feedback_ratio": round(bucket["not_useful_count"] / usefulness_count, 4)
+                if usefulness_count
+                else None,
+                "fallback_ratio": round(bucket["fallback_count"] / trigger_count, 4)
+                if trigger_count
+                else 0.0,
+            }
+
+        return {
+            "sample_size": len(records),
+            "payment_warning": families["payment_warning"],
+            "cashflow": families["cashflow"],
+            "language_slices": language_slices,
+            "cohort_slices": cohort_slices,
+            "variant_slices": variant_slices,
+        }
+
+    def _participant_analysis_metadata(self, participant_ids: set[str]) -> dict[str, dict]:
+        if not participant_ids:
+            return {}
+        ordered_ids = sorted(participant_ids)
+        placeholders = ", ".join("?" for _ in ordered_ids)
+        metadata = {
+            participant_id: {"language": None, "cohort": None, "variant": None}
+            for participant_id in ordered_ids
+        }
+        with self._connect() as conn:
+            for row in conn.execute(
+                f"""
+                SELECT participant_id, language
+                FROM consents
+                WHERE participant_id IN ({placeholders})
+                """,
+                tuple(ordered_ids),
+            ).fetchall():
+                metadata[str(row["participant_id"])]["language"] = row["language"]
+            for row in conn.execute(
+                f"""
+                SELECT participant_id, cohort
+                FROM essential_goal_profile
+                WHERE participant_id IN ({placeholders})
+                """,
+                tuple(ordered_ids),
+            ).fetchall():
+                metadata[str(row["participant_id"])]["cohort"] = row["cohort"]
+            for row in conn.execute(
+                f"""
+                SELECT participant_id, variant
+                FROM experiment_assignment
+                WHERE experiment_name='adaptive_alerts_v1'
+                  AND participant_id IN ({placeholders})
+                """,
+                tuple(ordered_ids),
+            ).fetchall():
+                metadata[str(row["participant_id"])]["variant"] = row["variant"]
+        return metadata
+
+    def _accumulate_slice(
+        self,
+        slices: dict[str, dict],
+        key: str,
+        family: str,
+        action: str,
+    ) -> None:
+        bucket = slices.setdefault(
+            key,
+            {
+                "total_records": 0,
+                "family_breakdown": {},
+                "action_breakdown": {},
+                "helpful_count": 0,
+                "not_useful_count": 0,
+                "dismissed_count": 0,
+            },
+        )
+        bucket["total_records"] += 1
+        bucket["family_breakdown"][family] = bucket["family_breakdown"].get(family, 0) + 1
+        if action:
+            bucket["action_breakdown"][action] = bucket["action_breakdown"].get(action, 0) + 1
+        if action == "useful":
+            bucket["helpful_count"] += 1
+        elif action == "not_useful":
+            bucket["not_useful_count"] += 1
+        elif action == "dismissed":
+            bucket["dismissed_count"] += 1
 
     def get_essential_goal_profile(self, participant_id: str) -> dict | None:
         with self._connect() as conn:

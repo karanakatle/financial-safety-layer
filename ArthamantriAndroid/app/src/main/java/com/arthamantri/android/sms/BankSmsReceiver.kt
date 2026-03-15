@@ -13,6 +13,7 @@ import com.arthamantri.android.repo.LiteracyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class BankSmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -62,6 +63,14 @@ class BankSmsReceiver : BroadcastReceiver() {
                     "sms-ingest API success; participantId=${result.participantId}; alertsCount=${result.alerts.size}"
                 )
 
+                if (result.alerts.isEmpty() && parsed.signalType == AppConstants.Domain.SMS_SIGNAL_PARTIAL) {
+                    showLocalFallback(
+                        context = context,
+                        parsed = parsed,
+                        telemetryReason = "partial_context",
+                    )
+                }
+
                 result.alerts.forEach { alert ->
                     AlertNotifier.show(
                         context,
@@ -73,6 +82,8 @@ class BankSmsReceiver : BroadcastReceiver() {
                         whyThisAlert = alert.why_this_alert,
                         nextSafeAction = alert.next_best_action,
                         essentialGoalImpact = alert.essential_goal_impact,
+                        alertFamily = AppConstants.Domain.ALERT_FAMILY_CASHFLOW,
+                        showUsefulnessFeedback = true,
                     )
                 }
             } catch (e: Exception) {
@@ -81,14 +92,51 @@ class BankSmsReceiver : BroadcastReceiver() {
                     AppConstants.LogMessages.BANK_SMS_PROCESS_FAILED,
                     e,
                 )
-                // ADD THIS FOR TESTING: Show the overlay even if the API fails
-                AlertNotifier.show(
+                showLocalFallback(
                     context = context,
-                    title = "SMS Processed (Offline)",
-                    body = "Signal: ${parsed.signalType}\nAmount: ${parsed.amount ?: "unknown"}\nStatus: Network Error. Could not sync with server.",
-                    severity = "medium"
+                    parsed = parsed,
+                    telemetryReason = "network_unavailable",
                 )
             }
         }
+    }
+
+    private suspend fun showLocalFallback(
+        context: Context,
+        parsed: ParsedSmsSignal,
+        telemetryReason: String,
+    ) {
+        val guidance = CashflowFallbackGuidanceBuilder.build(
+            context = context,
+            signalType = parsed.signalType,
+            amount = parsed.amount,
+        ) ?: return
+        val alertId = "${AppConstants.Domain.LOCAL_FALLBACK_ALERT_PREFIX}-${UUID.randomUUID()}"
+
+        AlertNotifier.show(
+            context = context,
+            title = context.getString(R.string.alert_title_default),
+            body = guidance.body,
+            alertId = alertId,
+            severity = "soft",
+            whyThisAlert = guidance.whyThisAlert,
+            nextSafeAction = guidance.nextSafeAction,
+            alertFamily = AppConstants.Domain.ALERT_FAMILY_CASHFLOW,
+            showUsefulnessFeedback = true,
+        )
+
+        LiteracyRepository.submitAppLog(
+            context = context,
+            level = AppConstants.Domain.APP_LOG_LEVEL_WARN,
+            message = listOf(
+                "cashflow_fallback_shown",
+                alertId,
+                telemetryReason,
+                parsed.signalType,
+                parsed.amount?.toString() ?: "unknown",
+            ).joinToString(":"),
+            language = LiteracyRepository.language(context),
+            participantId = LiteracyRepository.participantId(context),
+        )
     }
 }

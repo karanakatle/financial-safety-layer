@@ -4,6 +4,11 @@ import android.content.Context
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.model.UpiRequestInspectResponse
+import com.arthamantri.android.repo.LiteracyRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.UUID
 
 object PaymentInspectionAlertPresenter {
     fun maybeShow(
@@ -40,6 +45,7 @@ object PaymentInspectionAlertPresenter {
             whyThisAlert = inspection.why_this_alert,
             nextSafeAction = inspection.next_best_action,
             primaryActionLabel = context.getString(R.string.alert_payment_ack_long),
+            alertFamily = AppConstants.Domain.ALERT_FAMILY_PAYMENT,
             useFocusedPaymentActions = true,
         )
         return true
@@ -57,18 +63,54 @@ object PaymentInspectionAlertPresenter {
             return false
         }
 
+        val alertId = "${AppConstants.Domain.LOCAL_PAYMENT_FALLBACK_ALERT_PREFIX}-${UUID.randomUUID()}"
+
         AlertNotifier.show(
             context = context,
             title = context.getString(R.string.alert_payment_uncertain_title),
             body = context.getString(R.string.alert_payment_fallback_body),
+            alertId = alertId,
             severity = "medium",
             pauseSeconds = 3,
             whyThisAlert = context.getString(R.string.alert_payment_fallback_why),
             nextSafeAction = context.getString(R.string.alert_payment_fallback_next),
             primaryActionLabel = context.getString(R.string.alert_payment_ack_long),
+            alertFamily = AppConstants.Domain.ALERT_FAMILY_PAYMENT,
             useFocusedPaymentActions = true,
         )
+        CoroutineScope(Dispatchers.IO).launch {
+            LiteracyRepository.submitAppLog(
+                context = context,
+                level = AppConstants.Domain.APP_LOG_LEVEL_WARN,
+                message = buildFallbackLogMessage(
+                    alertId = alertId,
+                    requestKind = requestKind,
+                    amount = amount,
+                    payeeLabel = payeeLabel,
+                    payeeHandle = payeeHandle,
+                ),
+                language = LiteracyRepository.language(context),
+                participantId = LiteracyRepository.participantId(context),
+            )
+        }
         return true
+    }
+
+    private fun buildFallbackLogMessage(
+        alertId: String,
+        requestKind: String,
+        amount: Double?,
+        payeeLabel: String,
+        payeeHandle: String,
+    ): String {
+        return listOf(
+            "payment_fallback_shown",
+            alertId,
+            requestKind.ifBlank { AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN },
+            amount?.toString() ?: "unknown",
+            payeeLabel.ifBlank { "unknown" },
+            payeeHandle.ifBlank { "unknown" },
+        ).joinToString(":")
     }
 
     private fun hasMeaningfulPaymentContext(
