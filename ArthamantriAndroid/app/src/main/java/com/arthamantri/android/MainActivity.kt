@@ -23,6 +23,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.AdapterView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageButton
@@ -71,6 +72,15 @@ class MainActivity : AppCompatActivity() {
         val itemLabels: List<String>,
     )
 
+    private data class SupportAlertContext(
+        val alertId: String,
+        val title: String,
+        val body: String,
+        val whyThisAlert: String,
+        val nextSafeAction: String,
+        val essentialGoalImpact: String,
+    )
+
     private enum class FacilitatorStepProgress {
         PENDING,
         IN_PROGRESS,
@@ -114,7 +124,10 @@ class MainActivity : AppCompatActivity() {
     private var helpLanguageSpinner: Spinner? = null
     private var helpMoneySetupButton: Button? = null
     private var helpFacilitatorPackButton: Button? = null
+    private var helpApplyButton: ImageButton? = null
     private var facilitatorStatusRefresh: (() -> Unit)? = null
+    private var activeSupportAlertContext: SupportAlertContext? = null
+    private var activeHelpDialogSupportContext: SupportAlertContext? = null
 
     override fun onDestroy() {
         activeFlowDialog?.dismiss()
@@ -258,10 +271,17 @@ class MainActivity : AppCompatActivity() {
         animateDashboardCards()
         mainContentContainer.post { continueOnboardingFlow() }
         maybeRestoreHelpDialogAfterLanguageSwitch()
+        maybeHandleSupportEscalationIntent(intent)
 
         if (shouldRestoreDrawerState) {
             drawerLayout.post { drawerLayout.openDrawer(GravityCompat.START) }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        maybeHandleSupportEscalationIntent(intent)
     }
 
     private fun applyEdgeToEdgeInsets(
@@ -712,7 +732,7 @@ class MainActivity : AppCompatActivity() {
         showManagedFlowDialog(dialog, transparentBackground = false)
     }
 
-    private fun showFacilitatorSetupPackDialog() {
+    private fun showFacilitatorSetupPackDialog(supportContext: SupportAlertContext? = null) {
         val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_facilitator_pack, null)
         val readinessStatus = contentView.findViewById<TextView>(R.id.facilitatorReadinessStatus)
         val nextActionValue = contentView.findViewById<TextView>(R.id.facilitatorNextActionValue)
@@ -731,6 +751,19 @@ class MainActivity : AppCompatActivity() {
         val startMonitoringButton = contentView.findViewById<Button>(R.id.facilitatorStartMonitoringButton)
         val refreshButton = contentView.findViewById<Button>(R.id.facilitatorRefreshButton)
         val closeButton = contentView.findViewById<Button>(R.id.facilitatorCloseButton)
+
+        bindSupportContextCard(
+            contextCard = contentView.findViewById(R.id.facilitatorSupportContextCard),
+            titleView = contentView.findViewById(R.id.facilitatorSupportContextTitle),
+            bodyView = contentView.findViewById(R.id.facilitatorSupportContextBody),
+            whyHeading = contentView.findViewById(R.id.facilitatorSupportWhyHeading),
+            whyBody = contentView.findViewById(R.id.facilitatorSupportWhyBody),
+            nextHeading = contentView.findViewById(R.id.facilitatorSupportNextHeading),
+            nextBody = contentView.findViewById(R.id.facilitatorSupportNextBody),
+            goalHeading = contentView.findViewById(R.id.facilitatorSupportGoalHeading),
+            goalBody = contentView.findViewById(R.id.facilitatorSupportGoalBody),
+            supportContext = supportContext,
+        )
 
         val dialog = AlertDialog.Builder(this)
             .setView(contentView)
@@ -1908,7 +1941,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun showHelpDialog() {
+    private fun showHelpDialog(supportContext: SupportAlertContext? = null) {
         val languageOptions = supportedLanguages()
         val options = languageOptions.map { it.displayName }
         val selectedIndex = languageOptions.indexOfFirst { it.code == currentLangCode() }.takeIf { it >= 0 } ?: 0
@@ -1923,19 +1956,58 @@ class MainActivity : AppCompatActivity() {
         val facilitatorPackButton = contentView.findViewById<Button>(R.id.helpFacilitatorPackButton)
         val closeButton = contentView.findViewById<ImageButton>(R.id.helpCloseButton)
         val applyButton = contentView.findViewById<ImageButton>(R.id.helpApplyButton)
+        val isSupportMode = supportContext != null
 
-        heading.text = getString(R.string.help_title)
-        subtitle.text = getString(R.string.help_subtitle)
-        helpText.text = helpStepsText()
+        heading.text = if (isSupportMode) getString(R.string.help_support_title) else getString(R.string.help_title)
+        subtitle.text = if (isSupportMode) getString(R.string.help_support_subtitle) else getString(R.string.help_subtitle)
+        helpText.text = if (isSupportMode) supportHelpStepsText() else helpStepsText()
         languageLabel.text = getString(R.string.help_change_language)
         moneySetupButton.text = getString(R.string.help_edit_money_setup)
-        facilitatorPackButton.text = getString(R.string.help_open_facilitator_pack)
+        facilitatorPackButton.text = if (isSupportMode) {
+            getString(R.string.help_support_open_facilitator_pack)
+        } else {
+            getString(R.string.help_open_facilitator_pack)
+        }
         spinner.adapter = ArrayAdapter(
             this@MainActivity,
             android.R.layout.simple_spinner_item,
             options,
         ).also { a -> a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         spinner.setSelection(selectedIndex)
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                updateHelpApplyButtonState(
+                    applyButton = applyButton,
+                    selectedCode = languageOptions.getOrNull(position)?.code ?: currentLangCode(),
+                )
+            }
+
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                updateHelpApplyButtonState(applyButton, currentLangCode())
+            }
+        }
+
+        bindSupportContextCard(
+            contextCard = contentView.findViewById(R.id.helpSupportContextCard),
+            titleView = contentView.findViewById(R.id.helpSupportContextTitle),
+            bodyView = contentView.findViewById(R.id.helpSupportContextBody),
+            whyHeading = contentView.findViewById(R.id.helpSupportWhyHeading),
+            whyBody = contentView.findViewById(R.id.helpSupportWhyBody),
+            nextHeading = contentView.findViewById(R.id.helpSupportNextHeading),
+            nextBody = contentView.findViewById(R.id.helpSupportNextBody),
+            goalHeading = contentView.findViewById(R.id.helpSupportGoalHeading),
+            goalBody = contentView.findViewById(R.id.helpSupportGoalBody),
+            supportContext = supportContext,
+        )
+        contentView.findViewById<View>(R.id.helpSupportContextCard).visibility = if (isSupportMode) View.VISIBLE else View.GONE
+        languageLabel.visibility = if (isSupportMode) View.GONE else View.VISIBLE
+        spinner.visibility = if (isSupportMode) View.GONE else View.VISIBLE
+        moneySetupButton.visibility = if (isSupportMode) View.GONE else View.VISIBLE
+        applyButton.visibility = if (isSupportMode) View.GONE else View.VISIBLE
+        updateHelpApplyButtonState(
+            applyButton = applyButton,
+            selectedCode = languageOptions.getOrNull(spinner.selectedItemPosition)?.code ?: currentLangCode(),
+        )
 
         val dialog = AlertDialog.Builder(this)
             .setView(contentView)
@@ -1951,7 +2023,7 @@ class MainActivity : AppCompatActivity() {
             }
             facilitatorPackButton.setOnClickListener {
                 dialog.dismiss()
-                showFacilitatorSetupPackDialog()
+                showFacilitatorSetupPackDialog(supportContext)
             }
             applyButton.setOnClickListener {
                 val langCode = languageOptions.getOrNull(spinner.selectedItemPosition)?.code ?: currentLangCode()
@@ -1963,6 +2035,7 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         currentHelpDialog = dialog
+        activeHelpDialogSupportContext = supportContext
         helpHeadingView = heading
         helpSubtitleView = subtitle
         helpStepsView = helpText
@@ -1970,6 +2043,7 @@ class MainActivity : AppCompatActivity() {
         helpLanguageSpinner = spinner
         helpMoneySetupButton = moneySetupButton
         helpFacilitatorPackButton = facilitatorPackButton
+        helpApplyButton = applyButton
     }
 
     private fun helpStepsText(): String {
@@ -1983,6 +2057,15 @@ class MainActivity : AppCompatActivity() {
         ).joinToString(separator = "\n") { "• $it" }
     }
 
+    private fun supportHelpStepsText(): String {
+        return listOf(
+            getString(R.string.help_support_step_1),
+            getString(R.string.help_support_step_2),
+            getString(R.string.help_support_step_3),
+            getString(R.string.help_support_step_4),
+        ).joinToString(separator = "\n") { "• $it" }
+    }
+
     private fun maybeRestoreHelpDialogAfterLanguageSwitch() {
         val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
         val shouldReopen = prefs.getBoolean(AppConstants.Prefs.KEY_REOPEN_HELP_AFTER_LOCALE_SWITCH, false)
@@ -1992,7 +2075,7 @@ class MainActivity : AppCompatActivity() {
 
         prefs.edit().putBoolean(AppConstants.Prefs.KEY_REOPEN_HELP_AFTER_LOCALE_SWITCH, false).apply()
         updateLanguageChip()
-        window.decorView.post { showHelpDialog() }
+        window.decorView.post { showHelpDialog(activeSupportAlertContext) }
     }
 
     private fun applyLanguageInPlace() {
@@ -2027,12 +2110,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshHelpDialogTextsInPlace() {
-        helpHeadingView?.text = getString(R.string.help_title)
-        helpSubtitleView?.text = getString(R.string.help_subtitle)
-        helpStepsView?.text = helpStepsText()
+        val isSupportMode = activeHelpDialogSupportContext != null
+        helpHeadingView?.text = if (isSupportMode) getString(R.string.help_support_title) else getString(R.string.help_title)
+        helpSubtitleView?.text = if (isSupportMode) getString(R.string.help_support_subtitle) else getString(R.string.help_subtitle)
+        helpStepsView?.text = if (isSupportMode) supportHelpStepsText() else helpStepsText()
         helpLanguageLabelView?.text = getString(R.string.help_change_language)
         helpMoneySetupButton?.text = getString(R.string.help_edit_money_setup)
-        helpFacilitatorPackButton?.text = getString(R.string.help_open_facilitator_pack)
+        helpFacilitatorPackButton?.text = if (isSupportMode) {
+            getString(R.string.help_support_open_facilitator_pack)
+        } else {
+            getString(R.string.help_open_facilitator_pack)
+        }
 
         val spinner = helpLanguageSpinner ?: return
         val options = supportedLanguages().map { it.displayName }
@@ -2043,6 +2131,90 @@ class MainActivity : AppCompatActivity() {
         ).also { a -> a.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
         val selectedIndex = supportedLanguages().indexOfFirst { it.code == currentLangCode() }.takeIf { it >= 0 } ?: 0
         spinner.setSelection(selectedIndex)
+        updateHelpApplyButtonState(helpApplyButton, currentLangCode())
+    }
+
+    private fun maybeHandleSupportEscalationIntent(intent: Intent?) {
+        if (intent == null || !intent.getBooleanExtra(AppConstants.IntentExtras.ALERT_OPEN_SUPPORT_PATH, false)) {
+            return
+        }
+
+        activeSupportAlertContext = SupportAlertContext(
+            alertId = intent.getStringExtra(AppConstants.IntentExtras.ALERT_ID).orEmpty(),
+            title = intent.getStringExtra(AppConstants.IntentExtras.ALERT_TITLE) ?: getString(R.string.alert_title_default),
+            body = intent.getStringExtra(AppConstants.IntentExtras.ALERT_MESSAGE) ?: getString(R.string.alert_body_default),
+            whyThisAlert = intent.getStringExtra(AppConstants.IntentExtras.ALERT_WHY_THIS_ALERT).orEmpty(),
+            nextSafeAction = intent.getStringExtra(AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION).orEmpty(),
+            essentialGoalImpact = intent.getStringExtra(AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT).orEmpty(),
+        )
+        intent.removeExtra(AppConstants.IntentExtras.ALERT_OPEN_SUPPORT_PATH)
+        currentHelpDialog?.dismiss()
+        window.decorView.post { showHelpDialog(activeSupportAlertContext) }
+    }
+
+    private fun bindSupportContextCard(
+        contextCard: View,
+        titleView: TextView,
+        bodyView: TextView,
+        whyHeading: TextView,
+        whyBody: TextView,
+        nextHeading: TextView,
+        nextBody: TextView,
+        goalHeading: TextView,
+        goalBody: TextView,
+        supportContext: SupportAlertContext?,
+    ) {
+        if (supportContext == null) {
+            contextCard.visibility = View.GONE
+            return
+        }
+
+        contextCard.visibility = View.VISIBLE
+        titleView.text = supportContext.title
+        bodyView.text = supportContext.body
+        bindOptionalSupportField(
+            heading = whyHeading,
+            body = whyBody,
+            headingText = getString(R.string.alert_why_this_alert_label),
+            value = supportContext.whyThisAlert,
+        )
+        bindOptionalSupportField(
+            heading = nextHeading,
+            body = nextBody,
+            headingText = getString(R.string.alert_next_safe_action_label),
+            value = supportContext.nextSafeAction,
+        )
+        bindOptionalSupportField(
+            heading = goalHeading,
+            body = goalBody,
+            headingText = getString(R.string.alert_essential_goal_impact_label),
+            value = supportContext.essentialGoalImpact,
+        )
+    }
+
+    private fun bindOptionalSupportField(
+        heading: TextView,
+        body: TextView,
+        headingText: String,
+        value: String,
+    ) {
+        if (value.isBlank()) {
+            heading.visibility = View.GONE
+            body.visibility = View.GONE
+            return
+        }
+
+        heading.text = headingText
+        heading.visibility = View.VISIBLE
+        body.text = value
+        body.visibility = View.VISIBLE
+    }
+
+    private fun updateHelpApplyButtonState(applyButton: ImageButton?, selectedCode: String) {
+        val button = applyButton ?: return
+        val enabled = selectedCode != currentLangCode()
+        button.isEnabled = enabled
+        button.alpha = if (enabled) 1f else 0.45f
     }
 
     private fun toggleManageAccessItems() {

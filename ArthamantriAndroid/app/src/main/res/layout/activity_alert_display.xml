@@ -133,6 +133,36 @@
             android:backgroundTint="@null"
             app:backgroundTint="@null" />
 
+        <Button
+            android:id="@+id/trustedPersonBtn"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_btn_secondary"
+            android:text="@string/alert_action_trusted_person"
+            android:textAllCaps="false"
+            android:textColor="@color/btn_secondary_text"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            android:backgroundTint="@null"
+            app:backgroundTint="@null" />
+
+        <Button
+            android:id="@+id/supportBtn"
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_btn_secondary"
+            android:text="@string/alert_action_support"
+            android:textAllCaps="false"
+            android:textColor="@color/btn_secondary_text"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            android:backgroundTint="@null"
+            app:backgroundTint="@null" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -167,6 +197,49 @@
                 android:textAllCaps="false"
                 android:textColor="@color/btn_secondary_text"
                 android:textSize="16sp"
+                android:textStyle="bold"
+                android:backgroundTint="@null"
+                app:backgroundTint="@null" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/alertProceedConfirmGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:background="@drawable/bg_help_steps"
+            android:orientation="vertical"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/alertProceedConfirmTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/alert_proceed_confirmation_title"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/alertProceedConfirmBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="@string/alert_proceed_confirmation_body"
+                android:textColor="@color/text_secondary"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/confirmProceedBtn"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_btn_low_emphasis"
+                android:text="@string/alert_proceed_confirmation_confirm"
+                android:textAllCaps="false"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp"
                 android:textStyle="bold"
                 android:backgroundTint="@null"
                 app:backgroundTint="@null" />

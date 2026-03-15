@@ -40,6 +40,7 @@ object PaymentInspectionAlertPresenter {
             whyThisAlert = inspection.why_this_alert,
             nextSafeAction = inspection.next_best_action,
             primaryActionLabel = context.getString(R.string.alert_payment_ack_long),
+            useFocusedPaymentActions = true,
         )
         return true
     }
@@ -65,6 +66,7 @@ object PaymentInspectionAlertPresenter {
             whyThisAlert = context.getString(R.string.alert_payment_fallback_why),
             nextSafeAction = context.getString(R.string.alert_payment_fallback_next),
             primaryActionLabel = context.getString(R.string.alert_payment_ack_long),
+            useFocusedPaymentActions = true,
         )
         return true
     }

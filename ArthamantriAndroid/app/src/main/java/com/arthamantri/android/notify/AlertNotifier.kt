@@ -68,6 +68,7 @@ object AlertNotifier {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        useFocusedPaymentActions: Boolean = false,
     ) {
         ensureChannel(context)
         val resolvedSeverity = normalizeSeverity(severity)
@@ -85,6 +86,19 @@ object AlertNotifier {
             if (keyguardManager.isKeyguardLocked) {
                 return@post
             }
+            val alertIntent = buildAlertIntent(
+                context = context,
+                alertId = resolvedAlertId,
+                title = title,
+                primaryBody = primaryBody,
+                severity = resolvedSeverity,
+                pauseSeconds = pauseSeconds,
+                whyThisAlert = whyThisAlert,
+                nextSafeAction = nextSafeAction,
+                essentialGoalImpact = essentialGoalImpact,
+                primaryActionLabel = primaryActionLabel,
+                useFocusedPaymentActions = useFocusedPaymentActions,
+            )
 
             val overlayShown = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)) {
                 OverlayAlertWindow.show(
@@ -98,64 +112,145 @@ object AlertNotifier {
                     nextSafeAction = nextSafeAction,
                     essentialGoalImpact = essentialGoalImpact,
                     primaryActionLabel = primaryActionLabel,
+                    useFocusedPaymentActions = useFocusedPaymentActions,
                 )
             } else {
                 false
-            }
-
-            val alertIntent = Intent(context, AlertDisplayActivity::class.java).apply {
-                putExtra(AlertDisplayActivity.EXTRA_TITLE, title)
-                putExtra(AlertDisplayActivity.EXTRA_MESSAGE, primaryBody)
-                putExtra(AlertDisplayActivity.EXTRA_ALERT_ID, resolvedAlertId)
-                putExtra(AlertDisplayActivity.EXTRA_PAUSE_SECONDS, pauseSeconds)
-                putExtra(AlertDisplayActivity.EXTRA_SEVERITY, resolvedSeverity)
-                putExtra(AlertDisplayActivity.EXTRA_WHY_THIS_ALERT, whyThisAlert)
-                putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
-                putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
-                putExtra(AlertDisplayActivity.EXTRA_PRIMARY_ACTION_LABEL, primaryActionLabel)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             }
 
             if (!overlayShown) {
                 // Fallback when overlay permission is absent or blocked.
                 runCatching { context.startActivity(alertIntent) }
             }
-
-            val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            } else {
-                PendingIntent.FLAG_UPDATE_CURRENT
-            }
-            val fullScreenIntent = PendingIntent.getActivity(
-                context,
-                AppConstants.Notifications.FULL_SCREEN_INTENT_ID,
-                alertIntent,
-                pendingIntentFlags,
+            postAlertNotification(
+                context = context,
+                alertId = resolvedAlertId,
+                title = title,
+                primaryBody = primaryBody,
+                style = style,
+                alertIntent = alertIntent,
             )
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                return@post
-            }
-
-            val id = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-            val notification = NotificationCompat.Builder(context, AppConstants.Notifications.SAFETY_CHANNEL_ID)
-                .setSmallIcon(android.R.drawable.ic_dialog_alert)
-                .setContentTitle(title)
-                .setContentText(primaryBody)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(primaryBody))
-                .setPriority(style.notificationPriority)
-                .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
-                .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-                .setContentIntent(fullScreenIntent)
-                .setAutoCancel(true)
-                .setColor(ContextCompat.getColor(context, style.badgeTextColorRes))
-                .build()
-
-            NotificationManagerCompat.from(context).notify(id, notification)
         }
+    }
+
+    fun postReturnPathNotification(
+        context: Context,
+        alertId: String,
+        title: String,
+        body: String,
+        severity: String,
+        pauseSeconds: Int,
+        whyThisAlert: String,
+        nextSafeAction: String,
+        essentialGoalImpact: String,
+        primaryActionLabel: String,
+        useFocusedPaymentActions: Boolean,
+    ) {
+        ensureChannel(context)
+        val resolvedSeverity = normalizeSeverity(severity)
+        val style = styleForSeverity(resolvedSeverity)
+        val primaryBody = sanitizeBody(
+            body = body,
+            hasExplainabilitySections = whyThisAlert.isNotBlank() ||
+                nextSafeAction.isNotBlank() ||
+                essentialGoalImpact.isNotBlank(),
+        )
+        val alertIntent = buildAlertIntent(
+            context = context,
+            alertId = alertId,
+            title = title,
+            primaryBody = primaryBody,
+            severity = resolvedSeverity,
+            pauseSeconds = pauseSeconds,
+            whyThisAlert = whyThisAlert,
+            nextSafeAction = nextSafeAction,
+            essentialGoalImpact = essentialGoalImpact,
+            primaryActionLabel = primaryActionLabel,
+            useFocusedPaymentActions = useFocusedPaymentActions,
+        )
+        postAlertNotification(
+            context = context,
+            alertId = alertId,
+            title = title,
+            primaryBody = primaryBody,
+            style = style,
+            alertIntent = alertIntent,
+        )
+    }
+
+    private fun buildAlertIntent(
+        context: Context,
+        alertId: String,
+        title: String,
+        primaryBody: String,
+        severity: String,
+        pauseSeconds: Int,
+        whyThisAlert: String?,
+        nextSafeAction: String?,
+        essentialGoalImpact: String?,
+        primaryActionLabel: String?,
+        useFocusedPaymentActions: Boolean,
+    ): Intent {
+        return Intent(context, AlertDisplayActivity::class.java).apply {
+            putExtra(AlertDisplayActivity.EXTRA_TITLE, title)
+            putExtra(AlertDisplayActivity.EXTRA_MESSAGE, primaryBody)
+            putExtra(AlertDisplayActivity.EXTRA_ALERT_ID, alertId)
+            putExtra(AlertDisplayActivity.EXTRA_PAUSE_SECONDS, pauseSeconds)
+            putExtra(AlertDisplayActivity.EXTRA_SEVERITY, severity)
+            putExtra(AlertDisplayActivity.EXTRA_WHY_THIS_ALERT, whyThisAlert)
+            putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
+            putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
+            putExtra(AlertDisplayActivity.EXTRA_PRIMARY_ACTION_LABEL, primaryActionLabel)
+            putExtra(AlertDisplayActivity.EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+    }
+
+    private fun postAlertNotification(
+        context: Context,
+        alertId: String,
+        title: String,
+        primaryBody: String,
+        style: AlertVisualStyle,
+        alertIntent: Intent,
+    ) {
+        val pendingIntentFlags = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        } else {
+            PendingIntent.FLAG_UPDATE_CURRENT
+        }
+        val reopenIntent = PendingIntent.getActivity(
+            context,
+            notificationIdForAlert(alertId),
+            alertIntent,
+            pendingIntentFlags,
+        )
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+
+        val notification = NotificationCompat.Builder(context, AppConstants.Notifications.SAFETY_CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setContentTitle(title)
+            .setContentText(primaryBody)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(primaryBody))
+            .setPriority(style.notificationPriority)
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setContentIntent(reopenIntent)
+            .setAutoCancel(true)
+            .setColor(ContextCompat.getColor(context, style.badgeTextColorRes))
+            .build()
+
+        NotificationManagerCompat.from(context).notify(notificationIdForAlert(alertId), notification)
+    }
+
+    private fun notificationIdForAlert(alertId: String): Int {
+        return (alertId.hashCode() and Int.MAX_VALUE).takeIf { it != 0 } ?: AppConstants.Notifications.FULL_SCREEN_INTENT_ID
     }
 
     private fun sanitizeBody(body: String, hasExplainabilitySections: Boolean): String {

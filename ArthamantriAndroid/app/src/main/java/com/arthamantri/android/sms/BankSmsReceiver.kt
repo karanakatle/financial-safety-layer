@@ -78,6 +78,13 @@ class BankSmsReceiver : BroadcastReceiver() {
                     AppConstants.LogMessages.BANK_SMS_PROCESS_FAILED,
                     e,
                 )
+                // ADD THIS FOR TESTING: Show the overlay even if the API fails
+                AlertNotifier.show(
+                    context = context,
+                    title = "SMS Processed (Offline)",
+                    body = "Amount: ${parsed.amount}\nStatus: Network Error. Could not sync with server.",
+                    severity = "medium"
+                )
             }
         }
     }
