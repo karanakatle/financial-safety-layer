@@ -614,11 +614,11 @@ class MainActivity : AppCompatActivity() {
                 onPositive = {
                     setGuidedPermissionFlowActive(true)
                     sendAppLog("info", "permission_onboarding_prompted")
-                    val runtimePermissionsPending = !hasSmsRuntimePermissions() || !hasNotificationPermissionForOnboarding()
+                    val runtimePermissionsPending = !hasSmsRuntimePermissions() || !hasNotificationPostingPermission()
                     if (runtimePermissionsPending) {
                         requestRuntimePermissions()
                     } else {
-                        showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                        showPermissionSetupDialog(permissionStepOverride = permissionOnboardingState().nextStep())
                     }
                 },
                 onNegative = { dialogInterface ->
@@ -1230,7 +1230,7 @@ class MainActivity : AppCompatActivity() {
             smsGranted = hasSmsAccessEnabled(),
             usageGranted = hasUsageStatsPermission(),
             overlayGranted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(this) else true,
-            notificationsGranted = hasNotificationPermissionForOnboarding(),
+            notificationsGranted = hasNotificationAccessForOnboarding(),
         )
     }
 
@@ -1617,32 +1617,55 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openNotificationAccess() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!hasNotificationPostingPermission()) {
             requestNotificationPermissionIfNeeded()
             return
         }
 
-        if (NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+        val notificationsEnabled = NotificationManagerCompat.from(this).areNotificationsEnabled()
+        if (notificationsEnabled && hasNotificationListenerPermission()) {
             val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
             if (prefs.getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)) {
-                showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                showPermissionSetupDialog(permissionStepOverride = permissionOnboardingState().nextStep())
             }
             return
         }
 
         markRestoreDrawerOnReturn()
-        val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                putExtra(EXTRA_APP_PACKAGE, packageName)
+        markPendingPermissionSettingsStep(PermissionStep.NOTIFICATIONS)
+        if (!notificationsEnabled) {
+            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(EXTRA_APP_PACKAGE, packageName)
+                }
+            } else {
+                Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                    data = Uri.parse("package:$packageName")
+                }
             }
-        } else {
-            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.parse("package:$packageName")
-            }
+            startActivity(intent)
+            return
         }
-        startActivity(intent)
+
+        val listenerSettingsIntent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
+        val appDetailsIntent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.parse("package:$packageName")
+        }
+        launchSettingsIntent(listenerSettingsIntent, appDetailsIntent)
+    }
+
+    private fun hasNotificationAccessForOnboarding(): Boolean {
+        return hasNotificationPostingPermission() &&
+            NotificationManagerCompat.from(this).areNotificationsEnabled() &&
+            hasNotificationListenerPermission()
+    }
+
+    private fun hasNotificationPostingPermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
     }
 
     private fun openOverlaySettings() {
@@ -1737,10 +1760,6 @@ class MainActivity : AppCompatActivity() {
             }
 
             MonitoringStartBlocker.NONE -> Unit
-        }
-
-        if (!hasNotificationListenerPermission()) {
-            sendAppLog("info", "notification_listener_not_granted")
         }
 
         try {
@@ -2455,6 +2474,7 @@ class MainActivity : AppCompatActivity() {
         clearPendingPermissionSettingsStep()
         val nextOnboardingStep = onboardingEntryState(prefs).nextStep()
         when (pendingStep) {
+            PermissionStep.NOTIFICATIONS -> if (nextOnboardingStep != OnboardingStep.PERMISSIONS) return
             PermissionStep.USAGE -> if (nextOnboardingStep != OnboardingStep.PERMISSIONS) return
             PermissionStep.OVERLAY -> if (
                 nextOnboardingStep != OnboardingStep.PERMISSIONS &&
@@ -2464,6 +2484,20 @@ class MainActivity : AppCompatActivity() {
         }
 
         when (pendingStep) {
+            PermissionStep.NOTIFICATIONS -> {
+                when (permissionOnboardingState().nextStep()) {
+                    PermissionStep.NOTIFICATIONS -> showPermissionSetupDialog(permissionStepOverride = PermissionStep.NOTIFICATIONS)
+                    PermissionStep.USAGE -> showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                    PermissionStep.OVERLAY -> showPermissionSetupDialog(permissionStepOverride = PermissionStep.OVERLAY)
+                    PermissionStep.COMPLETE -> {
+                        syncPermissionOnboardingDone(prefs)
+                        setGuidedPermissionFlowActive(false)
+                        showMoneySetupDialog()
+                    }
+                    PermissionStep.SMS -> showPermissionSetupDialog(permissionStepOverride = PermissionStep.SMS)
+                }
+            }
+
             PermissionStep.USAGE -> {
                 if (hasUsageStatsPermission()) {
                     showPermissionSetupDialog(permissionStepOverride = PermissionStep.OVERLAY)
@@ -2532,14 +2566,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun hasNotificationPermissionForOnboarding(): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
-    }
-
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -2561,7 +2587,7 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     refreshPrimaryActionState()
                     if (allGranted && guidedFlowActive) {
-                        showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                        showPermissionSetupDialog(permissionStepOverride = permissionOnboardingState().nextStep())
                     }
                 }
             }
@@ -2572,7 +2598,7 @@ class MainActivity : AppCompatActivity() {
                 val guidedFlowActive = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
                     .getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)
                 if (granted && guidedFlowActive) {
-                    showPermissionSetupDialog(permissionStepOverride = PermissionStep.USAGE)
+                    showPermissionSetupDialog(permissionStepOverride = PermissionStep.NOTIFICATIONS)
                 }
             }
         }

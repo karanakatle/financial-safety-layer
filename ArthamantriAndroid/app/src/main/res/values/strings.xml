@@ -77,7 +77,7 @@
     <string name="dialog_perm_tracker_step_3_subtitle">Allow on-screen warnings at the right moment.</string>
     <string name="dialog_perm_tracker_step_4_title">Step 4 of 4: Money Setup Lite</string>
     <string name="dialog_perm_tracker_step_4_subtitle">Choose your profile and essential goals before monitoring starts.</string>
-    <string name="dialog_perm_tracker_item_sms_notifications">Enable SMS &amp; notifications</string>
+    <string name="dialog_perm_tracker_item_sms_notifications">Enable SMS &amp; notification access</string>
     <string name="dialog_perm_tracker_item_usage">Enable usage access</string>
     <string name="dialog_perm_tracker_item_overlay">Enable overlay access</string>
     <string name="dialog_perm_tracker_item_monitoring">Money Setup Lite</string>
@@ -224,11 +224,11 @@ Follow the system prompts to complete setup.</string>
     <string name="permission_help_sms">read money-related SMS alerts</string>
     <string name="permission_help_usage">notice when you open a payment app</string>
     <string name="permission_help_overlay">show a warning on top of the payment screen</string>
-    <string name="permission_help_notifications">keep safety alerts visible and easy to review</string>
+    <string name="permission_help_notifications">read payment-app notifications and keep safety alerts visible</string>
     <string name="permission_if_off_sms">the app cannot understand bank SMS safely</string>
     <string name="permission_if_off_usage">the app cannot notice risky payment moments in time</string>
     <string name="permission_if_off_overlay">the app cannot interrupt the screen during a risky moment</string>
-    <string name="permission_if_off_notifications">the app cannot keep alerts visible or let you review them properly</string>
+    <string name="permission_if_off_notifications">the app cannot read payment-app notifications in time for warning alerts</string>
     <string name="permission_action_sms">Allow SMS</string>
     <string name="permission_action_usage">Open Usage Access</string>
     <string name="permission_action_overlay">Open Overlay Access</string>

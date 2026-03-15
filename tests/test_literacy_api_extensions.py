@@ -179,6 +179,50 @@ def test_cashflow_guidance_uses_recent_income_context_in_next_action(tmp_path, m
     assert "recent money received" in alert["next_best_action"].lower()
 
 
+def test_reset_hard_clears_recent_income_context_and_cached_agent(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    participant_id = "reset_hard_income_p1"
+
+    income_res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": participant_id,
+            "language": "en",
+            "signal_type": "income",
+            "signal_confidence": "confirmed",
+            "amount": 4000,
+            "category": "bank_sms",
+            "note": "salary credited",
+        },
+    )
+    assert income_res.status_code == 200
+
+    reset_res = client.post(
+        "/api/literacy/reset-hard",
+        params={"participant_id": participant_id},
+        headers=_admin_headers(),
+    )
+    assert reset_res.status_code == 200
+
+    expense_res = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": participant_id,
+            "language": "en",
+            "amount": 1100,
+            "category": "upi",
+            "note": "merchant payment",
+        },
+    )
+
+    assert expense_res.status_code == 200
+    payload = expense_res.json()
+    assert payload["literacy_alerts"]
+    alert = payload["literacy_alerts"][0]
+    assert "recent money-in message" not in alert["why_this_alert"].lower()
+    assert "recent money received" not in alert["next_best_action"].lower()
+
+
 def test_cashflow_guidance_localizes_goal_aware_copy_in_hindi(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 

@@ -77,7 +77,7 @@
     <string name="dialog_perm_tracker_step_3_subtitle">ताकि सही समय पर स्क्रीन पर चेतावनी दिखाई जा सके।</string>
     <string name="dialog_perm_tracker_step_4_title">चरण 4 / 4: Money Setup Lite</string>
     <string name="dialog_perm_tracker_step_4_subtitle">मॉनिटरिंग शुरू होने से पहले अपनी प्रोफाइल और आवश्यक लक्ष्य चुनें।</string>
-    <string name="dialog_perm_tracker_item_sms_notifications">SMS और सूचनाएं चालू करें</string>
+    <string name="dialog_perm_tracker_item_sms_notifications">SMS और सूचना एक्सेस चालू करें</string>
     <string name="dialog_perm_tracker_item_usage">उपयोग-अनुमति चालू करें</string>
     <string name="dialog_perm_tracker_item_overlay">ओवरले अनुमति चालू करें</string>
     <string name="dialog_perm_tracker_item_monitoring">Money Setup Lite</string>
@@ -224,11 +224,11 @@
     <string name="permission_help_sms">पैसे से जुड़े SMS अलर्ट पढ़ने</string>
     <string name="permission_help_usage">जब आप भुगतान ऐप खोलते हैं, उसे पहचानने</string>
     <string name="permission_help_overlay">भुगतान स्क्रीन के ऊपर चेतावनी दिखाने</string>
-    <string name="permission_help_notifications">सुरक्षा अलर्ट को साफ़ और दिखाई देने योग्य रखने</string>
+    <string name="permission_help_notifications">भुगतान ऐप की सूचनाएं पढ़ने और सुरक्षा अलर्ट स्पष्ट दिखाने</string>
     <string name="permission_if_off_sms">ऐप बैंक SMS को सुरक्षित रूप से समझ नहीं पाएगा</string>
     <string name="permission_if_off_usage">ऐप जोखिम वाले भुगतान क्षण को समय पर पहचान नहीं पाएगा</string>
     <string name="permission_if_off_overlay">ऐप जोखिम के समय स्क्रीन पर रुकावट नहीं दिखा पाएगा</string>
-    <string name="permission_if_off_notifications">ऐप अलर्ट को ठीक से दिखा या बाद में समीक्षा नहीं करा पाएगा</string>
+    <string name="permission_if_off_notifications">ऐप समय पर भुगतान ऐप की सूचनाएं पढ़कर चेतावनी नहीं दिखा पाएगा</string>
     <string name="permission_action_sms">SMS अनुमति दें</string>
     <string name="permission_action_usage">उपयोग-अनुमति खोलें</string>
     <string name="permission_action_overlay">ओवरले अनुमति खोलें</string>

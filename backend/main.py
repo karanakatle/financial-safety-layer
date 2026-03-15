@@ -135,6 +135,12 @@ def _agent_for_participant(participant_id: str | None) -> FinancialAgent:
         return agent
 
 
+def _clear_cached_agent(participant_id: str | None) -> None:
+    normalized = _normalized_participant_id(participant_id)
+    with _participant_agents_lock:
+        _participant_agents.pop(normalized, None)
+
+
 cors_allowed_origins, cors_allow_credentials = _load_cors_settings()
 
 app = FastAPI(title="Arthamantri Prototype", version="0.1.0")
@@ -888,6 +894,7 @@ def literacy_storage_health(request: Request) -> dict:
 def literacy_reset(request: Request, participant_id: str = "global_user") -> dict:
     require_pilot_admin(request)
     pilot_storage.reset_literacy_state(participant_id)
+    _clear_cached_agent(participant_id)
     monitor = build_literacy_monitor(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
@@ -905,6 +912,7 @@ def literacy_reset(request: Request, participant_id: str = "global_user") -> dic
 def literacy_reset_hard(request: Request, participant_id: str = "global_user") -> dict:
     require_pilot_admin(request)
     pilot_storage.reset_literacy_profile(participant_id)
+    _clear_cached_agent(participant_id)
     monitor = build_literacy_monitor(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
