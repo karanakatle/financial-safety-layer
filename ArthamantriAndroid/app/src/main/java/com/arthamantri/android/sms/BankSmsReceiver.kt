@@ -13,6 +13,7 @@ import com.arthamantri.android.repo.LiteracyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.util.UUID
 
 class BankSmsReceiver : BroadcastReceiver() {
@@ -57,6 +58,7 @@ class BankSmsReceiver : BroadcastReceiver() {
                     amount = parsed.amount,
                     category = parsed.category,
                     note = parsed.note,
+                    timestamp = Instant.ofEpochMilli(messages[0].timestampMillis).toString(),
                 )
                 Log.i(
                     AppConstants.LogTags.BANK_SMS_RECEIVER,

@@ -41,6 +41,7 @@ object LiteracyRepository {
         amount: Double?,
         category: String,
         note: String,
+        timestamp: String? = null,
     ): SmsSendResult {
         val participantId = resolveParticipantId(context)
         val language = resolveLanguage(context)
@@ -54,6 +55,7 @@ object LiteracyRepository {
                 amount = amount,
                 category = category,
                 note = note,
+                timestamp = timestamp,
             )
         )
         flushQueuedTelemetry(context)

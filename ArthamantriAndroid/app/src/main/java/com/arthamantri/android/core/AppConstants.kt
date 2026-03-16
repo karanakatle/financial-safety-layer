@@ -176,6 +176,12 @@ object AppConstants {
             "debited", "debit", "spent", "upi", "paid", "withdrawn", "transaction",
         )
 
+        val MESSAGING_APP_PACKAGES = setOf(
+            "com.google.android.apps.messaging",
+            "com.android.mms",
+            "com.samsung.android.messaging",
+        )
+
         val SMS_DEBIT_CONFIRMATION_MARKERS = listOf(
             "via upi", "from a/c", "from ac", "from account", "account ending", "card ending",
             "atm", "imps", "neft", "rtgs", "avl bal", "available bal", "utr", "txn id", "ref no",

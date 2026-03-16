@@ -25,6 +25,13 @@ class TransactionNotificationListenerService : NotificationListenerService() {
         }
 
         val pkg = sbn.packageName ?: return
+        if (AppConstants.Parsing.MESSAGING_APP_PACKAGES.contains(pkg)) {
+            Log.i(
+                AppConstants.LogTags.TXN_NOTIFICATION_LISTENER,
+                "Skipping messaging-app notification to avoid duplicate SMS ingestion: $pkg",
+            )
+            return
+        }
         val extras = sbn.notification.extras
         val title = extras.getCharSequence(AppConstants.NotificationExtras.TITLE)?.toString().orEmpty()
         val text = extras.getCharSequence(AppConstants.NotificationExtras.TEXT)?.toString().orEmpty()
@@ -99,6 +106,7 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                     amount = parsed.amount,
                     category = category,
                     note = "${AppConstants.Domain.NOTE_NOTIFICATION_PREFIX} $pkg",
+                    timestamp = Instant.ofEpochMilli(sbn.postTime).toString(),
                 )
 
                 result.alerts.forEach { alert ->

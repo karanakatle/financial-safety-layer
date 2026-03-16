@@ -223,6 +223,56 @@ def test_reset_hard_clears_recent_income_context_and_cached_agent(tmp_path, monk
     assert "recent money received" not in alert["next_best_action"].lower()
 
 
+def test_sms_ingest_deduplicates_cross_source_duplicate_within_time_window(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    participant_id = "cross_source_dedupe_p1"
+
+    first = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": participant_id,
+            "language": "en",
+            "amount": 4000,
+            "category": "upi",
+            "note": "SMS from +919999999999",
+            "timestamp": "2026-03-16T04:16:28.952152Z",
+        },
+    )
+    assert first.status_code == 200
+    assert first.json()["deduplicated"] is False
+
+    second = client.post(
+        "/api/literacy/sms-ingest",
+        json={
+            "participant_id": participant_id,
+            "language": "en",
+            "amount": 4000,
+            "category": "upi",
+            "note": "Notification from com.google.android.apps.messaging",
+            "timestamp": "2026-03-16T04:16:30.138184Z",
+        },
+    )
+    assert second.status_code == 200
+    second_json = second.json()
+    assert second_json["deduplicated"] is True
+    assert second_json["literacy_alerts"] == []
+
+    trace = client.get(
+        "/api/literacy/debug-trace",
+        params={"participant_id": participant_id, "limit": 20},
+        headers=_admin_headers(),
+    )
+    assert trace.status_code == 200
+    trace_json = trace.json()
+
+    ingest_events = [
+        event for event in trace_json["recent_literacy_events"]
+        if event["event_type"] == "sms_ingest_event"
+    ]
+    assert len(ingest_events) == 1
+    assert ingest_events[0]["note"] == "SMS from +919999999999"
+
+
 def test_cashflow_guidance_localizes_goal_aware_copy_in_hindi(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 

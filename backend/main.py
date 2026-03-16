@@ -114,6 +114,61 @@ def _normalized_participant_id(value: str | None) -> str:
     return normalized or LEGACY_DEFAULT_PARTICIPANT_ID
 
 
+def _coerce_iso_datetime(value: str | None) -> datetime:
+    if not value:
+        return datetime.utcnow()
+    return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _sms_signal_transport_kind(note: str | None) -> str:
+    normalized = (note or "").strip().lower()
+    if normalized.startswith("sms from"):
+        return "sms"
+    if normalized.startswith("notification from"):
+        return "notification"
+    return "unknown"
+
+
+def _is_recent_cross_source_sms_duplicate(
+    *,
+    participant_id: str,
+    signal_type: str,
+    amount: float | None,
+    category: str | None,
+    note: str | None,
+    timestamp: str | None,
+) -> bool:
+    if signal_type not in {"expense", "income"} or amount is None:
+        return False
+
+    incoming_transport = _sms_signal_transport_kind(note)
+    if incoming_transport == "unknown":
+        return False
+
+    event_dt = _coerce_iso_datetime(timestamp)
+    for recent in pilot_storage.recent_literacy_events(participant_id, limit=12):
+        if recent.get("event_type") != "sms_ingest_event":
+            continue
+        if (recent.get("signal_type") or "").strip() != signal_type:
+            continue
+        if (recent.get("category") or "").strip() != (category or "").strip():
+            continue
+
+        recent_amount = recent.get("amount")
+        if recent_amount is None or round(float(recent_amount), 2) != round(float(amount), 2):
+            continue
+
+        prior_transport = _sms_signal_transport_kind(recent.get("note"))
+        if prior_transport == incoming_transport or prior_transport == "unknown":
+            continue
+
+        recent_dt = _coerce_iso_datetime(recent.get("timestamp"))
+        if abs((event_dt - recent_dt).total_seconds()) <= 45:
+            return True
+
+    return False
+
+
 def _load_cors_settings() -> tuple[list[str], bool]:
     raw = os.getenv("CORS_ALLOWED_ORIGINS", "")
     origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
@@ -442,16 +497,6 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
     )
     participant_agent = _agent_for_participant(participant_id)
     transaction_result = None
-    if signal_type in {"expense", "income"} and amount is not None:
-        event = {
-            "timestamp": event_timestamp,
-            "type": signal_type,
-            "amount": amount,
-            "category": payload.category,
-            "note": payload.note or f"Bank SMS detected {signal_type}",
-        }
-        transaction_result = participant_agent.process_event(event)
-
     monitor = build_literacy_monitor(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
@@ -463,6 +508,39 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
         ),
     )
     profile = pilot_storage.get_essential_goal_profile(participant_id)
+    if _is_recent_cross_source_sms_duplicate(
+        participant_id=participant_id,
+        signal_type=signal_type,
+        amount=amount,
+        category=payload.category,
+        note=payload.note,
+        timestamp=event_timestamp,
+    ):
+        return {
+            "transaction_result": None,
+            "literacy_alerts": [],
+            "literacy_state": monitor.status(),
+            "essential_goal_profile": effective_goal_profile(profile),
+            "essential_goal_envelope": essential_goal_envelope(
+                profile,
+                monitor.status().get("daily_safe_limit", 0.0),
+                _normalized_cohort,
+            ),
+            "participant_id": participant_id,
+            "language": language,
+            "experiment_variant": variant,
+            "policy_recalibrated": False,
+            "deduplicated": True,
+        }
+    if signal_type in {"expense", "income"} and amount is not None:
+        event = {
+            "timestamp": event_timestamp,
+            "type": signal_type,
+            "amount": amount,
+            "category": payload.category,
+            "note": payload.note or f"Bank SMS detected {signal_type}",
+        }
+        transaction_result = participant_agent.process_event(event)
     current_daily_spend = monitor.daily_spend
     projected_daily_spend = current_daily_spend + amount if signal_type == "expense" and amount is not None else current_daily_spend
     event_type = "sms_ingest_event" if signal_type in {"expense", "income"} else "sms_partial_context"
@@ -582,6 +660,7 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
         "language": language,
         "experiment_variant": variant,
         "policy_recalibrated": policy_recalibrated,
+        "deduplicated": False,
     }
 
 
