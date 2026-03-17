@@ -1,4 +1,5 @@
 > 🧠 Agentic AI System for Financial Safety • 📱 Android + ⚡ FastAPI • 🔍 Explainable Interventions • 📊 Research-Driven
+
 ![Platform](https://img.shields.io/badge/Platform-Android-green)
 ![Backend](https://img.shields.io/badge/Backend-FastAPI-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-Event--Driven-orange)
