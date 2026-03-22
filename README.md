@@ -261,6 +261,91 @@ Each alert includes:
 
 ---
 
+## 🔭 Future Scope
+
+### 1. Problem-Solution Fit Status
+
+The project is already solving a strong and differentiated slice of the problem:
+
+- helping low-confidence users understand risky payment and account-access moments
+- interpreting phone-native financial signals in plain language
+- giving explainable, decision-time guidance instead of only passive tracking
+
+Current status:
+
+- **strong on financial safety and scam/confusion reduction**
+- **emerging on day-to-day financial confidence and affordability guidance**
+- **not yet complete on long-term personalized money coaching**
+
+In short, the platform has moved beyond a pure prototype idea and now has a meaningful problem-solution wedge, but the broader financial-confidence layer is still expanding.
+
+### 2. What Is Already Solved Well
+
+The current and planned implementation already covers the core protective layer:
+
+- risky payment interpretation
+- account-access risk interpretation
+- setup-aware suppression to avoid noisy onboarding warnings
+- link and domain intelligence
+- sequence-aware risk scoring
+- explainable interventions with safer next actions
+- telemetry, review traces, and ML-readiness foundations
+
+This means the product is already strong at solving:
+
+- `fear of making a costly digital-finance mistake`
+- `fear of being tricked by confusing payment or access flows`
+- `lack of plain-language interpretation at the moment of action`
+
+### 3. What Is Partially Solved
+
+The broader confidence and day-to-day guidance layer is only partially solved so far.
+
+Partially solved areas include:
+
+- essential-goal prioritization
+- self-reported balance and end-of-day savings nudges
+- personalized expense-pressure guidance
+- confidence-preserving cashflow guidance under partial context
+
+These areas are important because real financial confidence is not only about fraud prevention. It also requires help with:
+
+- knowing whether a spend is okay
+- understanding burden vs safer limits
+- protecting essential priorities
+- building small saving habits without shame or pressure
+
+### 4. What Must Be Built Before Pilot Value Is Undeniable
+
+To make pilot value unmistakable, the following layers should be implemented and validated:
+
+- deterministic personalized expense-pressure guidance using cohort, balance, income bucket, essential items, and recent expense pattern
+- a `7-14 day` learning period before stronger real-time personalization
+- notification-first personalized guidance for routine cases
+- overlay personalization only for stronger high-pressure moments after learning
+- self-reported balance plus end-of-day savings nudges with honest confidence bounds
+- continued collection of reviewed live pilot data to improve evaluation and later intelligent guidance
+
+### 5. Later Intelligent Expansion
+
+The later-stage roadmap is to add an intelligent layer, but only after sufficient real data exists.
+
+That later layer can incorporate:
+
+- expense-pattern discovery
+- location and environmental context
+- market and inflation signals
+- cohort-specific and household-specific tuning
+- ML or LLM assistance for recommendation quality
+
+Important product principle:
+
+- deterministic, explainable, notification-first guidance comes first
+- intelligent personalization is additive later
+- high-trust overlays remain reserved for stronger, high-value moments
+
+---
+
 ## 🛠️ Tech Stack
 
 ### Frontend
