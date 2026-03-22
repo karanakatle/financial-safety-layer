@@ -4,6 +4,7 @@ import android.content.Context
 import android.provider.Settings
 import com.arthamantri.android.api.ApiClient
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.model.LiteracyAlert
 import com.arthamantri.android.model.LiteracyAlertFeedbackRequest
 import com.arthamantri.android.model.LiteracyState
@@ -98,11 +99,17 @@ object LiteracyRepository {
         rawText: String = "",
         source: String = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
         setupState: String? = PaymentAppSetupStateTracker.currentSnapshot(context).state.wireValue,
+        linkClicked: Boolean? = null,
+        linkScheme: String? = null,
+        urlHost: String? = null,
+        resolvedDomain: String? = null,
+        domainClass: String? = null,
         timestamp: String? = null,
     ): UpiRequestInspectResponse {
         val participantId = resolveParticipantId(context)
         val language = resolveLanguage(context)
         val api = ApiClient.literacyApi(context)
+        val recentLinkContext = RecentLinkContextTracker.currentSnapshot(context)?.signals
         val response = api.upiRequestInspect(
             UpiRequestInspectRequest(
                 participant_id = participantId,
@@ -115,6 +122,11 @@ object LiteracyRepository {
                 raw_text = rawText,
                 source = source,
                 setup_state = setupState,
+                link_clicked = linkClicked ?: recentLinkContext?.linkClicked,
+                link_scheme = linkScheme ?: recentLinkContext?.linkScheme,
+                url_host = urlHost ?: recentLinkContext?.urlHost,
+                resolved_domain = resolvedDomain ?: recentLinkContext?.resolvedDomain,
+                domain_class = domainClass,
                 timestamp = timestamp,
             )
         )
@@ -208,6 +220,11 @@ object LiteracyRepository {
         hasUpiHandle: Boolean? = null,
         hasUpiDeepLink: Boolean? = null,
         hasUrl: Boolean? = null,
+        linkClicked: Boolean? = null,
+        linkScheme: String? = null,
+        urlHost: String? = null,
+        resolvedDomain: String? = null,
+        domainClass: String? = null,
         metadata: Map<String, String> = emptyMap(),
     ): DeliveryResult {
         val event = PilotContextEvent(
@@ -224,6 +241,11 @@ object LiteracyRepository {
             has_upi_handle = hasUpiHandle,
             has_upi_deeplink = hasUpiDeepLink,
             has_url = hasUrl,
+            link_clicked = linkClicked,
+            link_scheme = linkScheme,
+            url_host = urlHost,
+            resolved_domain = resolvedDomain,
+            domain_class = domainClass,
             metadata = metadata,
         )
         val summary = buildString {

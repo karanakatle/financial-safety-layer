@@ -75,6 +75,12 @@ class UPIRequestInspectIn(BaseModel):
     raw_text: str = ""
     source: str = "android"
     setup_state: Optional[str] = None
+    link_clicked: Optional[bool] = None
+    link_scheme: Optional[str] = None
+    url_host: Optional[str] = None
+    resolved_domain: Optional[str] = None
+    domain_class: Optional[str] = None
+    correlation_id: Optional[str] = None
     timestamp: Optional[str] = None
 
 
@@ -82,11 +88,20 @@ class UPIRequestInspectOut(BaseModel):
     scenario: str
     classification: str = "payment_outflow_risk"
     should_warn: bool = True
+    alert_family: str = "payment"
+    title: str = ""
     risk_level: Literal["low", "medium", "high", "critical"]
     message: str
     why_this_alert: str
     next_best_action: str
+    primary_action_label: str = ""
     actions: list[str] = Field(default_factory=list)
+    action_labels: list[str] = Field(default_factory=list)
+    proceed_confirmation_label: str = ""
+    sequence_score: float = 0.0
+    sequence_window: str = ""
+    sequence_summary: str = ""
+    sequence_trace: list[dict] = Field(default_factory=list)
     alert_id: str
 
 
@@ -132,6 +147,49 @@ class PilotAppLogIn(BaseModel):
     context_event: Optional["PilotContextEventIn"] = None
 
 
+class PilotEntityReviewIn(BaseModel):
+    entity_key: str
+    entity_kind: str = "domain"
+    trust_state: Literal[
+        "official_verified",
+        "trusted_by_observation",
+        "financial_unknown",
+        "under_review",
+        "suspicious",
+        "blocked",
+    ]
+    review_status: str = "manual_override"
+    note: str = ""
+    timestamp: Optional[str] = None
+
+
+class PilotReviewSampleUpsertIn(BaseModel):
+    sample_id: Optional[str] = None
+    participant_id: Optional[str] = None
+    correlation_id: Optional[str] = None
+    source_tier: Literal["bootstrap_public", "live_reviewed_ground_truth"]
+    source_origin: str = "review_queue"
+    label: Optional[Literal["ignore_benign", "payment_outflow_risk", "account_access_risk", "uncertain"]] = None
+    review_status: Literal[
+        "queued",
+        "in_review",
+        "needs_second_review",
+        "approved_ground_truth",
+        "rejected",
+        "bootstrap_only",
+    ] = "queued"
+    reviewer_id: str = ""
+    reviewed_at: Optional[str] = None
+    event_trace: list[dict] = Field(default_factory=list)
+    sequence_trace: list[dict] = Field(default_factory=list)
+    entity_context: dict = Field(default_factory=dict)
+    alert_family: str = ""
+    heuristic_classification: str = ""
+    language: Optional[str] = None
+    cohort: Optional[str] = None
+    note: str = ""
+
+
 class PilotContextEventIn(BaseModel):
     event_type: str
     source_app: Optional[str] = None
@@ -146,6 +204,11 @@ class PilotContextEventIn(BaseModel):
     has_upi_handle: Optional[bool] = None
     has_upi_deeplink: Optional[bool] = None
     has_url: Optional[bool] = None
+    link_clicked: Optional[bool] = None
+    link_scheme: Optional[str] = None
+    url_host: Optional[str] = None
+    resolved_domain: Optional[str] = None
+    domain_class: Optional[str] = None
     metadata: dict = Field(default_factory=dict)
 
 

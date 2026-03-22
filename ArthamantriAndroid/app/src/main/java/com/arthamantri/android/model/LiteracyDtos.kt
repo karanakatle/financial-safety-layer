@@ -32,6 +32,11 @@ data class UpiRequestInspectRequest(
     val raw_text: String = "",
     val source: String = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
     val setup_state: String? = null,
+    val link_clicked: Boolean? = null,
+    val link_scheme: String? = null,
+    val url_host: String? = null,
+    val resolved_domain: String? = null,
+    val domain_class: String? = null,
     val timestamp: String? = null,
 )
 
@@ -39,11 +44,16 @@ data class UpiRequestInspectResponse(
     val scenario: String? = null,
     val classification: String? = null,
     val should_warn: Boolean = true,
+    val alert_family: String? = null,
+    val title: String? = null,
     val risk_level: String? = null,
     val message: String? = null,
     val why_this_alert: String? = null,
     val next_best_action: String? = null,
+    val primary_action_label: String? = null,
     val actions: List<String> = emptyList(),
+    val action_labels: List<String> = emptyList(),
+    val proceed_confirmation_label: String? = null,
     val alert_id: String? = null,
 )
 
@@ -164,6 +174,11 @@ data class PilotContextEvent(
     val has_upi_handle: Boolean? = null,
     val has_upi_deeplink: Boolean? = null,
     val has_url: Boolean? = null,
+    val link_clicked: Boolean? = null,
+    val link_scheme: String? = null,
+    val url_host: String? = null,
+    val resolved_domain: String? = null,
+    val domain_class: String? = null,
     val metadata: Map<String, String> = emptyMap(),
 )
 

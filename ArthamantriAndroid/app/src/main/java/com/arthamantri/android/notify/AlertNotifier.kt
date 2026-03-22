@@ -69,6 +69,8 @@ object AlertNotifier {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        focusedActionLabels: List<String>? = null,
+        proceedConfirmationLabel: String? = null,
         alertFamily: String? = null,
         showUsefulnessFeedback: Boolean = false,
         useFocusedPaymentActions: Boolean = false,
@@ -123,6 +125,8 @@ object AlertNotifier {
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
                 primaryActionLabel = primaryActionLabel,
+                focusedActionLabels = focusedActionLabels,
+                proceedConfirmationLabel = proceedConfirmationLabel,
                 alertFamily = alertFamily,
                 showUsefulnessFeedback = showUsefulnessFeedback,
                 useFocusedPaymentActions = useFocusedPaymentActions,
@@ -150,6 +154,8 @@ object AlertNotifier {
                     nextSafeAction = nextSafeAction,
                     essentialGoalImpact = essentialGoalImpact,
                     primaryActionLabel = primaryActionLabel,
+                    focusedActionLabels = focusedActionLabels,
+                    proceedConfirmationLabel = proceedConfirmationLabel,
                     alertFamily = alertFamily,
                     showUsefulnessFeedback = showUsefulnessFeedback,
                     useFocusedPaymentActions = useFocusedPaymentActions,
@@ -207,6 +213,8 @@ object AlertNotifier {
         nextSafeAction: String,
         essentialGoalImpact: String,
         primaryActionLabel: String,
+        focusedActionLabels: List<String>? = null,
+        proceedConfirmationLabel: String? = null,
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
@@ -231,6 +239,8 @@ object AlertNotifier {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
             primaryActionLabel = primaryActionLabel,
+            focusedActionLabels = focusedActionLabels,
+            proceedConfirmationLabel = proceedConfirmationLabel,
             alertFamily = alertFamily,
             showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
@@ -256,6 +266,8 @@ object AlertNotifier {
         nextSafeAction: String?,
         essentialGoalImpact: String?,
         primaryActionLabel: String?,
+        focusedActionLabels: List<String>?,
+        proceedConfirmationLabel: String?,
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
@@ -270,6 +282,11 @@ object AlertNotifier {
             putExtra(AlertDisplayActivity.EXTRA_NEXT_SAFE_ACTION, nextSafeAction)
             putExtra(AlertDisplayActivity.EXTRA_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
             putExtra(AlertDisplayActivity.EXTRA_PRIMARY_ACTION_LABEL, primaryActionLabel)
+            putStringArrayListExtra(
+                AlertDisplayActivity.EXTRA_FOCUSED_ACTION_LABELS,
+                ArrayList(focusedActionLabels ?: emptyList()),
+            )
+            putExtra(AlertDisplayActivity.EXTRA_PROCEED_CONFIRMATION_LABEL, proceedConfirmationLabel)
             putExtra(AlertDisplayActivity.EXTRA_ALERT_FAMILY, alertFamily)
             putExtra(AlertDisplayActivity.EXTRA_SHOW_USEFULNESS_FEEDBACK, showUsefulnessFeedback)
             putExtra(AlertDisplayActivity.EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)

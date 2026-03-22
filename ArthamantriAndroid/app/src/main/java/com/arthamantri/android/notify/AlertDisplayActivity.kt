@@ -30,6 +30,8 @@ class AlertDisplayActivity : AppCompatActivity() {
     private lateinit var nextSafeAction: String
     private lateinit var essentialGoalImpact: String
     private lateinit var primaryActionLabel: String
+    private var focusedActionLabels: List<String> = emptyList()
+    private lateinit var proceedConfirmationLabel: String
     private lateinit var reportMessage: String
 
     private lateinit var dismissBtn: Button
@@ -138,6 +140,8 @@ class AlertDisplayActivity : AppCompatActivity() {
         nextSafeAction = intent.getStringExtra(EXTRA_NEXT_SAFE_ACTION).orEmpty()
         essentialGoalImpact = intent.getStringExtra(EXTRA_ESSENTIAL_GOAL_IMPACT).orEmpty()
         primaryActionLabel = intent.getStringExtra(EXTRA_PRIMARY_ACTION_LABEL).orEmpty()
+        focusedActionLabels = intent.getStringArrayListExtra(EXTRA_FOCUSED_ACTION_LABELS)?.toList() ?: emptyList()
+        proceedConfirmationLabel = intent.getStringExtra(EXTRA_PROCEED_CONFIRMATION_LABEL).orEmpty()
         showUsefulnessFeedback = intent.getBooleanExtra(EXTRA_SHOW_USEFULNESS_FEEDBACK, false)
         useFocusedPaymentActions = intent.getBooleanExtra(EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, false)
         reportMessage = buildReportMessage(alertBody, whyThisAlert, nextSafeAction, essentialGoalImpact)
@@ -254,9 +258,23 @@ class AlertDisplayActivity : AppCompatActivity() {
     private fun configureActionMode() {
         proceedConfirmGroup.visibility = View.GONE
         if (useFocusedPaymentActions) {
-            dismissBtn.text = getString(R.string.alert_action_pause)
-            usefulBtn.text = getString(R.string.alert_action_decline)
-            notUsefulBtn.text = getString(R.string.alert_action_proceed)
+            val defaultLabels = if (alertFamily == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+                listOf(
+                    getString(R.string.alert_action_pause),
+                    getString(R.string.alert_action_protect_account),
+                    getString(R.string.alert_action_continue_anyway),
+                )
+            } else {
+                listOf(
+                    getString(R.string.alert_action_pause),
+                    getString(R.string.alert_action_decline),
+                    getString(R.string.alert_action_proceed),
+                )
+            }
+            val resolvedLabels = if (focusedActionLabels.size >= 3) focusedActionLabels else defaultLabels
+            dismissBtn.text = resolvedLabels[0]
+            usefulBtn.text = resolvedLabels[1]
+            notUsefulBtn.text = resolvedLabels[2]
             usefulnessHint.visibility = View.GONE
             feedbackRow.visibility = View.VISIBLE
             trustedPersonBtn.visibility = View.VISIBLE
@@ -265,7 +283,15 @@ class AlertDisplayActivity : AppCompatActivity() {
             supportBtn.text = getString(R.string.alert_action_support)
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_low_emphasis)
             notUsefulBtn.setTextColor(ContextCompat.getColor(this, R.color.text_secondary))
-            confirmProceedBtn.text = getString(R.string.alert_proceed_confirmation_confirm)
+            confirmProceedBtn.text = proceedConfirmationLabel.ifBlank {
+                getString(
+                    if (alertFamily == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+                        R.string.alert_access_proceed_confirmation_confirm
+                    } else {
+                        R.string.alert_proceed_confirmation_confirm
+                    }
+                )
+            }
         } else {
             trustedPersonBtn.visibility = View.GONE
             supportBtn.visibility = View.GONE
@@ -326,6 +352,8 @@ class AlertDisplayActivity : AppCompatActivity() {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
             primaryActionLabel = primaryActionLabel,
+            focusedActionLabels = focusedActionLabels,
+            proceedConfirmationLabel = proceedConfirmationLabel,
             useFocusedPaymentActions = useFocusedPaymentActions,
         )
 
@@ -372,6 +400,8 @@ class AlertDisplayActivity : AppCompatActivity() {
             nextSafeAction = nextSafeAction,
             essentialGoalImpact = essentialGoalImpact,
             primaryActionLabel = primaryActionLabel,
+            focusedActionLabels = focusedActionLabels,
+            proceedConfirmationLabel = proceedConfirmationLabel,
             alertFamily = alertFamily,
             showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
@@ -453,6 +483,8 @@ class AlertDisplayActivity : AppCompatActivity() {
         const val EXTRA_NEXT_SAFE_ACTION = AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION
         const val EXTRA_ESSENTIAL_GOAL_IMPACT = AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT
         const val EXTRA_PRIMARY_ACTION_LABEL = AppConstants.IntentExtras.ALERT_PRIMARY_ACTION_LABEL
+        const val EXTRA_FOCUSED_ACTION_LABELS = AppConstants.IntentExtras.ALERT_FOCUSED_ACTION_LABELS
+        const val EXTRA_PROCEED_CONFIRMATION_LABEL = AppConstants.IntentExtras.ALERT_PROCEED_CONFIRMATION_LABEL
         const val EXTRA_SHOW_USEFULNESS_FEEDBACK = AppConstants.IntentExtras.ALERT_SHOW_USEFULNESS_FEEDBACK
         const val EXTRA_USE_FOCUSED_PAYMENT_ACTIONS = AppConstants.IntentExtras.ALERT_USE_FOCUSED_PAYMENT_ACTIONS
     }

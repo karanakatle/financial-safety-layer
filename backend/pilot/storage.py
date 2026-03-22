@@ -77,9 +77,112 @@ class PilotStorage:
                     has_upi_handle INTEGER,
                     has_upi_deeplink INTEGER,
                     has_url INTEGER,
+                    link_clicked INTEGER,
+                    link_scheme TEXT,
+                    url_host TEXT,
+                    resolved_domain TEXT,
+                    domain_class TEXT,
                     metadata_json TEXT NOT NULL DEFAULT '{}',
                     language TEXT NOT NULL,
                     timestamp TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS review_samples (
+                    sample_id TEXT PRIMARY KEY,
+                    participant_id TEXT,
+                    correlation_id TEXT,
+                    source_tier TEXT NOT NULL,
+                    source_origin TEXT NOT NULL,
+                    label TEXT,
+                    review_status TEXT NOT NULL,
+                    reviewer_id TEXT,
+                    reviewed_at TEXT,
+                    alert_family TEXT,
+                    heuristic_classification TEXT,
+                    language TEXT,
+                    cohort TEXT,
+                    note TEXT NOT NULL DEFAULT '',
+                    event_trace_json TEXT NOT NULL DEFAULT '[]',
+                    sequence_trace_json TEXT NOT NULL DEFAULT '[]',
+                    entity_context_json TEXT NOT NULL DEFAULT '{}',
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS entity_registry (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_key TEXT NOT NULL,
+                    entity_kind TEXT NOT NULL,
+                    entity_type TEXT NOT NULL,
+                    trust_state TEXT NOT NULL,
+                    trust_score REAL NOT NULL DEFAULT 0,
+                    review_status TEXT NOT NULL DEFAULT 'none',
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    benign_count INTEGER NOT NULL DEFAULT 0,
+                    suspicious_count INTEGER NOT NULL DEFAULT 0,
+                    user_safe_feedback_count INTEGER NOT NULL DEFAULT 0,
+                    user_suspicious_feedback_count INTEGER NOT NULL DEFAULT 0,
+                    account_access_risk_count INTEGER NOT NULL DEFAULT 0,
+                    payment_risk_count INTEGER NOT NULL DEFAULT 0,
+                    evidence_json TEXT NOT NULL DEFAULT '{}',
+                    UNIQUE(entity_key, entity_kind)
+                );
+
+                CREATE TABLE IF NOT EXISTS entity_reputation (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_key TEXT NOT NULL,
+                    entity_kind TEXT NOT NULL,
+                    reputation_score REAL NOT NULL DEFAULT 0,
+                    unique_participant_count INTEGER NOT NULL DEFAULT 0,
+                    suspicious_feedback_count INTEGER NOT NULL DEFAULT 0,
+                    safe_feedback_count INTEGER NOT NULL DEFAULT 0,
+                    account_access_risk_count INTEGER NOT NULL DEFAULT 0,
+                    payment_risk_count INTEGER NOT NULL DEFAULT 0,
+                    manual_block_count INTEGER NOT NULL DEFAULT 0,
+                    manual_safe_count INTEGER NOT NULL DEFAULT 0,
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    evidence_json TEXT NOT NULL DEFAULT '{}',
+                    UNIQUE(entity_key, entity_kind)
+                );
+
+                CREATE TABLE IF NOT EXISTS entity_reputation_participants (
+                    entity_key TEXT NOT NULL,
+                    entity_kind TEXT NOT NULL,
+                    participant_id TEXT NOT NULL,
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    PRIMARY KEY (entity_key, entity_kind, participant_id)
+                );
+
+                CREATE TABLE IF NOT EXISTS entity_cohort_reputation (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_key TEXT NOT NULL,
+                    entity_kind TEXT NOT NULL,
+                    cohort TEXT NOT NULL,
+                    reputation_score REAL NOT NULL DEFAULT 0,
+                    unique_participant_count INTEGER NOT NULL DEFAULT 0,
+                    suspicious_feedback_count INTEGER NOT NULL DEFAULT 0,
+                    safe_feedback_count INTEGER NOT NULL DEFAULT 0,
+                    account_access_risk_count INTEGER NOT NULL DEFAULT 0,
+                    payment_risk_count INTEGER NOT NULL DEFAULT 0,
+                    manual_block_count INTEGER NOT NULL DEFAULT 0,
+                    manual_safe_count INTEGER NOT NULL DEFAULT 0,
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    evidence_json TEXT NOT NULL DEFAULT '{}',
+                    UNIQUE(entity_key, entity_kind, cohort)
+                );
+
+                CREATE TABLE IF NOT EXISTS entity_cohort_reputation_participants (
+                    entity_key TEXT NOT NULL,
+                    entity_kind TEXT NOT NULL,
+                    cohort TEXT NOT NULL,
+                    participant_id TEXT NOT NULL,
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    PRIMARY KEY (entity_key, entity_kind, cohort, participant_id)
                 );
 
                 CREATE TABLE IF NOT EXISTS literacy_state (
@@ -274,6 +377,11 @@ class PilotStorage:
             self._ensure_column(conn, "app_logs", "has_upi_handle INTEGER")
             self._ensure_column(conn, "app_logs", "has_upi_deeplink INTEGER")
             self._ensure_column(conn, "app_logs", "has_url INTEGER")
+            self._ensure_column(conn, "app_logs", "link_clicked INTEGER")
+            self._ensure_column(conn, "app_logs", "link_scheme TEXT")
+            self._ensure_column(conn, "app_logs", "url_host TEXT")
+            self._ensure_column(conn, "app_logs", "resolved_domain TEXT")
+            self._ensure_column(conn, "app_logs", "domain_class TEXT")
             self._ensure_column(conn, "app_logs", "metadata_json TEXT NOT NULL DEFAULT '{}'")
             self._ensure_column(conn, "alert_feedback", "event_id TEXT")
             self._ensure_column(conn, "unified_telemetry", "event_id TEXT")
@@ -301,6 +409,15 @@ class PilotStorage:
             return {}
         return parsed if isinstance(parsed, dict) else {}
 
+    def _parse_json_list(self, value: str | None) -> list:
+        if not value:
+            return []
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return []
+        return parsed if isinstance(parsed, list) else []
+
     def _ensure_column(self, conn: sqlite3.Connection, table: str, column_def: str) -> None:
         column_name = column_def.split()[0]
         rows = conn.execute(f"PRAGMA table_info({table})").fetchall()
@@ -312,10 +429,17 @@ class PilotStorage:
     def _parse_app_log_row(self, row: sqlite3.Row) -> dict:
         data = dict(row)
         data["metadata"] = self._parse_json_object(data.pop("metadata_json", None))
-        for key in ("has_otp", "has_upi_handle", "has_upi_deeplink", "has_url"):
+        for key in ("has_otp", "has_upi_handle", "has_upi_deeplink", "has_url", "link_clicked"):
             value = data.get(key)
             if value is not None:
                 data[key] = bool(value)
+        return data
+
+    def _parse_review_sample_row(self, row: sqlite3.Row) -> dict:
+        data = dict(row)
+        data["event_trace"] = self._parse_json_list(data.pop("event_trace_json", None))
+        data["sequence_trace"] = self._parse_json_list(data.pop("sequence_trace_json", None))
+        data["entity_context"] = self._parse_json_object(data.pop("entity_context_json", None))
         return data
 
     def recent_app_logs(
@@ -326,6 +450,7 @@ class PilotStorage:
         event_type: str | None = None,
         correlation_id: str | None = None,
         classification: str | None = None,
+        domain_class: str | None = None,
         context_only: bool = False,
     ) -> list[dict]:
         clauses: list[str] = []
@@ -342,6 +467,9 @@ class PilotStorage:
         if classification:
             clauses.append("classification=?")
             params.append(classification)
+        if domain_class:
+            clauses.append("domain_class=?")
+            params.append(domain_class)
         if context_only:
             clauses.append("event_type IS NOT NULL")
         where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
@@ -353,7 +481,8 @@ class PilotStorage:
                 SELECT participant_id, level, message, event_type, source_app, target_app,
                        correlation_id, classification, setup_state, suppression_reason,
                        message_family, amount, has_otp, has_upi_handle, has_upi_deeplink,
-                       has_url, metadata_json, language, timestamp
+                       has_url, link_clicked, link_scheme, url_host, resolved_domain,
+                       domain_class, metadata_json, language, timestamp
                 FROM app_logs
                 {where_sql}
                 ORDER BY id DESC
@@ -411,11 +540,742 @@ class PilotStorage:
                     tuple(params),
                 ).fetchall()
             ]
+            by_domain_class = [
+                dict(row)
+                for row in conn.execute(
+                    f"""
+                    SELECT domain_class, COUNT(*) AS count
+                    FROM app_logs
+                    WHERE {where_sql} AND domain_class IS NOT NULL
+                    GROUP BY domain_class
+                    ORDER BY count DESC, domain_class
+                    """,
+                    tuple(params),
+                ).fetchall()
+            ]
         return {
             "by_event_type": by_event_type,
             "by_classification": by_classification,
             "by_message_family": by_message_family,
+            "by_domain_class": by_domain_class,
         }
+
+    def upsert_review_sample(
+        self,
+        *,
+        sample_id: str,
+        participant_id: str | None,
+        correlation_id: str | None,
+        source_tier: str,
+        source_origin: str,
+        label: str | None,
+        review_status: str,
+        reviewer_id: str | None,
+        reviewed_at: str | None,
+        event_trace: list[dict] | None,
+        sequence_trace: list[dict] | None,
+        entity_context: dict | None,
+        alert_family: str | None,
+        heuristic_classification: str | None,
+        language: str | None,
+        cohort: str | None,
+        note: str | None,
+        updated_at: str,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO review_samples (
+                    sample_id, participant_id, correlation_id, source_tier, source_origin,
+                    label, review_status, reviewer_id, reviewed_at, alert_family,
+                    heuristic_classification, language, cohort, note, event_trace_json,
+                    sequence_trace_json, entity_context_json, created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(sample_id)
+                DO UPDATE SET
+                    participant_id=excluded.participant_id,
+                    correlation_id=excluded.correlation_id,
+                    source_tier=excluded.source_tier,
+                    source_origin=excluded.source_origin,
+                    label=excluded.label,
+                    review_status=excluded.review_status,
+                    reviewer_id=excluded.reviewer_id,
+                    reviewed_at=excluded.reviewed_at,
+                    alert_family=excluded.alert_family,
+                    heuristic_classification=excluded.heuristic_classification,
+                    language=excluded.language,
+                    cohort=excluded.cohort,
+                    note=excluded.note,
+                    event_trace_json=excluded.event_trace_json,
+                    sequence_trace_json=excluded.sequence_trace_json,
+                    entity_context_json=excluded.entity_context_json,
+                    updated_at=excluded.updated_at
+                """,
+                (
+                    sample_id,
+                    participant_id,
+                    correlation_id,
+                    source_tier,
+                    source_origin,
+                    label,
+                    review_status,
+                    reviewer_id,
+                    reviewed_at,
+                    alert_family,
+                    heuristic_classification,
+                    language,
+                    cohort,
+                    note or "",
+                    json.dumps(event_trace or [], ensure_ascii=True, sort_keys=True),
+                    json.dumps(sequence_trace or [], ensure_ascii=True, sort_keys=True),
+                    self._json_text(entity_context),
+                    updated_at,
+                    updated_at,
+                ),
+            )
+
+    def recent_review_samples(
+        self,
+        *,
+        participant_id: str | None = None,
+        correlation_id: str | None = None,
+        source_tier: str | None = None,
+        source_origin: str | None = None,
+        review_status: str | None = None,
+        label: str | None = None,
+        limit: int = 25,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        if correlation_id:
+            clauses.append("correlation_id=?")
+            params.append(correlation_id)
+        if source_tier:
+            clauses.append("source_tier=?")
+            params.append(source_tier)
+        if source_origin:
+            clauses.append("source_origin=?")
+            params.append(source_origin)
+        if review_status:
+            clauses.append("review_status=?")
+            params.append(review_status)
+        if label:
+            clauses.append("label=?")
+            params.append(label)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT sample_id, participant_id, correlation_id, source_tier, source_origin,
+                       label, review_status, reviewer_id, reviewed_at, alert_family,
+                       heuristic_classification, language, cohort, note, event_trace_json,
+                       sequence_trace_json, entity_context_json, created_at, updated_at
+                FROM review_samples
+                {where_sql}
+                ORDER BY COALESCE(reviewed_at, updated_at) DESC, updated_at DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [self._parse_review_sample_row(row) for row in rows]
+
+    def review_sample_breakdown(self) -> dict:
+        with self._connect() as conn:
+            by_review_status = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT review_status, COUNT(*) AS count
+                    FROM review_samples
+                    GROUP BY review_status
+                    ORDER BY count DESC, review_status
+                    """
+                ).fetchall()
+            ]
+            by_source_tier = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT source_tier, COUNT(*) AS count
+                    FROM review_samples
+                    GROUP BY source_tier
+                    ORDER BY count DESC, source_tier
+                    """
+                ).fetchall()
+            ]
+            by_label = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT label, COUNT(*) AS count
+                    FROM review_samples
+                    GROUP BY label
+                    ORDER BY count DESC, label
+                    """
+                ).fetchall()
+            ]
+        return {
+            "by_review_status": by_review_status,
+            "by_source_tier": by_source_tier,
+            "by_label": by_label,
+        }
+
+    def export_review_samples(
+        self,
+        *,
+        mode: str,
+        include_uncertain: bool = False,
+        limit: int = 1000,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        normalized_mode = (mode or "").strip().lower() or "gold_ground_truth_only"
+        if normalized_mode == "gold_ground_truth_only":
+            clauses.extend(
+                [
+                    "source_tier='live_reviewed_ground_truth'",
+                    "review_status='approved_ground_truth'",
+                    "label IS NOT NULL",
+                    "participant_id IS NOT NULL",
+                    "participant_id != ''",
+                    "correlation_id IS NOT NULL",
+                    "correlation_id != ''",
+                ]
+            )
+            if not include_uncertain:
+                clauses.append("label != 'uncertain'")
+        elif normalized_mode == "all_reviewed_samples":
+            clauses.append("review_status != 'queued'")
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT sample_id, participant_id, correlation_id, source_tier, source_origin,
+                       label, review_status, reviewer_id, reviewed_at, alert_family,
+                       heuristic_classification, language, cohort, note, event_trace_json,
+                       sequence_trace_json, entity_context_json, created_at, updated_at
+                FROM review_samples
+                {where_sql}
+                ORDER BY COALESCE(reviewed_at, updated_at) DESC, updated_at DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [self._parse_review_sample_row(row) for row in rows]
+
+    def recent_entities(
+        self,
+        *,
+        entity_kind: str | None = None,
+        trust_state: str | None = None,
+        review_status: str | None = None,
+        limit: int = 25,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if entity_kind:
+            clauses.append("entity_kind=?")
+            params.append(entity_kind)
+        if trust_state:
+            clauses.append("trust_state=?")
+            params.append(trust_state)
+        if review_status:
+            clauses.append("review_status=?")
+            params.append(review_status)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT entity_key, entity_kind, entity_type, trust_state, trust_score, review_status,
+                       first_seen_at, last_seen_at, benign_count, suspicious_count,
+                       user_safe_feedback_count, user_suspicious_feedback_count,
+                       account_access_risk_count, payment_risk_count, evidence_json
+                FROM entity_registry
+                {where_sql}
+                ORDER BY last_seen_at DESC, id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [
+            {
+                **dict(row),
+                "evidence": self._parse_json_object(row["evidence_json"]),
+            }
+            for row in rows
+        ]
+
+    def entity_breakdown(self) -> dict:
+        with self._connect() as conn:
+            by_trust_state = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT trust_state, COUNT(*) AS count
+                    FROM entity_registry
+                    GROUP BY trust_state
+                    ORDER BY count DESC, trust_state
+                    """
+                ).fetchall()
+            ]
+            by_entity_type = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT entity_type, COUNT(*) AS count
+                    FROM entity_registry
+                    GROUP BY entity_type
+                    ORDER BY count DESC, entity_type
+                    """
+                ).fetchall()
+            ]
+            by_review_status = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT review_status, COUNT(*) AS count
+                    FROM entity_registry
+                    GROUP BY review_status
+                    ORDER BY count DESC, review_status
+                    """
+                ).fetchall()
+            ]
+        return {
+            "by_trust_state": by_trust_state,
+            "by_entity_type": by_entity_type,
+            "by_review_status": by_review_status,
+        }
+
+    def get_entity(self, *, entity_key: str, entity_kind: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT entity_key, entity_kind, entity_type, trust_state, trust_score, review_status,
+                       first_seen_at, last_seen_at, benign_count, suspicious_count,
+                       user_safe_feedback_count, user_suspicious_feedback_count,
+                       account_access_risk_count, payment_risk_count, evidence_json
+                FROM entity_registry
+                WHERE entity_key=? AND entity_kind=?
+                """,
+                (entity_key, entity_kind),
+            ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        data["evidence"] = self._parse_json_object(data.pop("evidence_json", None))
+        return data
+
+    def record_entity_reputation_participant(
+        self,
+        *,
+        entity_key: str,
+        entity_kind: str,
+        participant_id: str,
+        timestamp: str,
+    ) -> bool:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO entity_reputation_participants (
+                    entity_key, entity_kind, participant_id, first_seen_at, last_seen_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                (entity_key, entity_kind, participant_id, timestamp, timestamp),
+            )
+            conn.execute(
+                """
+                UPDATE entity_reputation_participants
+                SET last_seen_at=?
+                WHERE entity_key=? AND entity_kind=? AND participant_id=?
+                """,
+                (timestamp, entity_key, entity_kind, participant_id),
+            )
+        return cursor.rowcount > 0
+
+    def get_entity_reputation(self, *, entity_key: str, entity_kind: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT entity_key, entity_kind, reputation_score, unique_participant_count,
+                       suspicious_feedback_count, safe_feedback_count, account_access_risk_count,
+                       payment_risk_count, manual_block_count, manual_safe_count,
+                       first_seen_at, last_seen_at, evidence_json
+                FROM entity_reputation
+                WHERE entity_key=? AND entity_kind=?
+                """,
+                (entity_key, entity_kind),
+            ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        data["evidence"] = self._parse_json_object(data.pop("evidence_json", None))
+        return data
+
+    def record_entity_cohort_reputation_participant(
+        self,
+        *,
+        entity_key: str,
+        entity_kind: str,
+        cohort: str,
+        participant_id: str,
+        timestamp: str,
+    ) -> bool:
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                INSERT OR IGNORE INTO entity_cohort_reputation_participants (
+                    entity_key, entity_kind, cohort, participant_id, first_seen_at, last_seen_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (entity_key, entity_kind, cohort, participant_id, timestamp, timestamp),
+            )
+            conn.execute(
+                """
+                UPDATE entity_cohort_reputation_participants
+                SET last_seen_at=?
+                WHERE entity_key=? AND entity_kind=? AND cohort=? AND participant_id=?
+                """,
+                (timestamp, entity_key, entity_kind, cohort, participant_id),
+            )
+        return cursor.rowcount > 0
+
+    def get_entity_cohort_reputation(self, *, entity_key: str, entity_kind: str, cohort: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT entity_key, entity_kind, cohort, reputation_score, unique_participant_count,
+                       suspicious_feedback_count, safe_feedback_count, account_access_risk_count,
+                       payment_risk_count, manual_block_count, manual_safe_count,
+                       first_seen_at, last_seen_at, evidence_json
+                FROM entity_cohort_reputation
+                WHERE entity_key=? AND entity_kind=? AND cohort=?
+                """,
+                (entity_key, entity_kind, cohort),
+            ).fetchone()
+        if not row:
+            return None
+        data = dict(row)
+        data["evidence"] = self._parse_json_object(data.pop("evidence_json", None))
+        return data
+
+    def upsert_entity_cohort_reputation(
+        self,
+        *,
+        entity_key: str,
+        entity_kind: str,
+        cohort: str,
+        reputation_score: float,
+        unique_participant_count: int,
+        suspicious_feedback_count: int = 0,
+        safe_feedback_count: int = 0,
+        account_access_risk_count: int = 0,
+        payment_risk_count: int = 0,
+        manual_block_count: int = 0,
+        manual_safe_count: int = 0,
+        timestamp: str,
+        evidence: dict | None = None,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO entity_cohort_reputation (
+                    entity_key, entity_kind, cohort, reputation_score, unique_participant_count,
+                    suspicious_feedback_count, safe_feedback_count, account_access_risk_count,
+                    payment_risk_count, manual_block_count, manual_safe_count,
+                    first_seen_at, last_seen_at, evidence_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(entity_key, entity_kind, cohort)
+                DO UPDATE SET
+                    reputation_score=excluded.reputation_score,
+                    unique_participant_count=excluded.unique_participant_count,
+                    suspicious_feedback_count=excluded.suspicious_feedback_count,
+                    safe_feedback_count=excluded.safe_feedback_count,
+                    account_access_risk_count=excluded.account_access_risk_count,
+                    payment_risk_count=excluded.payment_risk_count,
+                    manual_block_count=excluded.manual_block_count,
+                    manual_safe_count=excluded.manual_safe_count,
+                    last_seen_at=excluded.last_seen_at,
+                    evidence_json=excluded.evidence_json
+                """,
+                (
+                    entity_key,
+                    entity_kind,
+                    cohort,
+                    reputation_score,
+                    unique_participant_count,
+                    suspicious_feedback_count,
+                    safe_feedback_count,
+                    account_access_risk_count,
+                    payment_risk_count,
+                    manual_block_count,
+                    manual_safe_count,
+                    timestamp,
+                    timestamp,
+                    self._json_text(evidence),
+                ),
+            )
+
+    def recent_entity_cohort_reputations(
+        self,
+        *,
+        entity_kind: str | None = None,
+        cohort: str | None = None,
+        limit: int = 25,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if entity_kind:
+            clauses.append("entity_kind=?")
+            params.append(entity_kind)
+        if cohort:
+            clauses.append("cohort=?")
+            params.append(cohort)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT entity_key, entity_kind, cohort, reputation_score, unique_participant_count,
+                       suspicious_feedback_count, safe_feedback_count, account_access_risk_count,
+                       payment_risk_count, manual_block_count, manual_safe_count,
+                       first_seen_at, last_seen_at, evidence_json
+                FROM entity_cohort_reputation
+                {where_sql}
+                ORDER BY last_seen_at DESC, id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [{**dict(row), "evidence": self._parse_json_object(row["evidence_json"])} for row in rows]
+
+    def entity_cohort_reputation_breakdown(self) -> dict:
+        with self._connect() as conn:
+            by_cohort = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT cohort, COUNT(*) AS count
+                    FROM entity_cohort_reputation
+                    GROUP BY cohort
+                    ORDER BY count DESC, cohort
+                    """
+                ).fetchall()
+            ]
+            by_risk_level = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT
+                        CASE
+                            WHEN manual_block_count > 0 THEN 'high'
+                            WHEN unique_participant_count >= 2 AND reputation_score >= 6 THEN 'high'
+                            WHEN unique_participant_count >= 2 AND reputation_score >= 3 THEN 'medium'
+                            ELSE 'none'
+                        END AS risk_level,
+                        COUNT(*) AS count
+                    FROM entity_cohort_reputation
+                    GROUP BY risk_level
+                    ORDER BY count DESC, risk_level
+                    """
+                ).fetchall()
+            ]
+        return {
+            "by_cohort": by_cohort,
+            "by_risk_level": by_risk_level,
+        }
+
+    def upsert_entity_reputation(
+        self,
+        *,
+        entity_key: str,
+        entity_kind: str,
+        reputation_score: float,
+        unique_participant_count: int,
+        suspicious_feedback_count: int = 0,
+        safe_feedback_count: int = 0,
+        account_access_risk_count: int = 0,
+        payment_risk_count: int = 0,
+        manual_block_count: int = 0,
+        manual_safe_count: int = 0,
+        timestamp: str,
+        evidence: dict | None = None,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO entity_reputation (
+                    entity_key, entity_kind, reputation_score, unique_participant_count,
+                    suspicious_feedback_count, safe_feedback_count, account_access_risk_count,
+                    payment_risk_count, manual_block_count, manual_safe_count,
+                    first_seen_at, last_seen_at, evidence_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(entity_key, entity_kind)
+                DO UPDATE SET
+                    reputation_score=excluded.reputation_score,
+                    unique_participant_count=excluded.unique_participant_count,
+                    suspicious_feedback_count=excluded.suspicious_feedback_count,
+                    safe_feedback_count=excluded.safe_feedback_count,
+                    account_access_risk_count=excluded.account_access_risk_count,
+                    payment_risk_count=excluded.payment_risk_count,
+                    manual_block_count=excluded.manual_block_count,
+                    manual_safe_count=excluded.manual_safe_count,
+                    last_seen_at=excluded.last_seen_at,
+                    evidence_json=excluded.evidence_json
+                """,
+                (
+                    entity_key,
+                    entity_kind,
+                    reputation_score,
+                    unique_participant_count,
+                    suspicious_feedback_count,
+                    safe_feedback_count,
+                    account_access_risk_count,
+                    payment_risk_count,
+                    manual_block_count,
+                    manual_safe_count,
+                    timestamp,
+                    timestamp,
+                    self._json_text(evidence),
+                ),
+            )
+
+    def recent_entity_reputations(
+        self,
+        *,
+        entity_kind: str | None = None,
+        limit: int = 25,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if entity_kind:
+            clauses.append("entity_kind=?")
+            params.append(entity_kind)
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT entity_key, entity_kind, reputation_score, unique_participant_count,
+                       suspicious_feedback_count, safe_feedback_count, account_access_risk_count,
+                       payment_risk_count, manual_block_count, manual_safe_count,
+                       first_seen_at, last_seen_at, evidence_json
+                FROM entity_reputation
+                {where_sql}
+                ORDER BY last_seen_at DESC, id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [{**dict(row), "evidence": self._parse_json_object(row["evidence_json"])} for row in rows]
+
+    def entity_reputation_breakdown(self) -> dict:
+        with self._connect() as conn:
+            by_risk_level = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT
+                        CASE
+                            WHEN manual_block_count > 0 THEN 'high'
+                            WHEN unique_participant_count >= 2 AND reputation_score >= 6 THEN 'high'
+                            WHEN unique_participant_count >= 2 AND reputation_score >= 3 THEN 'medium'
+                            ELSE 'none'
+                        END AS risk_level,
+                        COUNT(*) AS count
+                    FROM entity_reputation
+                    GROUP BY risk_level
+                    ORDER BY count DESC, risk_level
+                    """
+                ).fetchall()
+            ]
+            by_entity_kind = [
+                dict(row)
+                for row in conn.execute(
+                    """
+                    SELECT entity_kind, COUNT(*) AS count
+                    FROM entity_reputation
+                    GROUP BY entity_kind
+                    ORDER BY count DESC, entity_kind
+                    """
+                ).fetchall()
+            ]
+        return {
+            "by_risk_level": by_risk_level,
+            "by_entity_kind": by_entity_kind,
+        }
+
+    def upsert_entity(
+        self,
+        *,
+        entity_key: str,
+        entity_kind: str,
+        entity_type: str,
+        trust_state: str,
+        trust_score: float,
+        timestamp: str,
+        review_status: str = "none",
+        benign_count: int = 0,
+        suspicious_count: int = 0,
+        user_safe_feedback_count: int = 0,
+        user_suspicious_feedback_count: int = 0,
+        account_access_risk_count: int = 0,
+        payment_risk_count: int = 0,
+        evidence: dict | None = None,
+    ) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO entity_registry (
+                    entity_key, entity_kind, entity_type, trust_state, trust_score, review_status,
+                    first_seen_at, last_seen_at, benign_count, suspicious_count,
+                    user_safe_feedback_count, user_suspicious_feedback_count,
+                    account_access_risk_count, payment_risk_count, evidence_json
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ON CONFLICT(entity_key, entity_kind)
+                DO UPDATE SET
+                    entity_type=excluded.entity_type,
+                    trust_state=excluded.trust_state,
+                    trust_score=excluded.trust_score,
+                    review_status=excluded.review_status,
+                    last_seen_at=excluded.last_seen_at,
+                    benign_count=excluded.benign_count,
+                    suspicious_count=excluded.suspicious_count,
+                    user_safe_feedback_count=excluded.user_safe_feedback_count,
+                    user_suspicious_feedback_count=excluded.user_suspicious_feedback_count,
+                    account_access_risk_count=excluded.account_access_risk_count,
+                    payment_risk_count=excluded.payment_risk_count,
+                    evidence_json=excluded.evidence_json
+                """,
+                (
+                    entity_key,
+                    entity_kind,
+                    entity_type,
+                    trust_state,
+                    trust_score,
+                    review_status,
+                    timestamp,
+                    timestamp,
+                    benign_count,
+                    suspicious_count,
+                    user_safe_feedback_count,
+                    user_suspicious_feedback_count,
+                    account_access_risk_count,
+                    payment_risk_count,
+                    self._json_text(evidence),
+                ),
+            )
 
     def upsert_consent(self, participant_id: str, accepted: bool, language: str, timestamp: str) -> None:
         with self._connect() as conn:
@@ -596,6 +1456,11 @@ class PilotStorage:
         has_upi_handle: bool | None = None,
         has_upi_deeplink: bool | None = None,
         has_url: bool | None = None,
+        link_clicked: bool | None = None,
+        link_scheme: str | None = None,
+        url_host: str | None = None,
+        resolved_domain: str | None = None,
+        domain_class: str | None = None,
         metadata: dict | None = None,
     ) -> bool:
         with self._connect() as conn:
@@ -604,10 +1469,11 @@ class PilotStorage:
                 INSERT OR IGNORE INTO app_logs (
                     event_id, participant_id, level, message, event_type, source_app, target_app,
                     correlation_id, classification, setup_state, suppression_reason, message_family,
-                    amount, has_otp, has_upi_handle, has_upi_deeplink, has_url, metadata_json,
-                    language, timestamp
+                    amount, has_otp, has_upi_handle, has_upi_deeplink, has_url, link_clicked,
+                    link_scheme, url_host, resolved_domain, domain_class, metadata_json, language,
+                    timestamp
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     event_id,
@@ -627,6 +1493,11 @@ class PilotStorage:
                     None if has_upi_handle is None else (1 if has_upi_handle else 0),
                     None if has_upi_deeplink is None else (1 if has_upi_deeplink else 0),
                     None if has_url is None else (1 if has_url else 0),
+                    None if link_clicked is None else (1 if link_clicked else 0),
+                    link_scheme,
+                    url_host,
+                    resolved_domain,
+                    domain_class,
                     self._json_text(metadata),
                     language,
                     timestamp,
@@ -1203,6 +2074,7 @@ class PilotStorage:
 
         families: dict[str, dict] = {
             "payment_warning": empty_bucket(),
+            "account_access_warning": empty_bucket(),
             "cashflow": empty_bucket(),
         }
         language_slices: dict[str, dict] = {}
@@ -1290,6 +2162,7 @@ class PilotStorage:
         return {
             "sample_size": len(records),
             "payment_warning": families["payment_warning"],
+            "account_access_warning": families["account_access_warning"],
             "cashflow": families["cashflow"],
             "language_slices": language_slices,
             "cohort_slices": cohort_slices,

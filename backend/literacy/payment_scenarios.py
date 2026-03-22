@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from backend.api_models import UPIRequestInspectIn
+from backend.literacy.domain_intelligence import enrich_domain_context, is_high_risk_domain_class
+from backend.literacy.messages import literacy_message
+from backend.literacy.sequence_correlation import SequenceEvidence
 from backend.literacy.structured_message_signals import extract_message_signals
 
 
@@ -11,6 +14,7 @@ class PaymentScenarioDecision:
     scenario: str
     classification: str
     should_warn: bool
+    alert_family: str
     risk_level: str
     message: str
     why_this_alert: str
@@ -19,10 +23,14 @@ class PaymentScenarioDecision:
 
 IGNORE_BENIGN_CLASSIFICATION = "ignore_benign"
 STORE_ONLY_ACCOUNT_ACCESS_CLASSIFICATION = "store_only_account_access"
+ACCOUNT_ACCESS_RISK_CLASSIFICATION = "account_access_risk"
 PAYMENT_OUTFLOW_RISK_CLASSIFICATION = "payment_outflow_risk"
+ALERT_FAMILY_PAYMENT = "payment"
+ALERT_FAMILY_ACCOUNT_ACCESS = "account_access"
 COLLECT_SCENARIO = "collect_request_confusion"
 REFUND_SCENARIO = "refund_reward_kyc_scam"
 UNKNOWN_PAYEE_SCENARIO = "unknown_payee_or_unusual_amount"
+ACCOUNT_ACCESS_RISK_SCENARIO = "account_access_risk"
 UNKNOWN_SCENARIO = "unknown"
 IGNORE_BENIGN_SCENARIO = "ignore_benign"
 STORE_ONLY_ACCOUNT_ACCESS_SCENARIO = "store_only_account_access"
@@ -48,7 +56,14 @@ _UNUSUAL_AMOUNT_MEDIUM = 5000.0
 _REFUND_SCAM_KEYWORDS = ("refund", "cashback", "reward", "prize", "bonus", "kyc", "verify account", "update account")
 
 
-def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) -> PaymentScenarioDecision:
+def classify_payment_scenario(
+    payload: UPIRequestInspectIn,
+    *,
+    language: str,
+    entity_trust_state: str | None = None,
+    entity_reputation_level: str | None = None,
+    sequence_evidence: SequenceEvidence | None = None,
+) -> PaymentScenarioDecision:
     raw_text = _normalize(payload.raw_text)
     signals = extract_message_signals(raw_text)
     app_name = _normalize(payload.app_name)
@@ -56,6 +71,54 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
     payee_handle = _normalize(payload.payee_handle)
     request_kind = _normalize((payload.request_kind or "").replace("_", " ")).lower()
     setup_state = _normalize((payload.setup_state or "").replace("_", " ")).lower()
+    domain_context = enrich_domain_context(
+        link_scheme=payload.link_scheme,
+        url_host=payload.url_host,
+        resolved_domain=payload.resolved_domain,
+        domain_class=payload.domain_class,
+    )
+    link_clicked = bool(payload.link_clicked)
+    sequence_evidence = sequence_evidence or SequenceEvidence(sequence_trace=[])
+
+    if _looks_like_visible_access_flow(
+        raw_text=raw_text,
+        signals=signals,
+        link_clicked=link_clicked,
+        setup_state=setup_state,
+        domain_class=domain_context.domain_class,
+        entity_trust_state=entity_trust_state,
+        entity_reputation_level=entity_reputation_level,
+        sequence_evidence=sequence_evidence,
+    ):
+        return _augment_sequence_context(
+            _account_access_risk_decision(
+                language=language,
+                domain_class=domain_context.domain_class,
+                entity_trust_state=entity_trust_state,
+                entity_reputation_level=entity_reputation_level,
+            ),
+            language=language,
+            sequence_evidence=sequence_evidence,
+        )
+
+    if _looks_like_clicked_access_flow(
+        raw_text=raw_text,
+        signals=signals,
+        link_clicked=link_clicked,
+        domain_class=domain_context.domain_class,
+    ):
+        if sequence_evidence.access_confidence in {"medium", "strong"}:
+            return _augment_sequence_context(
+                _account_access_risk_decision(
+                    language=language,
+                    domain_class=domain_context.domain_class,
+                    entity_trust_state=entity_trust_state,
+                    entity_reputation_level=entity_reputation_level,
+                ),
+                language=language,
+                sequence_evidence=sequence_evidence,
+            )
+        return _store_only_account_access_decision(language)
 
     if signals.is_call_metadata:
         return _ignore_benign_decision(language)
@@ -91,10 +154,22 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
         return _ignore_benign_decision(language)
 
     if _looks_like_refund_reward_kyc_scam(raw_text, request_kind):
-        return _refund_reward_kyc_decision(language)
+        return _augment_link_context(
+            _refund_reward_kyc_decision(language),
+            language=language,
+            link_clicked=link_clicked,
+            domain_class=domain_context.domain_class,
+            sequence_evidence=sequence_evidence,
+        )
 
     if _looks_like_collect_request(raw_text, request_kind):
-        return _collect_request_decision(language)
+        return _augment_link_context(
+            _collect_request_decision(language),
+            language=language,
+            link_clicked=link_clicked,
+            domain_class=domain_context.domain_class,
+            sequence_evidence=sequence_evidence,
+        )
 
     if _looks_like_unknown_payee_or_unusual_amount(
         raw_text=raw_text,
@@ -105,16 +180,28 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
         request_kind=request_kind,
         signals=signals,
     ):
-        return _unknown_payee_or_unusual_amount_decision(
+        return _augment_link_context(
+            _unknown_payee_or_unusual_amount_decision(
+                language=language,
+                amount=payload.amount,
+                request_kind=request_kind,
+            ),
             language=language,
-            amount=payload.amount,
-            request_kind=request_kind,
+            link_clicked=link_clicked,
+            domain_class=domain_context.domain_class,
+            sequence_evidence=sequence_evidence,
         )
 
-    return _fallback_decision(
+    return _augment_link_context(
+        _fallback_decision(
+            language=language,
+            has_context=bool(raw_text or app_name or payee_label or payee_handle or payload.amount not in (None, 0)),
+            request_kind=request_kind,
+        ),
         language=language,
-        has_context=bool(raw_text or app_name or payee_label or payee_handle or payload.amount not in (None, 0)),
-        request_kind=request_kind,
+        link_clicked=link_clicked,
+        domain_class=domain_context.domain_class,
+        sequence_evidence=sequence_evidence,
     )
 
 
@@ -175,6 +262,73 @@ def _is_active_setup_state(setup_state: str) -> bool:
     return setup_state in _ACTIVE_SETUP_STATES
 
 
+def _looks_like_clicked_access_flow(
+    *,
+    raw_text: str,
+    signals,
+    link_clicked: bool,
+    domain_class: str | None,
+) -> bool:
+    if not link_clicked or not is_high_risk_domain_class(domain_class):
+        return False
+    return signals.is_otp_verification or signals.is_sensitive_access_signal or any(
+        phrase in raw_text for phrase in ("login", "verify account", "kyc", "update account", "net banking", "mobile banking")
+    )
+
+
+def _looks_like_visible_access_flow(
+    *,
+    raw_text: str,
+    signals,
+    link_clicked: bool,
+    setup_state: str,
+    domain_class: str | None,
+    entity_trust_state: str | None,
+    entity_reputation_level: str | None,
+    sequence_evidence: SequenceEvidence,
+) -> bool:
+    if not link_clicked:
+        return False
+
+    normalized_domain_class = (domain_class or "").strip().lower()
+    normalized_trust_state = (entity_trust_state or "").strip().lower()
+    normalized_reputation_level = (entity_reputation_level or "").strip().lower()
+    if _is_active_setup_state(setup_state) and normalized_domain_class == "official":
+        return False
+    if _is_active_setup_state(setup_state) and normalized_trust_state in {"official_verified", "trusted_by_observation"}:
+        return False
+
+    has_access_context = signals.is_otp_verification or signals.is_sensitive_access_signal or any(
+        phrase in raw_text
+        for phrase in (
+            "login",
+            "verify account",
+            "update account",
+            "mobile banking",
+            "net banking",
+            "customer id",
+            "internet banking",
+            "kyc",
+        )
+    )
+    if not has_access_context:
+        return False
+
+    if normalized_trust_state in {"official_verified", "trusted_by_observation"}:
+        if normalized_domain_class in {"suspicious", "loan", "card"}:
+            return True
+        return normalized_domain_class == "bank" and (
+            sequence_evidence.access_confidence in {"medium", "strong"} or
+            normalized_reputation_level in {"medium", "high"}
+        )
+    if normalized_domain_class in {"suspicious", "loan", "card"}:
+        return True
+    return normalized_domain_class == "bank" and any(
+        phrase in raw_text
+        for phrase in ("login", "verify account", "update account", "mobile banking", "net banking", "customer id", "kyc")
+    )
+
+
 def _has_explicit_payment_signal(*, raw_text: str, request_kind: str) -> bool:
     normalized_request_kind = request_kind.replace("_", " ").strip().lower()
     if normalized_request_kind in {"collect", "collect request", "refund", "refund request", "send money"}:
@@ -197,66 +351,28 @@ def _has_explicit_payment_signal(*, raw_text: str, request_kind: str) -> bool:
 
 
 def _collect_request_decision(language: str) -> PaymentScenarioDecision:
-    if language == "hi":
-        return PaymentScenarioDecision(
-            scenario=COLLECT_SCENARIO,
-            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
-            should_warn=True,
-            risk_level="high",
-            message="यह अनुरोध पैसा प्राप्त करने का नहीं है। इसे मंजूर करने पर आपके खाते से पैसा जा सकता है।",
-            why_this_alert=(
-                "कलेक्ट अनुरोध, ऑटोपे या मंजूरी वाले प्रॉम्प्ट कई बार आने वाले पैसे जैसे दिखते हैं,"
-                " लेकिन इन्हें स्वीकार करने पर भुगतान बाहर जा सकता है।"
-            ),
-            next_best_action="रुकें और अलग से पुष्टि करें कि सामने वाला आपसे पैसा क्यों मांग रहा है।",
-        )
-
     return PaymentScenarioDecision(
         scenario=COLLECT_SCENARIO,
         classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
         should_warn=True,
+        alert_family=ALERT_FAMILY_PAYMENT,
         risk_level="high",
-        message="This is not incoming money. Approving this request can send money from your account.",
-        why_this_alert=(
-            "Collect requests, approval prompts, and autopay mandates can look like money is coming in,"
-            " but approval usually authorizes a payment out from your account."
-        ),
-        next_best_action="Pause and verify why this person or business is asking you to approve a payment.",
+        message=literacy_message(language, "payment_inspection.collect_request_confusion.message"),
+        why_this_alert=literacy_message(language, "payment_inspection.collect_request_confusion.why"),
+        next_best_action=literacy_message(language, "payment_inspection.collect_request_confusion.next"),
     )
 
 
 def _refund_reward_kyc_decision(language: str) -> PaymentScenarioDecision:
-    if language == "hi":
-        return PaymentScenarioDecision(
-            scenario=REFUND_SCENARIO,
-            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
-            should_warn=True,
-            risk_level="high",
-            message=(
-                "असली रिफंड, इनाम या KYC अपडेट के लिए आपको पैसा भेजने की जरूरत नहीं होनी चाहिए।"
-                " यह मंजूरी आपके खाते से पैसा भेज सकती है।"
-            ),
-            why_this_alert=(
-                "ठगी में अक्सर रिफंड, कैशबैक, इनाम या KYC के नाम पर ऐसा अनुरोध भेजा जाता है"
-                " जिससे आप कलेक्ट या फीस जैसा भुगतान मंजूर कर दें।"
-            ),
-            next_best_action="भुगतान ऐप के अंदर मंजूरी न दें। आधिकारिक ऐप या सपोर्ट से अलग से जांच करें।",
-        )
-
     return PaymentScenarioDecision(
         scenario=REFUND_SCENARIO,
         classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
         should_warn=True,
+        alert_family=ALERT_FAMILY_PAYMENT,
         risk_level="high",
-        message=(
-            "A real refund, reward, or KYC update should not require you to send money."
-            " Approving this can send money from your account."
-        ),
-        why_this_alert=(
-            "Scammers often use refund, cashback, reward, or KYC stories to make users approve"
-            " a collect request or a fake verification fee."
-        ),
-        next_best_action="Do not approve inside the payment app. Check with the official app or support separately.",
+        message=literacy_message(language, "payment_inspection.refund_reward_kyc_scam.message"),
+        why_this_alert=literacy_message(language, "payment_inspection.refund_reward_kyc_scam.why"),
+        next_best_action=literacy_message(language, "payment_inspection.refund_reward_kyc_scam.next"),
     )
 
 
@@ -269,97 +385,56 @@ def _unknown_payee_or_unusual_amount_decision(
     risk_level = "high" if (amount or 0) >= _UNUSUAL_AMOUNT_HIGH else "medium"
     direction_line = _direction_line(language, request_kind)
 
-    if language == "hi":
-        return PaymentScenarioDecision(
-            scenario=UNKNOWN_PAYEE_SCENARIO,
-            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
-            should_warn=True,
-            risk_level=risk_level,
-            message=(
-                "यह अनुरोध किसी अनजान प्राप्तकर्ता या असामान्य राशि जैसा दिख रहा है। "
-                f"{direction_line} मंजूरी देने से पहले रुककर जांच लें."
-            ).strip(),
-            why_this_alert=(
-                "अर्थमंत्री को प्राप्तकर्ता की साफ पहचान नहीं मिली या राशि इतनी अलग दिखी कि"
-                " हाथ से सत्यापन जरूरी हो गया।"
-            ),
-            next_best_action="प्राप्तकर्ता का नाम और राशि अलग से पुष्टि करें। कुछ भी अजीब लगे तो अस्वीकार करें।",
-        )
-
     return PaymentScenarioDecision(
         scenario=UNKNOWN_PAYEE_SCENARIO,
         classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
         should_warn=True,
+        alert_family=ALERT_FAMILY_PAYMENT,
         risk_level=risk_level,
-        message=(
-            "This request involves an unfamiliar payee or an amount that looks unusual. "
-            f"{direction_line} Pause before you approve it."
-        ).strip(),
-        why_this_alert=(
-            "Arthamantri could not match a clearly known payee, or the amount is large enough"
-            " to deserve manual verification."
+        message=_compact_message(
+            literacy_message(
+                language,
+                "payment_inspection.unknown_payee_or_unusual_amount.message_template",
+                direction_line=direction_line,
+            )
         ),
-        next_best_action="Verify the payee name and amount on a separate channel. Decline if anything feels unexpected.",
+        why_this_alert=literacy_message(language, "payment_inspection.unknown_payee_or_unusual_amount.why"),
+        next_best_action=literacy_message(language, "payment_inspection.unknown_payee_or_unusual_amount.next"),
     )
 
 
 def _fallback_decision(language: str, *, has_context: bool, request_kind: str) -> PaymentScenarioDecision:
     direction_line = _direction_line(language, request_kind, fallback=True)
 
-    if language == "hi":
-        message = (
-            "यह अनुरोध पूरी तरह साफ नहीं है। आगे बढ़ने से पहले रुककर जांच लें।"
-            if has_context
-            else "यह भुगतान अनुरोध साफ नहीं पढ़ा जा सका। आगे बढ़ने से पहले रुककर जांच लें।"
-        )
-        if direction_line:
-            message = f"{message} {direction_line}"
-        return PaymentScenarioDecision(
-            scenario=UNKNOWN_SCENARIO,
-            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
-            should_warn=True,
-            risk_level="medium",
-            message=message,
-            why_this_alert=(
-                "ऐप इस भुगतान के मतलब को भरोसे के साथ तय नहीं कर सका, इसलिए यह सावधानी वाली चेतावनी दिखा रहा है।"
-            ),
-            next_best_action="रुकें और भेजने वाले या मांग करने वाले व्यक्ति से अलग से पुष्टि करें।",
-        )
-
-    message = (
-        "This request is not fully clear yet. Pause and verify before you approve it."
+    message_key = (
+        "payment_inspection.unknown.message_with_context_template"
         if has_context
-        else "This payment request could not be read clearly. Pause and verify before you approve it."
+        else "payment_inspection.unknown.message_without_context_template"
     )
-    if direction_line:
-        message = f"{message} {direction_line}"
     return PaymentScenarioDecision(
         scenario=UNKNOWN_SCENARIO,
         classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
         should_warn=True,
+        alert_family=ALERT_FAMILY_PAYMENT,
         risk_level="medium",
-        message=message,
-        why_this_alert=(
-            "Arthamantri could not confidently interpret what this payment will do, so it is showing a cautious warning."
+        message=_compact_message(
+            literacy_message(
+                language,
+                message_key,
+                direction_line=direction_line,
+            )
         ),
-        next_best_action="Pause and verify the request source before continuing.",
+        why_this_alert=literacy_message(language, "payment_inspection.unknown.why"),
+        next_best_action=literacy_message(language, "payment_inspection.unknown.next"),
     )
 
 
 def _direction_line(language: str, request_kind: str, fallback: bool = False) -> str:
     outgoing_kinds = {"collect", "collect request", "send money", "refund request"}
     if request_kind in outgoing_kinds:
-        return (
-            "इस मंजूरी से आपके खाते से पैसा जा सकता है।"
-            if language == "hi"
-            else "If you approve, money can go out from your account."
-        )
+        return literacy_message(language, "payment_inspection.direction_line_outgoing")
     if fallback:
-        return (
-            "ऐप अभी साफ नहीं बता पा रहा कि पैसा जाएगा या आएगा।"
-            if language == "hi"
-            else "Arthamantri still cannot confirm whether this will send money or receive money."
-        )
+        return literacy_message(language, "payment_inspection.direction_line_fallback")
     return ""
 
 
@@ -372,6 +447,7 @@ def _ignore_benign_decision(language: str) -> PaymentScenarioDecision:
         scenario=IGNORE_BENIGN_SCENARIO,
         classification=IGNORE_BENIGN_CLASSIFICATION,
         should_warn=False,
+        alert_family=ALERT_FAMILY_PAYMENT,
         risk_level="low",
         message="",
         why_this_alert="",
@@ -384,10 +460,104 @@ def _store_only_account_access_decision(language: str) -> PaymentScenarioDecisio
         scenario=STORE_ONLY_ACCOUNT_ACCESS_SCENARIO,
         classification=STORE_ONLY_ACCOUNT_ACCESS_CLASSIFICATION,
         should_warn=False,
+        alert_family=ALERT_FAMILY_ACCOUNT_ACCESS,
         risk_level="low",
         message="",
         why_this_alert="",
         next_best_action="",
+    )
+
+
+def _account_access_risk_decision(
+    language: str,
+    *,
+    domain_class: str | None,
+    entity_trust_state: str | None,
+    entity_reputation_level: str | None = None,
+) -> PaymentScenarioDecision:
+    normalized_domain_class = (domain_class or "").strip().lower()
+    normalized_trust_state = (entity_trust_state or "").strip().lower()
+    normalized_reputation_level = (entity_reputation_level or "").strip().lower()
+    why_this_alert = literacy_message(language, "payment_inspection.account_access_risk.why")
+    if normalized_domain_class in {"suspicious", "loan", "card"}:
+        why_this_alert = f"{why_this_alert} {literacy_message(language, 'payment_inspection.account_access_risk.why_suffix_risky_domain')}".strip()
+    elif normalized_domain_class == "bank" and normalized_trust_state not in {"official_verified", "trusted_by_observation"}:
+        why_this_alert = f"{why_this_alert} {literacy_message(language, 'payment_inspection.account_access_risk.why_suffix_new_bank_like_domain')}".strip()
+    if normalized_reputation_level in {"medium", "high"}:
+        why_this_alert = f"{why_this_alert} {literacy_message(language, 'payment_inspection.account_access_risk.why_suffix_cross_user_reputation')}".strip()
+
+    return PaymentScenarioDecision(
+        scenario=ACCOUNT_ACCESS_RISK_SCENARIO,
+        classification=ACCOUNT_ACCESS_RISK_CLASSIFICATION,
+        should_warn=True,
+        alert_family=ALERT_FAMILY_ACCOUNT_ACCESS,
+        risk_level="high",
+        message=literacy_message(language, "payment_inspection.account_access_risk.message"),
+        why_this_alert=why_this_alert,
+        next_best_action=literacy_message(language, "payment_inspection.account_access_risk.next"),
+    )
+
+
+def _augment_link_context(
+    decision: PaymentScenarioDecision,
+    *,
+    language: str,
+    link_clicked: bool,
+    domain_class: str | None,
+    sequence_evidence: SequenceEvidence,
+) -> PaymentScenarioDecision:
+    combined_why = decision.why_this_alert
+    if link_clicked and is_high_risk_domain_class(domain_class):
+        extra_line = literacy_message(language, "payment_inspection.risky_link_suffix")
+        if extra_line not in combined_why:
+            combined_why = f"{combined_why} {extra_line}".strip()
+    if sequence_evidence.sequence_trace:
+        extra_line = literacy_message(
+            language,
+            "payment_inspection.sequence_suffix_strong"
+            if sequence_evidence.sequence_window == "0-120s"
+            else "payment_inspection.sequence_suffix_medium",
+        )
+        if extra_line not in combined_why:
+            combined_why = f"{combined_why} {extra_line}".strip()
+    return PaymentScenarioDecision(
+        scenario=decision.scenario,
+        classification=decision.classification,
+        should_warn=decision.should_warn,
+        alert_family=decision.alert_family,
+        risk_level=decision.risk_level,
+        message=decision.message,
+        why_this_alert=combined_why,
+        next_best_action=decision.next_best_action,
+    )
+
+
+def _augment_sequence_context(
+    decision: PaymentScenarioDecision,
+    *,
+    language: str,
+    sequence_evidence: SequenceEvidence,
+) -> PaymentScenarioDecision:
+    if not sequence_evidence.sequence_trace:
+        return decision
+    extra_line = literacy_message(
+        language,
+        "payment_inspection.sequence_suffix_strong"
+        if sequence_evidence.sequence_window == "0-120s"
+        else "payment_inspection.sequence_suffix_medium",
+    )
+    combined_why = decision.why_this_alert
+    if extra_line not in combined_why:
+        combined_why = f"{combined_why} {extra_line}".strip()
+    return PaymentScenarioDecision(
+        scenario=decision.scenario,
+        classification=decision.classification,
+        should_warn=decision.should_warn,
+        alert_family=decision.alert_family,
+        risk_level=decision.risk_level,
+        message=decision.message,
+        why_this_alert=combined_why,
+        next_best_action=decision.next_best_action,
     )
 
 
@@ -397,3 +567,7 @@ def _has_strong_payment_signal(*, raw_text: str, request_kind: str, payee_handle
     if payee_handle:
         return True
     return signals.has_strong_payment_signal
+
+
+def _compact_message(value: str) -> str:
+    return " ".join(value.split())

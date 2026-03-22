@@ -62,6 +62,11 @@ object OfflineTelemetryQueue {
                         put("has_upi_handle", event.has_upi_handle)
                         put("has_upi_deeplink", event.has_upi_deeplink)
                         put("has_url", event.has_url)
+                        put("link_clicked", event.link_clicked)
+                        put("link_scheme", event.link_scheme)
+                        put("url_host", event.url_host)
+                        put("resolved_domain", event.resolved_domain)
+                        put("domain_class", event.domain_class)
                         put("metadata", JSONObject(event.metadata))
                     })
                 }
@@ -121,6 +126,11 @@ object OfflineTelemetryQueue {
                                         has_upi_handle = event.opt("has_upi_handle").takeIf { it != null } as? Boolean,
                                         has_upi_deeplink = event.opt("has_upi_deeplink").takeIf { it != null } as? Boolean,
                                         has_url = event.opt("has_url").takeIf { it != null } as? Boolean,
+                                        link_clicked = event.opt("link_clicked").takeIf { it != null } as? Boolean,
+                                        link_scheme = event.optString("link_scheme").takeIf { it.isNotBlank() },
+                                        url_host = event.optString("url_host").takeIf { it.isNotBlank() },
+                                        resolved_domain = event.optString("resolved_domain").takeIf { it.isNotBlank() },
+                                        domain_class = event.optString("domain_class").takeIf { it.isNotBlank() },
                                         metadata = buildMap {
                                             val metadata = event.optJSONObject("metadata")
                                             if (metadata != null) {

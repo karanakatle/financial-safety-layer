@@ -7,6 +7,9 @@ import java.time.Instant
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.core.DebugObservability
+import com.arthamantri.android.core.LinkContextSignalExtractor
+import com.arthamantri.android.core.LinkContextSignals
+import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.sms.SmsParser
@@ -73,6 +76,11 @@ class TransactionNotificationListenerService : NotificationListenerService() {
         )
         val parsed = SmsParser.parseSignal(pkg, payload, setupState = setupState)
         val category = if (isUpiPackage) AppConstants.Domain.CATEGORY_UPI else parsed?.category
+        val messageLinkContext = LinkContextSignalExtractor.fromText(payload, linkClicked = false)
+        val recentLinkContext = RecentLinkContextTracker.currentSnapshot(this, nowMs = sbn.postTime)
+        val effectiveLinkContext = recentLinkContext?.signals ?: messageLinkContext
+        val shouldCreateAccessCandidate = signals.isSensitiveAccessSignal ||
+            (signals.isOtpVerification && recentLinkContext != null)
 
         serviceScope.launch {
             try {
@@ -107,10 +115,16 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                     hasUpiHandle = signals.hasUpiHandle,
                     hasUpiDeepLink = signals.hasUpiDeepLink,
                     hasUrl = signals.hasUrl,
-                    metadata = mapOf(
-                        "source" to AppConstants.PaymentInspection.SOURCE_NOTIFICATION,
-                        "posted_at" to Instant.ofEpochMilli(sbn.postTime).toString(),
-                        "is_upi_package" to isUpiPackage.toString(),
+                    linkClicked = effectiveLinkContext?.linkClicked,
+                    linkScheme = effectiveLinkContext?.linkScheme,
+                    urlHost = effectiveLinkContext?.urlHost,
+                    resolvedDomain = effectiveLinkContext?.resolvedDomain,
+                    metadata = buildLinkContextMetadata(
+                        source = AppConstants.PaymentInspection.SOURCE_NOTIFICATION,
+                        postedAt = Instant.ofEpochMilli(sbn.postTime).toString(),
+                        isUpiPackage = isUpiPackage,
+                        linkSignals = effectiveLinkContext,
+                        recentLinkCapturedAtMs = recentLinkContext?.capturedAtMs,
                     ),
                 )
 
@@ -132,7 +146,7 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                     ),
                 )
 
-                if (signals.isSensitiveAccessSignal) {
+                if (shouldCreateAccessCandidate) {
                     LiteracyRepository.submitContextEvent(
                         context = this@TransactionNotificationListenerService,
                         eventType = AppConstants.ContextEvents.EVENT_ACCOUNT_ACCESS_CANDIDATE,
@@ -147,9 +161,16 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                         hasUpiHandle = signals.hasUpiHandle,
                         hasUpiDeepLink = signals.hasUpiDeepLink,
                         hasUrl = signals.hasUrl,
-                        metadata = mapOf(
-                            "source" to AppConstants.PaymentInspection.SOURCE_NOTIFICATION,
-                            "is_upi_package" to isUpiPackage.toString(),
+                        linkClicked = effectiveLinkContext?.linkClicked,
+                        linkScheme = effectiveLinkContext?.linkScheme,
+                        urlHost = effectiveLinkContext?.urlHost,
+                        resolvedDomain = effectiveLinkContext?.resolvedDomain,
+                        metadata = buildLinkContextMetadata(
+                            source = AppConstants.PaymentInspection.SOURCE_NOTIFICATION,
+                            postedAt = Instant.ofEpochMilli(sbn.postTime).toString(),
+                            isUpiPackage = isUpiPackage,
+                            linkSignals = effectiveLinkContext,
+                            recentLinkCapturedAtMs = recentLinkContext?.capturedAtMs,
                         ),
                     )
                 }
@@ -223,9 +244,17 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                         hasUpiHandle = signals.hasUpiHandle,
                         hasUpiDeepLink = signals.hasUpiDeepLink,
                         hasUrl = signals.hasUrl,
-                        metadata = mapOf(
-                            "request_kind" to signal.requestKind,
-                            "source" to signal.source,
+                        linkClicked = effectiveLinkContext?.linkClicked,
+                        linkScheme = effectiveLinkContext?.linkScheme,
+                        urlHost = effectiveLinkContext?.urlHost,
+                        resolvedDomain = effectiveLinkContext?.resolvedDomain,
+                        metadata = buildLinkContextMetadata(
+                            source = signal.source,
+                            postedAt = Instant.ofEpochMilli(sbn.postTime).toString(),
+                            isUpiPackage = isUpiPackage,
+                            linkSignals = effectiveLinkContext,
+                            recentLinkCapturedAtMs = recentLinkContext?.capturedAtMs,
+                            extra = mapOf("request_kind" to signal.requestKind),
                         ),
                     )
                 }
@@ -241,6 +270,10 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                         rawText = signal.rawText,
                         source = signal.source,
                         setupState = setupState.wireValue,
+                        linkClicked = effectiveLinkContext?.linkClicked,
+                        linkScheme = effectiveLinkContext?.linkScheme,
+                        urlHost = effectiveLinkContext?.urlHost,
+                        resolvedDomain = effectiveLinkContext?.resolvedDomain,
                         timestamp = Instant.ofEpochMilli(sbn.postTime).toString(),
                     )
                     DebugObservability.trace(
@@ -401,6 +434,27 @@ class TransactionNotificationListenerService : NotificationListenerService() {
         val hasTxnKeywords = AppConstants.Parsing.NOTIFICATION_TXN_KEYWORDS.any { lower.contains(it) }
         val hasMoneyMarker = AppConstants.Parsing.MONEY_MARKERS.any { lower.contains(it) }
         return hasTxnKeywords && hasMoneyMarker
+    }
+
+    private fun buildLinkContextMetadata(
+        source: String,
+        postedAt: String,
+        isUpiPackage: Boolean,
+        linkSignals: LinkContextSignals?,
+        recentLinkCapturedAtMs: Long?,
+        extra: Map<String, String> = emptyMap(),
+    ): Map<String, String> = buildMap {
+        put("source", source)
+        put("posted_at", postedAt)
+        put("is_upi_package", isUpiPackage.toString())
+        putAll(extra)
+        linkSignals?.let {
+            put("raw_url", it.rawUrl)
+            put("link_context_source", if (it.linkClicked) "recent_click" else "message_text")
+        }
+        recentLinkCapturedAtMs?.let {
+            put("link_age_ms", (System.currentTimeMillis() - it).toString())
+        }
     }
 
     private fun isFresh(pkg: String, payload: String): Boolean {

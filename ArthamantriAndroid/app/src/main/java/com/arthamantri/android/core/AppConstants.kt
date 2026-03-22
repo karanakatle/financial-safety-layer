@@ -29,6 +29,12 @@ object AppConstants {
         const val KEY_PAYMENT_APP_SETUP_STATE = "payment_app_setup_state"
         const val KEY_PAYMENT_APP_SETUP_SOURCE_APP = "payment_app_setup_source_app"
         const val KEY_PAYMENT_APP_SETUP_UPDATED_AT_MS = "payment_app_setup_updated_at_ms"
+        const val KEY_RECENT_LINK_URL = "recent_link_url"
+        const val KEY_RECENT_LINK_SCHEME = "recent_link_scheme"
+        const val KEY_RECENT_LINK_HOST = "recent_link_host"
+        const val KEY_RECENT_LINK_RESOLVED_DOMAIN = "recent_link_resolved_domain"
+        const val KEY_RECENT_LINK_SOURCE_APP = "recent_link_source_app"
+        const val KEY_RECENT_LINK_CAPTURED_AT_MS = "recent_link_captured_at_ms"
 
         const val APP_CONFIG_PREFS = "arthamantri_android_prefs"
         const val KEY_BASE_URL = "base_url"
@@ -52,6 +58,7 @@ object AppConstants {
         const val NOTIFICATION_DEDUPE_WINDOW_MS = 15_000L
         const val PAYMENT_DECISION_PAUSE_SECONDS = 3
         const val OFFLINE_QUEUE_MAX_ITEMS = 30
+        const val RECENT_LINK_CONTEXT_WINDOW_MS = 10 * 60 * 1000L
     }
 
     object IntentExtras {
@@ -64,10 +71,13 @@ object AppConstants {
         const val ALERT_NEXT_SAFE_ACTION = "extra_next_safe_action"
         const val ALERT_ESSENTIAL_GOAL_IMPACT = "extra_essential_goal_impact"
         const val ALERT_PRIMARY_ACTION_LABEL = "extra_alert_primary_action_label"
+        const val ALERT_FOCUSED_ACTION_LABELS = "extra_alert_focused_action_labels"
+        const val ALERT_PROCEED_CONFIRMATION_LABEL = "extra_alert_proceed_confirmation_label"
         const val ALERT_USE_FOCUSED_PAYMENT_ACTIONS = "extra_alert_use_focused_payment_actions"
         const val ALERT_FAMILY = "extra_alert_family"
         const val ALERT_SHOW_USEFULNESS_FEEDBACK = "extra_alert_show_usefulness_feedback"
         const val ALERT_OPEN_SUPPORT_PATH = "extra_alert_open_support_path"
+        const val INBOUND_LINK_CAPTURED = "extra_inbound_link_captured"
     }
 
     object NotificationExtras {
@@ -116,6 +126,7 @@ object AppConstants {
         const val OFFLINE_QUEUE_KIND_ALERT_FEEDBACK = "alert_feedback"
         const val OFFLINE_QUEUE_KIND_APP_LOG = "app_log"
         const val ALERT_FAMILY_PAYMENT = "payment"
+        const val ALERT_FAMILY_ACCOUNT_ACCESS = "account_access"
         const val ALERT_FAMILY_CASHFLOW = "cashflow"
         const val LOCAL_FALLBACK_ALERT_PREFIX = "local-cashflow-fallback"
         const val LOCAL_PAYMENT_FALLBACK_ALERT_PREFIX = "local-payment-fallback"
@@ -128,6 +139,7 @@ object AppConstants {
         const val EVENT_PAYMENT_CANDIDATE = "payment_candidate"
         const val EVENT_ACCOUNT_ACCESS_CANDIDATE = "account_access_candidate"
         const val EVENT_SETUP_STATE_TRANSITION = "setup_state_transition"
+        const val EVENT_LINK_CLICK = "link_click"
         const val EVENT_ALERT_ACTION = "alert_action"
 
         const val CLASSIFICATION_OBSERVED = "observed"

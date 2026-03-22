@@ -23,7 +23,7 @@ object PaymentInspectionAlertPresenter {
         if (!inspection.should_warn) {
             return false
         }
-        if (!hasMeaningfulPaymentContext(requestKind, amount, payeeLabel, payeeHandle, rawText)) {
+        if (!hasMeaningfulInspectionContext(requestKind, amount, payeeLabel, payeeHandle, rawText)) {
             return false
         }
 
@@ -32,23 +32,42 @@ object PaymentInspectionAlertPresenter {
             return false
         }
 
+        val alertFamily = resolveAlertFamily(inspection)
         val scenario = inspection.scenario?.trim().orEmpty()
         val riskLevel = inspection.risk_level?.trim().orEmpty()
-        val isFallback = scenario == "unknown"
+        val isFallback = alertFamily == AppConstants.Domain.ALERT_FAMILY_PAYMENT && scenario == "unknown"
+        val title = inspection.title?.trim().takeUnless { it.isNullOrBlank() }
+            ?: context.getString(
+                if (alertFamily == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+                    R.string.alert_access_risk_title
+                } else if (isFallback) {
+                    R.string.alert_payment_uncertain_title
+                } else {
+                    R.string.alert_payment_risk_title
+                }
+            )
+        val primaryActionLabel = inspection.primary_action_label?.trim().takeUnless { it.isNullOrBlank() }
+            ?: if (alertFamily == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+                context.getString(R.string.alert_access_ack_long)
+            } else {
+                context.getString(R.string.alert_payment_ack_long)
+            }
+        val focusedActionLabels = inspection.action_labels.takeIf { it.size >= 3 && it.all { label -> label.isNotBlank() } }
+        val proceedConfirmationLabel = inspection.proceed_confirmation_label?.trim().takeUnless { it.isNullOrBlank() }
 
         AlertNotifier.show(
             context = context,
-            title = context.getString(
-                if (isFallback) R.string.alert_payment_uncertain_title else R.string.alert_payment_risk_title
-            ),
+            title = title,
             body = body,
             alertId = inspection.alert_id,
             severity = severityForRisk(riskLevel, isFallback),
             pauseSeconds = pauseSecondsForRisk(riskLevel, isFallback),
             whyThisAlert = inspection.why_this_alert,
             nextSafeAction = inspection.next_best_action,
-            primaryActionLabel = context.getString(R.string.alert_payment_ack_long),
-            alertFamily = AppConstants.Domain.ALERT_FAMILY_PAYMENT,
+            primaryActionLabel = primaryActionLabel,
+            focusedActionLabels = focusedActionLabels,
+            proceedConfirmationLabel = proceedConfirmationLabel,
+            alertFamily = alertFamily,
             useFocusedPaymentActions = true,
         )
         return true
@@ -62,7 +81,7 @@ object PaymentInspectionAlertPresenter {
         payeeHandle: String,
         rawText: String,
     ): Boolean {
-        if (!hasMeaningfulPaymentContext(requestKind, amount, payeeLabel, payeeHandle, rawText)) {
+        if (!hasMeaningfulInspectionContext(requestKind, amount, payeeLabel, payeeHandle, rawText)) {
             return false
         }
 
@@ -116,7 +135,7 @@ object PaymentInspectionAlertPresenter {
         ).joinToString(":")
     }
 
-    private fun hasMeaningfulPaymentContext(
+    private fun hasMeaningfulInspectionContext(
         requestKind: String,
         amount: Double?,
         payeeLabel: String,
@@ -150,6 +169,14 @@ object PaymentInspectionAlertPresenter {
             riskLevel.equals("high", ignoreCase = true) -> 5
             isFallback -> 3
             else -> 0
+        }
+    }
+
+    private fun resolveAlertFamily(inspection: UpiRequestInspectResponse): String {
+        return if (inspection.alert_family == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+            AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS
+        } else {
+            AppConstants.Domain.ALERT_FAMILY_PAYMENT
         }
     }
 }
