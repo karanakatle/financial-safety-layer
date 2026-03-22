@@ -7,6 +7,7 @@ import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.model.LiteracyAlert
 import com.arthamantri.android.model.LiteracyAlertFeedbackRequest
 import com.arthamantri.android.model.LiteracyState
+import com.arthamantri.android.model.PilotContextEvent
 import com.arthamantri.android.model.PilotAppLogRequest
 import com.arthamantri.android.model.PilotConsentRequest
 import com.arthamantri.android.model.PilotFeedbackRequest
@@ -20,6 +21,7 @@ import com.arthamantri.android.model.UpiRequestInspectResponse
 import com.arthamantri.android.model.UpiOpenRequest
 import java.time.Instant
 import java.util.UUID
+import com.arthamantri.android.usage.PaymentAppSetupStateTracker
 
 object LiteracyRepository {
     data class SmsSendResult(
@@ -95,6 +97,7 @@ object LiteracyRepository {
         payeeHandle: String = "",
         rawText: String = "",
         source: String = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
+        setupState: String? = PaymentAppSetupStateTracker.currentSnapshot(context).state.wireValue,
         timestamp: String? = null,
     ): UpiRequestInspectResponse {
         val participantId = resolveParticipantId(context)
@@ -111,6 +114,7 @@ object LiteracyRepository {
                 payee_handle = payeeHandle,
                 raw_text = rawText,
                 source = source,
+                setup_state = setupState,
                 timestamp = timestamp,
             )
         )
@@ -164,6 +168,7 @@ object LiteracyRepository {
         level: String,
         message: String,
         language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
+        contextEvent: PilotContextEvent? = null,
     ): DeliveryResult {
         val request = PilotAppLogRequest(
                 event_id = UUID.randomUUID().toString(),
@@ -172,6 +177,7 @@ object LiteracyRepository {
                 message = message,
                 language = language,
                 timestamp = currentTimestamp(),
+                context_event = contextEvent,
             )
         return runCatching {
             val ok = ApiClient.literacyApi(context).pilotAppLog(request).ok
@@ -185,6 +191,56 @@ object LiteracyRepository {
             OfflineTelemetryQueue.enqueueAppLog(context, request)
             DeliveryResult(delivered = false, queued = true)
         }
+    }
+
+    suspend fun submitContextEvent(
+        context: Context,
+        eventType: String,
+        sourceApp: String? = null,
+        targetApp: String? = null,
+        correlationId: String? = null,
+        classification: String? = null,
+        setupState: String? = AppConstants.ContextEvents.SETUP_STATE_UNKNOWN,
+        suppressionReason: String? = null,
+        messageFamily: String? = null,
+        amount: Double? = null,
+        hasOtp: Boolean? = null,
+        hasUpiHandle: Boolean? = null,
+        hasUpiDeepLink: Boolean? = null,
+        hasUrl: Boolean? = null,
+        metadata: Map<String, String> = emptyMap(),
+    ): DeliveryResult {
+        val event = PilotContextEvent(
+            event_type = eventType,
+            source_app = sourceApp,
+            target_app = targetApp,
+            correlation_id = correlationId,
+            classification = classification,
+            setup_state = setupState,
+            suppression_reason = suppressionReason,
+            message_family = messageFamily,
+            amount = amount,
+            has_otp = hasOtp,
+            has_upi_handle = hasUpiHandle,
+            has_upi_deeplink = hasUpiDeepLink,
+            has_url = hasUrl,
+            metadata = metadata,
+        )
+        val summary = buildString {
+            append("context_event:")
+            append(eventType)
+            if (!sourceApp.isNullOrBlank()) {
+                append(":")
+                append(sourceApp)
+            }
+        }
+        return submitAppLog(
+            context = context,
+            level = AppConstants.Domain.PILOT_LOG_LEVEL_INFO,
+            message = summary,
+            language = resolveLanguage(context),
+            contextEvent = event,
+        )
     }
 
     suspend fun submitAlertFeedback(

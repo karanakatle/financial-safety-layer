@@ -8,8 +8,10 @@ import android.util.Log
 import com.arthamantri.android.R
 import com.arthamantri.android.config.AppConfig
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
+import com.arthamantri.android.usage.PaymentAppSetupStateTracker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,21 +38,80 @@ class BankSmsReceiver : BroadcastReceiver() {
             "Incoming SMS sender=$sender body='${body.take(180)}'"
         )
 
-        val parsed = SmsParser.parseSignal(sender, body)
-        if (parsed == null) {
-            Log.w(
-                AppConstants.LogTags.BANK_SMS_RECEIVER,
-                "SMS ignored: parser did not detect financial signal pattern"
-            )
-            return
-        }
-        Log.i(
-            AppConstants.LogTags.BANK_SMS_RECEIVER,
-            "Parsed SMS signal type=${parsed.signalType} confidence=${parsed.confidence} amount=${parsed.amount} category=${parsed.category} baseUrl=${AppConfig.getBaseUrl(context)}"
-        )
+        val signals = StructuredMessageSignalExtractor.extract(body)
+        val messageFamily = StructuredMessageSignalExtractor.messageFamily(signals)
+        val suppressionReason = StructuredMessageSignalExtractor.suppressionReason(signals)
+        val setupState = PaymentAppSetupStateTracker.currentSnapshot(context).state
+        val parsed = SmsParser.parseSignal(sender, body, setupState = setupState)
+        val shouldTrackContext =
+            parsed != null || suppressionReason != null || signals.isSensitiveAccessSignal || signals.hasStrongPaymentSignal
+        val correlationId = UUID.randomUUID().toString()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                if (shouldTrackContext) {
+                    LiteracyRepository.submitContextEvent(
+                        context = context,
+                        eventType = AppConstants.ContextEvents.EVENT_SMS_OBSERVED,
+                        sourceApp = sender,
+                        correlationId = correlationId,
+                        classification = if (suppressionReason != null) {
+                            AppConstants.ContextEvents.CLASSIFICATION_SUPPRESSED
+                        } else {
+                            AppConstants.ContextEvents.CLASSIFICATION_OBSERVED
+                        },
+                        suppressionReason = suppressionReason,
+                        messageFamily = messageFamily,
+                        amount = parsed?.amount,
+                        hasOtp = signals.hasOtpCode,
+                        hasUpiHandle = signals.hasUpiHandle,
+                        hasUpiDeepLink = signals.hasUpiDeepLink,
+                        hasUrl = signals.hasUrl,
+                        metadata = mapOf("source" to "sms"),
+                    )
+                }
+
+                if (signals.isSensitiveAccessSignal) {
+                    LiteracyRepository.submitContextEvent(
+                        context = context,
+                        eventType = AppConstants.ContextEvents.EVENT_ACCOUNT_ACCESS_CANDIDATE,
+                        sourceApp = sender,
+                        correlationId = correlationId,
+                        classification = AppConstants.ContextEvents.CLASSIFICATION_ACCOUNT_ACCESS_CANDIDATE,
+                        suppressionReason = suppressionReason,
+                        messageFamily = messageFamily,
+                        amount = parsed?.amount,
+                        hasOtp = signals.hasOtpCode,
+                        hasUpiHandle = signals.hasUpiHandle,
+                        hasUpiDeepLink = signals.hasUpiDeepLink,
+                        hasUrl = signals.hasUrl,
+                        metadata = mapOf("source" to "sms"),
+                    )
+                }
+
+                PaymentAppSetupStateTracker.onStructuredMessage(
+                    context = context,
+                    sourceApp = sender,
+                    targetApp = null,
+                    rawText = body,
+                    signals = signals,
+                    correlationId = correlationId,
+                    nowMs = messages[0].timestampMillis,
+                )
+
+                if (parsed == null) {
+                    Log.w(
+                        AppConstants.LogTags.BANK_SMS_RECEIVER,
+                        "SMS ignored: parser did not detect financial signal pattern"
+                    )
+                    return@launch
+                }
+
+                Log.i(
+                    AppConstants.LogTags.BANK_SMS_RECEIVER,
+                    "Parsed SMS signal type=${parsed.signalType} confidence=${parsed.confidence} amount=${parsed.amount} category=${parsed.category} baseUrl=${AppConfig.getBaseUrl(context)}"
+                )
+
                 val result = LiteracyRepository.sendSmsSignal(
                     context = context,
                     signalType = parsed.signalType,
@@ -94,11 +155,13 @@ class BankSmsReceiver : BroadcastReceiver() {
                     AppConstants.LogMessages.BANK_SMS_PROCESS_FAILED,
                     e,
                 )
-                showLocalFallback(
-                    context = context,
-                    parsed = parsed,
-                    telemetryReason = "network_unavailable",
-                )
+                parsed?.let {
+                    showLocalFallback(
+                        context = context,
+                        parsed = it,
+                        telemetryReason = "network_unavailable",
+                    )
+                }
             }
         }
     }

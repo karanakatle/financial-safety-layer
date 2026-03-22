@@ -3,6 +3,8 @@ package com.arthamantri.android.notify
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.sms.SmsParser
+import com.arthamantri.android.usage.PaymentAppSetupState
+import com.arthamantri.android.usage.isActiveOnboardingState
 
 data class PaymentInspectionNotificationSignal(
     val appName: String,
@@ -37,6 +39,7 @@ object PaymentInspectionNotificationParser {
         text: String,
         bigText: String,
         isUpiPackage: Boolean,
+        setupState: PaymentAppSetupState = PaymentAppSetupState.IDLE,
     ): PaymentInspectionNotificationSignal? {
         val rawText = listOf(title, text, bigText)
             .filter { it.isNotBlank() }
@@ -71,7 +74,11 @@ object PaymentInspectionNotificationParser {
         val hasUpiHandle = payeeHandleRegex.containsMatchIn(rawText)
         val hasUpiDeepLink = upiDeepLinkRegex.containsMatchIn(rawText)
         val hasStrongPaymentSignal = hasCollectKeyword || hasRefundKeyword || hasSendKeyword || hasUpiHandle || hasUpiDeepLink
+        val hasExplicitPaymentSignal = hasCollectKeyword || hasRefundKeyword || hasSendKeyword || hasUpiDeepLink
         if (!hasStrongPaymentSignal) {
+            return null
+        }
+        if (setupState.isActiveOnboardingState() && !hasExplicitPaymentSignal) {
             return null
         }
 

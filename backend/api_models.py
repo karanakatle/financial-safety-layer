@@ -74,6 +74,7 @@ class UPIRequestInspectIn(BaseModel):
     payee_handle: str = ""
     raw_text: str = ""
     source: str = "android"
+    setup_state: Optional[str] = None
     timestamp: Optional[str] = None
 
 
@@ -128,6 +129,24 @@ class PilotAppLogIn(BaseModel):
     message: str
     language: str = "en"
     timestamp: Optional[str] = None
+    context_event: Optional["PilotContextEventIn"] = None
+
+
+class PilotContextEventIn(BaseModel):
+    event_type: str
+    source_app: Optional[str] = None
+    target_app: Optional[str] = None
+    correlation_id: Optional[str] = None
+    classification: Optional[str] = None
+    setup_state: Optional[str] = None
+    suppression_reason: Optional[str] = None
+    message_family: Optional[str] = None
+    amount: Optional[float] = Field(default=None, ge=0)
+    has_otp: Optional[bool] = None
+    has_upi_handle: Optional[bool] = None
+    has_upi_deeplink: Optional[bool] = None
+    has_url: Optional[bool] = None
+    metadata: dict = Field(default_factory=dict)
 
 
 class EssentialGoalProfileUpsertIn(BaseModel):

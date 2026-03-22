@@ -106,13 +106,22 @@ def build_pilot_router(
     def pilot_analytics(
         request: Request,
         participant_id: Optional[str] = None,
+        event_type: Optional[str] = None,
+        correlation_id: Optional[str] = None,
         limit: int = 25,
     ) -> dict:
         require_admin(request)
         safe_limit = max(1, min(limit, 200))
         return {
-            **pilot_storage.analytics(recent_limit=safe_limit),
+            **pilot_storage.analytics(
+                recent_limit=safe_limit,
+                participant_id=participant_id,
+                event_type=event_type,
+                correlation_id=correlation_id,
+            ),
             "participant_id": participant_id,
+            "event_type": event_type,
+            "correlation_id": correlation_id,
             "telemetry_comparison": pilot_storage.unified_telemetry_comparison(
                 participant_id=participant_id,
                 limit=safe_limit * 4,
@@ -127,12 +136,16 @@ def build_pilot_router(
     def pilot_review(
         request: Request,
         participant_id: Optional[str] = None,
+        event_type: Optional[str] = None,
+        correlation_id: Optional[str] = None,
         limit: int = 25,
     ) -> dict:
         require_admin(request)
         safe_limit = max(1, min(limit, 200))
         return {
             "participant_id": participant_id,
+            "event_type": event_type,
+            "correlation_id": correlation_id,
             "telemetry_comparison": pilot_storage.unified_telemetry_comparison(
                 participant_id=participant_id,
                 limit=safe_limit * 4,
@@ -156,6 +169,43 @@ def build_pilot_router(
                 if participant_id
                 else []
             ),
+            "recent_context_events": pilot_storage.recent_app_logs(
+                participant_id=participant_id,
+                limit=safe_limit,
+                event_type=event_type,
+                correlation_id=correlation_id,
+                context_only=True,
+            ),
+            "context_event_breakdown": pilot_storage.context_event_breakdown(participant_id=participant_id),
+        }
+
+    @router.get("/api/pilot/context-events")
+    def pilot_context_events(
+        request: Request,
+        participant_id: Optional[str] = None,
+        event_type: Optional[str] = None,
+        correlation_id: Optional[str] = None,
+        classification: Optional[str] = None,
+        limit: int = 25,
+    ) -> dict:
+        require_admin(request)
+        safe_limit = max(1, min(limit, 500))
+        records = pilot_storage.recent_app_logs(
+            participant_id=participant_id,
+            limit=safe_limit,
+            event_type=event_type,
+            correlation_id=correlation_id,
+            classification=classification,
+            context_only=True,
+        )
+        return {
+            "participant_id": participant_id,
+            "event_type": event_type,
+            "correlation_id": correlation_id,
+            "classification": classification,
+            "count": len(records),
+            "events": records,
+            "breakdown": pilot_storage.context_event_breakdown(participant_id=participant_id),
         }
 
     @router.post("/api/pilot/app-log")
@@ -172,6 +222,20 @@ def build_pilot_router(
             language=language,
             timestamp=event_timestamp,
             event_id=payload.event_id,
+            event_type=(payload.context_event.event_type if payload.context_event else None),
+            source_app=(payload.context_event.source_app if payload.context_event else None),
+            target_app=(payload.context_event.target_app if payload.context_event else None),
+            correlation_id=(payload.context_event.correlation_id if payload.context_event else None),
+            classification=(payload.context_event.classification if payload.context_event else None),
+            setup_state=(payload.context_event.setup_state if payload.context_event else None),
+            suppression_reason=(payload.context_event.suppression_reason if payload.context_event else None),
+            message_family=(payload.context_event.message_family if payload.context_event else None),
+            amount=(payload.context_event.amount if payload.context_event else None),
+            has_otp=(payload.context_event.has_otp if payload.context_event else None),
+            has_upi_handle=(payload.context_event.has_upi_handle if payload.context_event else None),
+            has_upi_deeplink=(payload.context_event.has_upi_deeplink if payload.context_event else None),
+            has_url=(payload.context_event.has_url if payload.context_event else None),
+            metadata=(payload.context_event.metadata if payload.context_event else None),
         )
         telemetry_recorded = False
         if inserted:

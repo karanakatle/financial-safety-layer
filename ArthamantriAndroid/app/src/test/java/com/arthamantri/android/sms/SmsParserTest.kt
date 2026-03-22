@@ -1,12 +1,19 @@
 package com.arthamantri.android.sms
 
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.usage.PaymentAppSetupState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SmsParserTest {
+    private data class SetupSmsFixture(
+        val sender: String,
+        val message: String,
+        val setupState: PaymentAppSetupState,
+    )
+
     @Test
     fun `parser detects expense signal from debit sms`() {
         val parsed = SmsParser.parseSignal(
@@ -95,5 +102,47 @@ class SmsParserTest {
         assertEquals(AppConstants.Domain.SMS_SIGNAL_PARTIAL, parsed?.signalType)
         assertEquals(AppConstants.Domain.SMS_SIGNAL_PARTIAL_CONFIDENCE, parsed?.confidence)
         assertEquals(900.0, parsed?.amount)
+    }
+
+    @Test
+    fun `parser suppresses partial upi setup sms when onboarding is active`() {
+        val parsed = SmsParser.parseSignal(
+            sender = "VM-PHONPE",
+            message = "Txn alert: UPI account setup in progress for your bank profile.",
+            setupState = PaymentAppSetupState.PHONE_VERIFICATION,
+        )
+
+        assertNull(parsed)
+    }
+
+    @Test
+    fun `parser suppresses setup sms fixtures across onboarding phases`() {
+        val fixtures = listOf(
+            SetupSmsFixture(
+                sender = "VM-PHONPE",
+                message = "Your verification code is 245611. Verify mobile number to continue PhonePe setup.",
+                setupState = PaymentAppSetupState.PHONE_VERIFICATION,
+            ),
+            SetupSmsFixture(
+                sender = "VM-GPAY",
+                message = "Link bank account to continue setup. Bank account fetch in progress for Google Pay.",
+                setupState = PaymentAppSetupState.BANK_ACCOUNT_FETCH,
+            ),
+            SetupSmsFixture(
+                sender = "VM-PAYTM",
+                message = "Set UPI PIN to complete Paytm setup for your bank profile.",
+                setupState = PaymentAppSetupState.UPI_PIN_SETUP,
+            ),
+        )
+
+        fixtures.forEach { fixture ->
+            val parsed = SmsParser.parseSignal(
+                sender = fixture.sender,
+                message = fixture.message,
+                setupState = fixture.setupState,
+            )
+
+            assertNull("${fixture.sender} setup fixture should stay silent", parsed)
+        }
     }
 }

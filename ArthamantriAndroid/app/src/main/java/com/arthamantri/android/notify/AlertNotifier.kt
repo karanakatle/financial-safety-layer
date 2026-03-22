@@ -19,6 +19,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.DebugObservability
 
 object AlertNotifier {
     data class AlertVisualStyle(
@@ -85,7 +86,30 @@ object AlertNotifier {
         mainHandler.post {
             val resolvedAlertId = alertId ?: java.util.UUID.randomUUID().toString()
             val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            val canDrawOverlays = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
+            DebugObservability.traceAsync(
+                context = context,
+                tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                event = "alert_show_requested",
+                fields = mapOf(
+                    "alert_id" to resolvedAlertId,
+                    "severity" to resolvedSeverity,
+                    "alert_family" to alertFamily,
+                    "can_draw_overlays" to canDrawOverlays.toString(),
+                    "keyguard_locked" to keyguardManager.isKeyguardLocked.toString(),
+                    "use_focused_payment_actions" to useFocusedPaymentActions.toString(),
+                ),
+            )
             if (keyguardManager.isKeyguardLocked) {
+                DebugObservability.traceAsync(
+                    context = context,
+                    tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                    event = "alert_show_aborted",
+                    fields = mapOf(
+                        "alert_id" to resolvedAlertId,
+                        "reason" to "keyguard_locked",
+                    ),
+                )
                 return@post
             }
             val alertIntent = buildAlertIntent(
@@ -104,7 +128,17 @@ object AlertNotifier {
                 useFocusedPaymentActions = useFocusedPaymentActions,
             )
 
-            val overlayShown = if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)) {
+            DebugObservability.traceAsync(
+                context = context,
+                tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                event = "alert_overlay_attempted",
+                fields = mapOf(
+                    "alert_id" to resolvedAlertId,
+                    "can_draw_overlays" to canDrawOverlays.toString(),
+                ),
+            )
+
+            val overlayShown = if (canDrawOverlays) {
                 OverlayAlertWindow.show(
                     context = context,
                     alertId = resolvedAlertId,
@@ -124,9 +158,32 @@ object AlertNotifier {
                 false
             }
 
+            DebugObservability.traceAsync(
+                context = context,
+                tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                event = "alert_overlay_result",
+                fields = mapOf(
+                    "alert_id" to resolvedAlertId,
+                    "overlay_shown" to overlayShown.toString(),
+                    "can_draw_overlays" to canDrawOverlays.toString(),
+                ),
+            )
+
             if (!overlayShown) {
                 // Fallback when overlay permission is absent or blocked.
-                runCatching { context.startActivity(alertIntent) }
+                val fallbackStarted = runCatching {
+                    context.startActivity(alertIntent)
+                    true
+                }.getOrElse { false }
+                DebugObservability.traceAsync(
+                    context = context,
+                    tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                    event = "alert_activity_fallback_result",
+                    fields = mapOf(
+                        "alert_id" to resolvedAlertId,
+                        "fallback_started" to fallbackStarted.toString(),
+                    ),
+                )
             }
             postAlertNotification(
                 context = context,
@@ -244,6 +301,15 @@ object AlertNotifier {
             ActivityCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
             != PackageManager.PERMISSION_GRANTED
         ) {
+            DebugObservability.traceAsync(
+                context = context,
+                tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                event = "alert_notification_skipped",
+                fields = mapOf(
+                    "alert_id" to alertId,
+                    "reason" to "missing_post_notifications_permission",
+                ),
+            )
             return
         }
 
@@ -261,6 +327,15 @@ object AlertNotifier {
             .build()
 
         NotificationManagerCompat.from(context).notify(notificationIdForAlert(alertId), notification)
+        DebugObservability.traceAsync(
+            context = context,
+            tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+            event = "alert_notification_posted",
+            fields = mapOf(
+                "alert_id" to alertId,
+                "notification_priority" to style.notificationPriority.toString(),
+            ),
+        )
     }
 
     private fun notificationIdForAlert(alertId: String): Int {

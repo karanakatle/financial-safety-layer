@@ -64,6 +64,20 @@ class PilotStorage:
                     participant_id TEXT NOT NULL,
                     level TEXT NOT NULL,
                     message TEXT NOT NULL,
+                    event_type TEXT,
+                    source_app TEXT,
+                    target_app TEXT,
+                    correlation_id TEXT,
+                    classification TEXT,
+                    setup_state TEXT,
+                    suppression_reason TEXT,
+                    message_family TEXT,
+                    amount REAL,
+                    has_otp INTEGER,
+                    has_upi_handle INTEGER,
+                    has_upi_deeplink INTEGER,
+                    has_url INTEGER,
+                    metadata_json TEXT NOT NULL DEFAULT '{}',
                     language TEXT NOT NULL,
                     timestamp TEXT NOT NULL
                 );
@@ -247,6 +261,20 @@ class PilotStorage:
             self._ensure_column(conn, "participant_policy", "is_auto INTEGER NOT NULL DEFAULT 1")
             self._ensure_column(conn, "participant_policy", "updated_at TEXT NOT NULL DEFAULT ''")
             self._ensure_column(conn, "app_logs", "event_id TEXT")
+            self._ensure_column(conn, "app_logs", "event_type TEXT")
+            self._ensure_column(conn, "app_logs", "source_app TEXT")
+            self._ensure_column(conn, "app_logs", "target_app TEXT")
+            self._ensure_column(conn, "app_logs", "correlation_id TEXT")
+            self._ensure_column(conn, "app_logs", "classification TEXT")
+            self._ensure_column(conn, "app_logs", "setup_state TEXT")
+            self._ensure_column(conn, "app_logs", "suppression_reason TEXT")
+            self._ensure_column(conn, "app_logs", "message_family TEXT")
+            self._ensure_column(conn, "app_logs", "amount REAL")
+            self._ensure_column(conn, "app_logs", "has_otp INTEGER")
+            self._ensure_column(conn, "app_logs", "has_upi_handle INTEGER")
+            self._ensure_column(conn, "app_logs", "has_upi_deeplink INTEGER")
+            self._ensure_column(conn, "app_logs", "has_url INTEGER")
+            self._ensure_column(conn, "app_logs", "metadata_json TEXT NOT NULL DEFAULT '{}'")
             self._ensure_column(conn, "alert_feedback", "event_id TEXT")
             self._ensure_column(conn, "unified_telemetry", "event_id TEXT")
             conn.execute(
@@ -280,6 +308,114 @@ class PilotStorage:
         if column_name in existing:
             return
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column_def}")
+
+    def _parse_app_log_row(self, row: sqlite3.Row) -> dict:
+        data = dict(row)
+        data["metadata"] = self._parse_json_object(data.pop("metadata_json", None))
+        for key in ("has_otp", "has_upi_handle", "has_upi_deeplink", "has_url"):
+            value = data.get(key)
+            if value is not None:
+                data[key] = bool(value)
+        return data
+
+    def recent_app_logs(
+        self,
+        participant_id: str | None = None,
+        *,
+        limit: int = 25,
+        event_type: str | None = None,
+        correlation_id: str | None = None,
+        classification: str | None = None,
+        context_only: bool = False,
+    ) -> list[dict]:
+        clauses: list[str] = []
+        params: list[object] = []
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        if event_type:
+            clauses.append("event_type=?")
+            params.append(event_type)
+        if correlation_id:
+            clauses.append("correlation_id=?")
+            params.append(correlation_id)
+        if classification:
+            clauses.append("classification=?")
+            params.append(classification)
+        if context_only:
+            clauses.append("event_type IS NOT NULL")
+        where_sql = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        params.append(limit)
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT participant_id, level, message, event_type, source_app, target_app,
+                       correlation_id, classification, setup_state, suppression_reason,
+                       message_family, amount, has_otp, has_upi_handle, has_upi_deeplink,
+                       has_url, metadata_json, language, timestamp
+                FROM app_logs
+                {where_sql}
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                tuple(params),
+            ).fetchall()
+        return [self._parse_app_log_row(row) for row in rows]
+
+    def context_event_breakdown(self, participant_id: str | None = None) -> dict:
+        clauses = ["event_type IS NOT NULL"]
+        params: list[object] = []
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        where_sql = " AND ".join(clauses)
+
+        with self._connect() as conn:
+            by_event_type = [
+                dict(row)
+                for row in conn.execute(
+                    f"""
+                    SELECT event_type, COUNT(*) AS count
+                    FROM app_logs
+                    WHERE {where_sql}
+                    GROUP BY event_type
+                    ORDER BY count DESC, event_type
+                    """,
+                    tuple(params),
+                ).fetchall()
+            ]
+            by_classification = [
+                dict(row)
+                for row in conn.execute(
+                    f"""
+                    SELECT classification, COUNT(*) AS count
+                    FROM app_logs
+                    WHERE {where_sql}
+                    GROUP BY classification
+                    ORDER BY count DESC, classification
+                    """,
+                    tuple(params),
+                ).fetchall()
+            ]
+            by_message_family = [
+                dict(row)
+                for row in conn.execute(
+                    f"""
+                    SELECT message_family, COUNT(*) AS count
+                    FROM app_logs
+                    WHERE {where_sql}
+                    GROUP BY message_family
+                    ORDER BY count DESC, message_family
+                    """,
+                    tuple(params),
+                ).fetchall()
+            ]
+        return {
+            "by_event_type": by_event_type,
+            "by_classification": by_classification,
+            "by_message_family": by_message_family,
+        }
 
     def upsert_consent(self, participant_id: str, accepted: bool, language: str, timestamp: str) -> None:
         with self._connect() as conn:
@@ -373,7 +509,13 @@ class PilotStorage:
             "average_rating": avg_rating,
         }
 
-    def analytics(self, recent_limit: int = 25) -> dict:
+    def analytics(
+        self,
+        recent_limit: int = 25,
+        participant_id: str | None = None,
+        event_type: str | None = None,
+        correlation_id: str | None = None,
+    ) -> dict:
         with self._connect() as conn:
             event_breakdown = [
                 dict(row)
@@ -410,24 +552,27 @@ class PilotStorage:
                     (recent_limit,),
                 ).fetchall()
             ]
-            recent_logs = [
-                dict(row)
-                for row in conn.execute(
-                    """
-                    SELECT participant_id, level, message, language, timestamp
-                    FROM app_logs
-                    ORDER BY id DESC
-                    LIMIT ?
-                    """,
-                    (recent_limit,),
-                ).fetchall()
-            ]
+            recent_logs = self.recent_app_logs(
+                participant_id=participant_id,
+                limit=recent_limit,
+                event_type=event_type,
+                correlation_id=correlation_id,
+            )
+            recent_context_events = self.recent_app_logs(
+                participant_id=participant_id,
+                limit=recent_limit,
+                event_type=event_type,
+                correlation_id=correlation_id,
+                context_only=True,
+            )
 
         return {
             "event_breakdown": event_breakdown,
             "stage_breakdown": stage_breakdown,
             "recent_feedback": recent_feedback,
             "recent_app_logs": recent_logs,
+            "recent_context_events": recent_context_events,
+            "context_event_breakdown": self.context_event_breakdown(participant_id=participant_id),
         }
 
     def add_app_log(
@@ -438,14 +583,54 @@ class PilotStorage:
         language: str,
         timestamp: str,
         event_id: str | None = None,
+        event_type: str | None = None,
+        source_app: str | None = None,
+        target_app: str | None = None,
+        correlation_id: str | None = None,
+        classification: str | None = None,
+        setup_state: str | None = None,
+        suppression_reason: str | None = None,
+        message_family: str | None = None,
+        amount: float | None = None,
+        has_otp: bool | None = None,
+        has_upi_handle: bool | None = None,
+        has_upi_deeplink: bool | None = None,
+        has_url: bool | None = None,
+        metadata: dict | None = None,
     ) -> bool:
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT OR IGNORE INTO app_logs (event_id, participant_id, level, message, language, timestamp)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT OR IGNORE INTO app_logs (
+                    event_id, participant_id, level, message, event_type, source_app, target_app,
+                    correlation_id, classification, setup_state, suppression_reason, message_family,
+                    amount, has_otp, has_upi_handle, has_upi_deeplink, has_url, metadata_json,
+                    language, timestamp
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (event_id, participant_id, level, message, language, timestamp),
+                (
+                    event_id,
+                    participant_id,
+                    level,
+                    message,
+                    event_type,
+                    source_app,
+                    target_app,
+                    correlation_id,
+                    classification,
+                    setup_state,
+                    suppression_reason,
+                    message_family,
+                    amount,
+                    None if has_otp is None else (1 if has_otp else 0),
+                    None if has_upi_handle is None else (1 if has_upi_handle else 0),
+                    None if has_upi_deeplink is None else (1 if has_upi_deeplink else 0),
+                    None if has_url is None else (1 if has_url else 0),
+                    self._json_text(metadata),
+                    language,
+                    timestamp,
+                ),
             )
         return cursor.rowcount > 0
 

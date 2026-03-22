@@ -11,6 +11,7 @@ import android.util.Log
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.notify.AlertNotifier
+import com.arthamantri.android.repo.LiteracyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,6 +23,7 @@ class AppUsageForegroundService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + Job())
     private var lastForegroundPackage: String? = null
     private var lastUpiSignalAtMs: Long = 0L
+    private val trackedContextPackages = setOf("com.whatsapp")
 
     override fun onCreate() {
         super.onCreate()
@@ -53,8 +55,37 @@ class AppUsageForegroundService : Service() {
                     if (pkg != null && pkg != lastForegroundPackage) {
                         lastForegroundPackage = pkg
                         // Foreground app switches alone are too noisy to treat as payment intent.
-                        if (UpiPackages.isUpiPackage(this@AppUsageForegroundService, pkg)) {
+                        val isUpiPackage = UpiPackages.isUpiPackage(this@AppUsageForegroundService, pkg)
+                        if (isUpiPackage) {
                             lastUpiSignalAtMs = System.currentTimeMillis()
+                        }
+                        if (isUpiPackage || trackedContextPackages.contains(pkg)) {
+                            val targetApp = if (isUpiPackage) {
+                                UpiPackages.displayName(this@AppUsageForegroundService, pkg)
+                            } else {
+                                pkg
+                            }
+                            LiteracyRepository.submitContextEvent(
+                                context = this@AppUsageForegroundService,
+                                eventType = AppConstants.ContextEvents.EVENT_APP_OPEN,
+                                sourceApp = pkg,
+                                targetApp = targetApp,
+                                classification = AppConstants.ContextEvents.CLASSIFICATION_OBSERVED,
+                                metadata = buildMap {
+                                    put("package_name", pkg)
+                                    put("is_upi_package", isUpiPackage.toString())
+                                    if (lastUpiSignalAtMs > 0L) {
+                                        put("last_upi_signal_at_ms", lastUpiSignalAtMs.toString())
+                                    }
+                                },
+                            )
+                            if (isUpiPackage) {
+                                PaymentAppSetupStateTracker.onAppOpen(
+                                    context = this@AppUsageForegroundService,
+                                    sourceApp = pkg,
+                                    targetApp = targetApp,
+                                )
+                            }
                         }
                     }
                 } catch (e: Exception) {

@@ -26,6 +26,13 @@ UNKNOWN_PAYEE_SCENARIO = "unknown_payee_or_unusual_amount"
 UNKNOWN_SCENARIO = "unknown"
 IGNORE_BENIGN_SCENARIO = "ignore_benign"
 STORE_ONLY_ACCOUNT_ACCESS_SCENARIO = "store_only_account_access"
+_ACTIVE_SETUP_STATES = {
+    "upi registration started",
+    "phone verification",
+    "bank account fetch",
+    "upi pin setup",
+    "registration success",
+}
 
 _GENERIC_PAYEE_MARKERS = {
     "",
@@ -48,6 +55,7 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
     payee_label = _normalize(payload.payee_label)
     payee_handle = _normalize(payload.payee_handle)
     request_kind = _normalize((payload.request_kind or "").replace("_", " ")).lower()
+    setup_state = _normalize((payload.setup_state or "").replace("_", " ")).lower()
 
     if signals.is_call_metadata:
         return _ignore_benign_decision(language)
@@ -69,6 +77,11 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
         return _ignore_benign_decision(language)
     if signals.is_sensitive_access_signal:
         return _store_only_account_access_decision(language)
+    if _is_active_setup_state(setup_state) and not _has_explicit_payment_signal(
+        raw_text=raw_text,
+        request_kind=request_kind,
+    ):
+        return _ignore_benign_decision(language)
     if not _has_strong_payment_signal(
         raw_text=raw_text,
         request_kind=request_kind,
@@ -156,6 +169,31 @@ def _is_missing_or_generic_payee(payee_label: str, payee_handle: str) -> bool:
     if normalized_handle:
         return False
     return normalized_label in _GENERIC_PAYEE_MARKERS
+
+
+def _is_active_setup_state(setup_state: str) -> bool:
+    return setup_state in _ACTIVE_SETUP_STATES
+
+
+def _has_explicit_payment_signal(*, raw_text: str, request_kind: str) -> bool:
+    normalized_request_kind = request_kind.replace("_", " ").strip().lower()
+    if normalized_request_kind in {"collect", "collect request", "refund", "refund request", "send money"}:
+        return True
+    return (
+        "request money" in raw_text
+        or "approve request" in raw_text
+        or "approve collect" in raw_text
+        or "collect" in raw_text
+        or "mandate" in raw_text
+        or "autopay" in raw_text
+        or "send money" in raw_text
+        or "approve payment" in raw_text
+        or "payment request" in raw_text
+        or "pay to" in raw_text
+        or "payment to" in raw_text
+        or "scan and pay" in raw_text
+        or "upi://pay" in raw_text
+    )
 
 
 def _collect_request_decision(language: str) -> PaymentScenarioDecision:
