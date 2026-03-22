@@ -31,6 +31,8 @@ object OverlayAlertWindow {
     private var currentSeverity: String = "medium"
     private var currentAlertFamily: String = ""
     private var currentPrimaryActionLabel: String = ""
+    private var currentFocusedActionLabels: List<String> = emptyList()
+    private var currentProceedConfirmationLabel: String = ""
     private var currentShowUsefulnessFeedback: Boolean = false
     private var currentUseFocusedPaymentActions: Boolean = false
     private var currentPauseSeconds: Int = 0
@@ -46,6 +48,8 @@ object OverlayAlertWindow {
         nextSafeAction: String? = null,
         essentialGoalImpact: String? = null,
         primaryActionLabel: String? = null,
+        focusedActionLabels: List<String>? = null,
+        proceedConfirmationLabel: String? = null,
         alertFamily: String? = null,
         showUsefulnessFeedback: Boolean = false,
         useFocusedPaymentActions: Boolean = false,
@@ -71,6 +75,8 @@ object OverlayAlertWindow {
                 nextSafeAction = nextSafeAction,
                 essentialGoalImpact = essentialGoalImpact,
                 primaryActionLabel = primaryActionLabel,
+                focusedActionLabels = focusedActionLabels,
+                proceedConfirmationLabel = proceedConfirmationLabel,
                 alertFamily = alertFamily,
                 showUsefulnessFeedback = showUsefulnessFeedback,
                 useFocusedPaymentActions = useFocusedPaymentActions,
@@ -99,6 +105,8 @@ object OverlayAlertWindow {
         currentSeverity = severity
         currentAlertFamily = alertFamily.orEmpty()
         currentPrimaryActionLabel = primaryActionLabel.orEmpty()
+        currentFocusedActionLabels = focusedActionLabels ?: emptyList()
+        currentProceedConfirmationLabel = proceedConfirmationLabel.orEmpty()
         currentShowUsefulnessFeedback = showUsefulnessFeedback
         currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
@@ -107,6 +115,8 @@ object OverlayAlertWindow {
             view = view,
             appContext = appContext,
             primaryActionLabel = primaryActionLabel,
+            focusedActionLabels = focusedActionLabels,
+            proceedConfirmationLabel = proceedConfirmationLabel,
             alertFamily = alertFamily,
             showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
@@ -156,6 +166,8 @@ object OverlayAlertWindow {
         nextSafeAction: String?,
         essentialGoalImpact: String?,
         primaryActionLabel: String?,
+        focusedActionLabels: List<String>?,
+        proceedConfirmationLabel: String?,
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
@@ -174,6 +186,8 @@ object OverlayAlertWindow {
         currentSeverity = severity
         currentAlertFamily = alertFamily.orEmpty()
         currentPrimaryActionLabel = primaryActionLabel.orEmpty()
+        currentFocusedActionLabels = focusedActionLabels ?: emptyList()
+        currentProceedConfirmationLabel = proceedConfirmationLabel.orEmpty()
         currentShowUsefulnessFeedback = showUsefulnessFeedback
         currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
@@ -190,6 +204,8 @@ object OverlayAlertWindow {
             view = view,
             appContext = view.context.applicationContext,
             primaryActionLabel = primaryActionLabel,
+            focusedActionLabels = focusedActionLabels,
+            proceedConfirmationLabel = proceedConfirmationLabel,
             alertFamily = alertFamily,
             showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
@@ -245,6 +261,8 @@ object OverlayAlertWindow {
         view: View,
         appContext: Context,
         primaryActionLabel: String?,
+        focusedActionLabels: List<String>?,
+        proceedConfirmationLabel: String?,
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
@@ -261,9 +279,27 @@ object OverlayAlertWindow {
         proceedConfirmGroup.visibility = View.GONE
 
         if (useFocusedPaymentActions) {
-            dismissBtn.text = view.context.getString(R.string.alert_action_pause)
-            usefulBtn.text = view.context.getString(R.string.alert_action_decline)
-            notUsefulBtn.text = view.context.getString(R.string.alert_action_proceed)
+            val defaultLabels = if (alertFamily == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+                listOf(
+                    view.context.getString(R.string.alert_action_pause),
+                    view.context.getString(R.string.alert_action_protect_account),
+                    view.context.getString(R.string.alert_action_continue_anyway),
+                )
+            } else {
+                listOf(
+                    view.context.getString(R.string.alert_action_pause),
+                    view.context.getString(R.string.alert_action_decline),
+                    view.context.getString(R.string.alert_action_proceed),
+                )
+            }
+            val resolvedLabels = if ((focusedActionLabels ?: emptyList()).size >= 3) {
+                focusedActionLabels ?: emptyList()
+            } else {
+                defaultLabels
+            }
+            dismissBtn.text = resolvedLabels[0]
+            usefulBtn.text = resolvedLabels[1]
+            notUsefulBtn.text = resolvedLabels[2]
             trustedPersonBtn.visibility = View.VISIBLE
             trustedPersonBtn.text = view.context.getString(R.string.alert_action_trusted_person)
             supportBtn.visibility = View.VISIBLE
@@ -272,7 +308,13 @@ object OverlayAlertWindow {
             feedbackRow.visibility = View.VISIBLE
             notUsefulBtn.setBackgroundResource(R.drawable.bg_btn_low_emphasis)
             notUsefulBtn.setTextColor(ContextCompat.getColor(view.context, R.color.text_secondary))
-            confirmProceedBtn.text = view.context.getString(R.string.alert_proceed_confirmation_confirm)
+            confirmProceedBtn.text = proceedConfirmationLabel?.takeIf { it.isNotBlank() } ?: view.context.getString(
+                if (alertFamily == AppConstants.Domain.ALERT_FAMILY_ACCOUNT_ACCESS) {
+                    R.string.alert_access_proceed_confirmation_confirm
+                } else {
+                    R.string.alert_proceed_confirmation_confirm
+                }
+            )
 
             dismissBtn.setOnClickListener {
                 proceedConfirmGroup.visibility = View.GONE
@@ -456,6 +498,8 @@ object OverlayAlertWindow {
             nextSafeAction = currentNextSafeAction,
             essentialGoalImpact = currentEssentialGoalImpact,
             primaryActionLabel = currentPrimaryActionLabel,
+            focusedActionLabels = currentFocusedActionLabels,
+            proceedConfirmationLabel = currentProceedConfirmationLabel,
             useFocusedPaymentActions = currentUseFocusedPaymentActions,
         )
 
@@ -513,6 +557,8 @@ object OverlayAlertWindow {
         currentSeverity = "medium"
         currentAlertFamily = ""
         currentPrimaryActionLabel = ""
+        currentFocusedActionLabels = emptyList()
+        currentProceedConfirmationLabel = ""
         currentShowUsefulnessFeedback = false
         currentUseFocusedPaymentActions = false
         currentPauseSeconds = 0
@@ -531,6 +577,8 @@ object OverlayAlertWindow {
             nextSafeAction = currentNextSafeAction,
             essentialGoalImpact = currentEssentialGoalImpact,
             primaryActionLabel = currentPrimaryActionLabel,
+            focusedActionLabels = currentFocusedActionLabels,
+            proceedConfirmationLabel = currentProceedConfirmationLabel,
             alertFamily = currentAlertFamily.ifBlank { null },
             showUsefulnessFeedback = currentShowUsefulnessFeedback,
             useFocusedPaymentActions = currentUseFocusedPaymentActions,

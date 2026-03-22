@@ -43,7 +43,15 @@ from backend.literacy import (
     risk_level_from_score,
     why_text,
 )
+from backend.literacy.domain_intelligence import enrich_domain_context
+from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
+from backend.literacy.entity_trust import (
+    ENTITY_KIND_DOMAIN,
+    apply_feedback,
+    seed_for_domain_class,
+)
 from backend.literacy.payment_inspection import inspect_payment_request
+from backend.literacy.sequence_correlation import build_recent_sequence_groups, build_sequence_evidence
 from backend.pilot import PilotStorage
 from backend.pilot.admin import require_pilot_admin
 from backend.pilot.telemetry import (
@@ -114,10 +122,146 @@ def _normalized_participant_id(value: str | None) -> str:
     return normalized or LEGACY_DEFAULT_PARTICIPANT_ID
 
 
+def _update_entity_from_alert_feedback(
+    *,
+    source_record: dict | None,
+    feedback_action: str,
+    timestamp: str,
+) -> None:
+    if not source_record:
+        return
+
+    context = source_record.get("context") or {}
+    domain_context = enrich_domain_context(
+        link_scheme=context.get("link_scheme"),
+        url_host=context.get("url_host"),
+        resolved_domain=context.get("resolved_domain"),
+        domain_class=context.get("domain_class"),
+    )
+    entity_key = domain_context.resolved_domain or domain_context.url_host
+    if not entity_key:
+        return
+
+    existing = pilot_storage.get_entity(entity_key=entity_key, entity_kind=ENTITY_KIND_DOMAIN)
+    reputation = pilot_storage.get_entity_reputation(entity_key=entity_key, entity_kind=ENTITY_KIND_DOMAIN)
+    participant_id = str(source_record.get("participant_id") or "").strip()
+    profile = pilot_storage.get_essential_goal_profile(participant_id) if participant_id else None
+    cohort = str((profile or {}).get("cohort") or "unknown").strip() or "unknown"
+    cohort_reputation = pilot_storage.get_entity_cohort_reputation(
+        entity_key=entity_key,
+        entity_kind=ENTITY_KIND_DOMAIN,
+        cohort=cohort,
+    )
+    seed = seed_for_domain_class(domain_context.domain_class)
+    next_state, next_score, deltas = apply_feedback(
+        current_state=(existing or {}).get("trust_state") or seed.trust_state,
+        current_score=float((existing or {}).get("trust_score") or seed.trust_score),
+        review_status=(existing or {}).get("review_status") or "none",
+        benign_count=int((existing or {}).get("benign_count") or 0),
+        benign_day_count=int(((existing or {}).get("evidence") or {}).get("distinct_benign_days") or 0),
+        suspicious_count=int((existing or {}).get("suspicious_count") or 0),
+        user_safe_feedback_count=int((existing or {}).get("user_safe_feedback_count") or 0),
+        user_suspicious_feedback_count=int((existing or {}).get("user_suspicious_feedback_count") or 0),
+        feedback_action=feedback_action,
+        telemetry_family=source_record.get("telemetry_family"),
+        strong_consistency_signal=(
+            int(((existing or {}).get("evidence") or {}).get("source_consistency_count") or 0) >= 2 and
+            int(((existing or {}).get("evidence") or {}).get("target_consistency_count") or 0) >= 2
+        ) or
+        int(((existing or {}).get("evidence") or {}).get("source_consistency_count") or 0) >= 3 or
+        int(((existing or {}).get("evidence") or {}).get("target_consistency_count") or 0) >= 3,
+    )
+    if not any(deltas.values()):
+        return
+
+    pilot_storage.upsert_entity(
+        entity_key=entity_key,
+        entity_kind=ENTITY_KIND_DOMAIN,
+        entity_type=(existing or {}).get("entity_type") or seed.entity_type,
+        trust_state=next_state,
+        trust_score=next_score,
+        review_status=(existing or {}).get("review_status") or "none",
+        timestamp=timestamp,
+        benign_count=int((existing or {}).get("benign_count") or 0),
+        suspicious_count=int((existing or {}).get("suspicious_count") or 0) + deltas["suspicious_delta"],
+        user_safe_feedback_count=int((existing or {}).get("user_safe_feedback_count") or 0) + deltas["user_safe_feedback_delta"],
+        user_suspicious_feedback_count=int((existing or {}).get("user_suspicious_feedback_count") or 0) + deltas["user_suspicious_feedback_delta"],
+        account_access_risk_count=int((existing or {}).get("account_access_risk_count") or 0) + deltas["access_risk_delta"],
+        payment_risk_count=int((existing or {}).get("payment_risk_count") or 0) + deltas["payment_risk_delta"],
+        evidence={
+            **((existing or {}).get("evidence") or {}),
+            "last_domain_class": domain_context.domain_class,
+            "last_feedback_action": feedback_action,
+            "last_feedback_family": source_record.get("telemetry_family"),
+            "last_feedback_source": "alert_feedback",
+            "url_host": domain_context.url_host,
+        },
+    )
+    reputation_score, reputation_deltas = apply_reputation_feedback(
+        current_score=float((reputation or {}).get("reputation_score") or 0.0),
+        action=feedback_action,
+        telemetry_family=source_record.get("telemetry_family"),
+    )
+    if any(reputation_deltas.values()):
+        pilot_storage.upsert_entity_reputation(
+            entity_key=entity_key,
+            entity_kind=ENTITY_KIND_DOMAIN,
+            reputation_score=reputation_score,
+            unique_participant_count=int((reputation or {}).get("unique_participant_count") or 0),
+            suspicious_feedback_count=int((reputation or {}).get("suspicious_feedback_count") or 0) + reputation_deltas["suspicious_feedback_delta"],
+            safe_feedback_count=int((reputation or {}).get("safe_feedback_count") or 0) + reputation_deltas["safe_feedback_delta"],
+            account_access_risk_count=int((reputation or {}).get("account_access_risk_count") or 0),
+            payment_risk_count=int((reputation or {}).get("payment_risk_count") or 0),
+            manual_block_count=int((reputation or {}).get("manual_block_count") or 0),
+            manual_safe_count=int((reputation or {}).get("manual_safe_count") or 0),
+            timestamp=timestamp,
+            evidence={
+                **((reputation or {}).get("evidence") or {}),
+                "last_feedback_action": feedback_action,
+                "last_feedback_family": source_record.get("telemetry_family"),
+                "last_feedback_participant": source_record.get("participant_id"),
+            },
+        )
+        pilot_storage.upsert_entity_cohort_reputation(
+            entity_key=entity_key,
+            entity_kind=ENTITY_KIND_DOMAIN,
+            cohort=cohort,
+            reputation_score=float((cohort_reputation or {}).get("reputation_score") or 0.0) + (
+                reputation_score - float((reputation or {}).get("reputation_score") or 0.0)
+            ),
+            unique_participant_count=int((cohort_reputation or {}).get("unique_participant_count") or 0),
+            suspicious_feedback_count=int((cohort_reputation or {}).get("suspicious_feedback_count") or 0) + reputation_deltas["suspicious_feedback_delta"],
+            safe_feedback_count=int((cohort_reputation or {}).get("safe_feedback_count") or 0) + reputation_deltas["safe_feedback_delta"],
+            account_access_risk_count=int((cohort_reputation or {}).get("account_access_risk_count") or 0),
+            payment_risk_count=int((cohort_reputation or {}).get("payment_risk_count") or 0),
+            manual_block_count=int((cohort_reputation or {}).get("manual_block_count") or 0),
+            manual_safe_count=int((cohort_reputation or {}).get("manual_safe_count") or 0),
+            timestamp=timestamp,
+            evidence={
+                **((cohort_reputation or {}).get("evidence") or {}),
+                "last_feedback_action": feedback_action,
+                "last_feedback_family": source_record.get("telemetry_family"),
+                "last_feedback_participant": participant_id,
+                "cohort": cohort,
+            },
+        )
+
+
 def _coerce_iso_datetime(value: str | None) -> datetime:
     if not value:
         return datetime.utcnow()
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _resolve_entity_reputation_level(
+    *,
+    global_reputation: dict | None,
+    cohort_reputation: dict | None,
+) -> str:
+    priority = {"none": 0, "medium": 1, "high": 2}
+    cohort_level = reputation_risk_level(cohort_reputation)
+    global_level = reputation_risk_level(global_reputation)
+    return cohort_level if priority.get(cohort_level, 0) >= priority.get(global_level, 0) else global_level
 
 
 def _sms_signal_transport_kind(note: str | None) -> str:
@@ -791,11 +935,48 @@ def literacy_upi_request_inspect(payload: UPIRequestInspectIn) -> dict:
     participant_id = _normalized_participant_id(payload.participant_id)
     language = _normalized_language(payload.language)
     event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    domain_context = enrich_domain_context(
+        link_scheme=payload.link_scheme,
+        url_host=payload.url_host,
+        resolved_domain=payload.resolved_domain,
+        domain_class=payload.domain_class,
+    )
+    entity = None
+    reputation = None
+    cohort_reputation = None
+    entity_key = domain_context.resolved_domain or domain_context.url_host
+    participant_profile = pilot_storage.get_essential_goal_profile(participant_id)
+    participant_cohort = str((participant_profile or {}).get("cohort") or "unknown").strip() or "unknown"
+    if entity_key:
+        entity = pilot_storage.get_entity(
+            entity_key=entity_key,
+            entity_kind="domain",
+        )
+        reputation = pilot_storage.get_entity_reputation(
+            entity_key=entity_key,
+            entity_kind="domain",
+        )
+        cohort_reputation = pilot_storage.get_entity_cohort_reputation(
+            entity_key=entity_key,
+            entity_kind="domain",
+            cohort=participant_cohort,
+        )
     inspection = inspect_payment_request(
         payload,
         participant_id=participant_id,
         language=language,
         alert_id=str(uuid4()),
+        entity_trust_state=((entity or {}).get("trust_state") if entity else None),
+        entity_reputation_level=_resolve_entity_reputation_level(
+            global_reputation=reputation,
+            cohort_reputation=cohort_reputation,
+        ),
+        sequence_evidence=build_sequence_evidence(
+            pilot_storage=pilot_storage,
+            participant_id=participant_id,
+            timestamp=event_timestamp,
+            correlation_id=payload.correlation_id,
+        ),
     )
     inspection_payload = inspection.model_dump()
     if inspection_payload.get("should_warn", True):
@@ -951,6 +1132,11 @@ def literacy_debug_trace(request: Request, participant_id: str = "global_user", 
             participant_id=participant_id,
             limit=safe_limit,
         ),
+        "recent_sequence_traces": build_recent_sequence_groups(
+            pilot_storage=pilot_storage,
+            participant_id=participant_id,
+            limit=safe_limit,
+        ),
         "telemetry_comparison": pilot_storage.unified_telemetry_comparison(
             participant_id=participant_id,
             limit=safe_limit * 4,
@@ -1013,6 +1199,10 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
     normalized_alert_id = payload.alert_id.strip()
     normalized_action = payload.action.strip().lower()
     normalized_channel = payload.channel.strip().lower() or "overlay"
+    source_record = pilot_storage.latest_unified_telemetry_for_alert(
+        alert_id=normalized_alert_id,
+        participant_id=participant_id,
+    )
     inserted = pilot_storage.add_alert_feedback(
         event_id=payload.event_id,
         alert_id=normalized_alert_id,
@@ -1053,6 +1243,11 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
             "title": payload.title.strip(),
             "event_id": payload.event_id,
         },
+        timestamp=event_timestamp,
+    )
+    _update_entity_from_alert_feedback(
+        source_record=source_record,
+        feedback_action=normalized_action,
         timestamp=event_timestamp,
     )
     return {"ok": True, "deduplicated": False}

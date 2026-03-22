@@ -732,6 +732,7 @@ def test_context_events_can_be_ingested_and_filtered_for_review(tmp_path, monkey
             "has_upi_handle": False,
             "has_upi_deeplink": False,
             "has_url": False,
+            "link_clicked": False,
             "metadata": {"source": "notification"},
         },
     }
@@ -754,6 +755,7 @@ def test_context_events_can_be_ingested_and_filtered_for_review(tmp_path, monkey
             "has_upi_handle": True,
             "has_upi_deeplink": False,
             "has_url": False,
+            "link_clicked": False,
             "metadata": {"request_kind": "collect_request"},
         },
     }
@@ -831,6 +833,705 @@ def test_pilot_analytics_exposes_context_event_breakdown(tmp_path, monkeypatch):
     assert analytics_json["recent_context_events"][0]["event_type"] == "account_access_candidate"
     assert analytics_json["context_event_breakdown"]["by_event_type"][0]["event_type"] == "account_access_candidate"
     assert analytics_json["context_event_breakdown"]["by_classification"][0]["classification"] == "account_access_candidate"
+
+
+def test_context_events_store_domain_fields_and_backend_classification(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    payload = {
+        "event_id": "context-event-domain-1",
+        "participant_id": "context_domain_p1",
+        "level": "info",
+        "message": "context_event:link_click:whatsapp",
+        "language": "en",
+        "context_event": {
+            "event_type": "link_click",
+            "source_app": "com.whatsapp",
+            "correlation_id": "corr-domain-1",
+            "classification": "observed",
+            "setup_state": "unknown",
+            "message_family": "clicked_link",
+            "has_url": True,
+            "link_clicked": True,
+            "link_scheme": "https",
+            "url_host": "secure-login.paytm-help.top",
+            "resolved_domain": "paytm-help.top",
+            "metadata": {"raw_url": "https://secure-login.paytm-help.top/login"},
+        },
+    }
+    created = client.post("/api/pilot/app-log", json=payload)
+    assert created.status_code == 200
+
+    events = client.get(
+        "/api/pilot/context-events",
+        params={"participant_id": "context_domain_p1", "event_type": "link_click"},
+        headers=_admin_headers(),
+    )
+    assert events.status_code == 200
+    event = events.json()["events"][0]
+    assert event["link_clicked"] is True
+    assert event["url_host"] == "secure-login.paytm-help.top"
+    assert event["resolved_domain"] == "paytm-help.top"
+    assert event["domain_class"] == "suspicious"
+
+
+def test_entity_registry_seeds_official_domain_from_context_event(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    payload = {
+        "event_id": "entity-official-1",
+        "participant_id": "entity_p1",
+        "level": "info",
+        "message": "context_event:link_click:browser",
+        "language": "en",
+        "context_event": {
+            "event_type": "link_click",
+            "source_app": "browser",
+            "classification": "observed",
+            "message_family": "clicked_link",
+            "has_url": True,
+            "link_clicked": True,
+            "link_scheme": "https",
+            "url_host": "secure.icicibank.com",
+            "resolved_domain": "icicibank.com",
+            "metadata": {"raw_url": "https://secure.icicibank.com/login"},
+        },
+    }
+    created = client.post("/api/pilot/app-log", json=payload)
+    assert created.status_code == 200
+
+    entities = client.get(
+        "/api/pilot/entities",
+        params={"trust_state": "official_verified"},
+        headers=_admin_headers(),
+    )
+    assert entities.status_code == 200
+    assert entities.json()["entities"][0]["entity_key"] == "icicibank.com"
+    assert entities.json()["entities"][0]["trust_state"] == "official_verified"
+
+
+def test_entity_registry_promotes_repeated_bank_like_domain_to_trusted_by_observation(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    for index, day in enumerate(("2026-03-20T08:00:00", "2026-03-21T08:00:00")):
+        payload = {
+            "event_id": f"entity-banklike-{index}",
+            "participant_id": "entity_banklike_p1",
+            "level": "info",
+            "message": "context_event:notification_observed:bank",
+            "language": "en",
+            "timestamp": day,
+            "context_event": {
+                "event_type": "notification_observed",
+                "source_app": "VM-GBANK",
+                "classification": "observed",
+                "message_family": "statement_or_report",
+                "has_url": True,
+                "link_clicked": False,
+                "link_scheme": "https",
+                "url_host": "secure.graminbank-example.co.in",
+                "resolved_domain": "graminbank-example.co.in",
+                "metadata": {"raw_url": "https://secure.graminbank-example.co.in/statement"},
+            },
+        }
+        created = client.post("/api/pilot/app-log", json=payload)
+        assert created.status_code == 200
+
+    entities = client.get(
+        "/api/pilot/entities",
+        params={"trust_state": "trusted_by_observation"},
+        headers=_admin_headers(),
+    )
+    assert entities.status_code == 200
+    entity = entities.json()["entities"][0]
+    assert entity["entity_key"] == "graminbank-example.co.in"
+    assert entity["entity_type"] == "bank"
+    assert entity["trust_state"] == "trusted_by_observation"
+    assert entity["benign_count"] >= 2
+    assert entity["evidence"]["distinct_benign_days"] == 2
+
+
+def test_entity_registry_does_not_promote_same_day_benign_burst_without_additional_signals(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    for index in range(5):
+        payload = {
+            "event_id": f"entity-sameday-{index}",
+            "participant_id": "entity_same_day_p1",
+            "level": "info",
+            "message": "context_event:notification_observed:bank",
+            "language": "en",
+            "timestamp": f"2026-03-20T0{index}:00:00",
+            "context_event": {
+                "event_type": "notification_observed",
+                "source_app": f"VM-GBANK-{index}",
+                "classification": "observed",
+                "message_family": "statement_or_report",
+                "has_url": True,
+                "link_clicked": False,
+                "link_scheme": "https",
+                "url_host": "secure.graminbank-burst.co.in",
+                "resolved_domain": "graminbank-burst.co.in",
+                "metadata": {"raw_url": "https://secure.graminbank-burst.co.in/statement"},
+            },
+        }
+        created = client.post("/api/pilot/app-log", json=payload)
+        assert created.status_code == 200
+
+    entities = client.get(
+        "/api/pilot/entities",
+        params={"entity_kind": "domain"},
+        headers=_admin_headers(),
+    )
+    assert entities.status_code == 200
+    entity = next(item for item in entities.json()["entities"] if item["entity_key"] == "graminbank-burst.co.in")
+    assert entity["trust_state"] == "financial_unknown"
+    assert entity["benign_count"] >= 5
+    assert entity["evidence"]["distinct_benign_days"] == 1
+
+
+def test_entity_registry_rewards_sender_domain_app_consistency(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    participant_id = "entity_consistency_p1"
+    for index in range(2):
+        payload = {
+            "event_id": f"entity-consistency-{index}",
+            "participant_id": participant_id,
+            "level": "info",
+            "message": "context_event:notification_observed:bank",
+            "language": "en",
+            "context_event": {
+                "event_type": "notification_observed",
+                "source_app": "VM-GBANK",
+                "target_app": "Gramin Bank",
+                "classification": "observed",
+                "message_family": "statement_or_report",
+                "has_url": True,
+                "link_clicked": False,
+                "link_scheme": "https",
+                "url_host": "secure.graminbank-consistent.co.in",
+                "resolved_domain": "graminbank-consistent.co.in",
+                "metadata": {"raw_url": "https://secure.graminbank-consistent.co.in/statement"},
+            },
+        }
+        created = client.post("/api/pilot/app-log", json=payload)
+        assert created.status_code == 200
+
+    entities = client.get(
+        "/api/pilot/entities",
+        params={"trust_state": "trusted_by_observation"},
+        headers=_admin_headers(),
+    )
+    assert entities.status_code == 200
+    entity = next(item for item in entities.json()["entities"] if item["entity_key"] == "graminbank-consistent.co.in")
+    assert entity["trust_score"] >= 30.0
+    assert entity["evidence"]["canonical_source_app"] == "vm-gbank"
+    assert entity["evidence"]["canonical_target_app"] == "gramin bank"
+    assert entity["evidence"]["source_consistency_count"] == 2
+    assert entity["evidence"]["target_consistency_count"] == 2
+
+
+def test_entity_registry_marks_clicked_suspicious_access_domain_as_suspicious(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    payload = {
+        "event_id": "entity-suspicious-1",
+        "participant_id": "entity_suspicious_p1",
+        "level": "info",
+        "message": "context_event:account_access_candidate:browser",
+        "language": "en",
+        "context_event": {
+            "event_type": "account_access_candidate",
+            "source_app": "browser",
+            "classification": "account_access_candidate",
+            "message_family": "otp_verification",
+            "has_otp": True,
+            "has_url": True,
+            "link_clicked": True,
+            "link_scheme": "https",
+            "url_host": "secure-login-paytm-help.top",
+            "resolved_domain": "paytm-help.top",
+            "metadata": {"raw_url": "https://secure-login-paytm-help.top/login"},
+        },
+    }
+    created = client.post("/api/pilot/app-log", json=payload)
+    assert created.status_code == 200
+
+    entities = client.get(
+        "/api/pilot/entities",
+        params={"trust_state": "suspicious"},
+        headers=_admin_headers(),
+    )
+    assert entities.status_code == 200
+    entity = entities.json()["entities"][0]
+    assert entity["entity_key"] == "paytm-help.top"
+    assert entity["trust_state"] == "suspicious"
+    assert entity["account_access_risk_count"] >= 1
+
+
+def test_review_exposes_grouped_sequence_traces(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    participant_id = "sequence_review_p1"
+    events = [
+        {
+            "event_id": "sequence-review-chat",
+            "timestamp": "2026-03-22T09:00:00Z",
+            "context_event": {
+                "event_type": "chat_context",
+                "source_app": "WhatsApp",
+                "classification": "observed",
+                "message_family": "chat_pressure",
+            },
+        },
+        {
+            "event_id": "sequence-review-link",
+            "timestamp": "2026-03-22T09:00:30Z",
+            "context_event": {
+                "event_type": "link_click",
+                "source_app": "browser",
+                "classification": "observed",
+                "message_family": "clicked_link",
+                "link_clicked": True,
+                "link_scheme": "https",
+                "url_host": "secure.fakebank.top",
+                "resolved_domain": "fakebank.top",
+                "domain_class": "suspicious",
+            },
+        },
+        {
+            "event_id": "sequence-review-otp",
+            "timestamp": "2026-03-22T09:01:00Z",
+            "context_event": {
+                "event_type": "sms_observed",
+                "source_app": "VM-BANK",
+                "classification": "observed",
+                "message_family": "otp_verification",
+                "has_otp": True,
+            },
+        },
+    ]
+    for event in events:
+        res = client.post(
+            "/api/pilot/app-log",
+            json={
+                "participant_id": participant_id,
+                "level": "info",
+                "message": event["event_id"],
+                "language": "en",
+                "timestamp": event["timestamp"],
+                "context_event": event["context_event"],
+            },
+        )
+        assert res.status_code == 200
+
+    review = client.get(
+        "/api/pilot/review",
+        params={"participant_id": participant_id},
+        headers=_admin_headers(),
+    )
+    assert review.status_code == 200
+    payload = review.json()
+    assert payload["recent_sequence_traces"]
+    trace = payload["recent_sequence_traces"][0]
+    assert trace["event_count"] >= 3
+    assert trace["window"] == "0-120s"
+    assert "chat_context" in trace["event_types"]
+    assert "link_click" in trace["event_types"]
+
+
+def test_entity_reputation_aggregates_across_participants_and_is_queryable(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    domain = "graminbank-risk.co.in"
+    for participant_id in ("rep_p1", "rep_p2"):
+        res = client.post(
+            "/api/pilot/app-log",
+            json={
+                "participant_id": participant_id,
+                "level": "info",
+                "message": f"cross_user_signal:{participant_id}",
+                "language": "en",
+                "timestamp": "2026-03-22T11:00:00Z",
+                "context_event": {
+                    "event_type": "account_access_candidate",
+                    "source_app": "browser",
+                    "classification": "account_access_candidate",
+                    "message_family": "otp_verification",
+                    "has_otp": True,
+                    "has_url": True,
+                    "link_clicked": True,
+                    "link_scheme": "https",
+                    "url_host": f"secure.{domain}",
+                    "resolved_domain": domain,
+                    "domain_class": "bank",
+                },
+            },
+        )
+        assert res.status_code == 200
+
+    reputations = client.get(
+        "/api/pilot/entity-reputations",
+        headers=_admin_headers(),
+    )
+    assert reputations.status_code == 200
+    record = next(item for item in reputations.json()["entity_reputations"] if item["entity_key"] == domain)
+    assert record["unique_participant_count"] == 2
+    assert record["account_access_risk_count"] >= 2
+    assert record["reputation_score"] >= 3.0
+
+    review = client.get(
+        "/api/pilot/review",
+        params={"participant_id": "rep_p1"},
+        headers=_admin_headers(),
+    )
+    assert review.status_code == 200
+    assert any(item["entity_key"] == domain for item in review.json()["recent_entity_reputations"])
+
+
+def test_entity_cohort_reputation_segments_by_cohort(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    domain = "graminbank-cohort.co.in"
+    cohort_assignments = {
+        "cohort_a_p1": "women_led_household",
+        "cohort_a_p2": "women_led_household",
+        "cohort_b_p1": "daily_cashflow_worker",
+    }
+    for participant_id, cohort in cohort_assignments.items():
+        profile_res = client.post(
+            "/api/literacy/essential-goals",
+            json={
+                "participant_id": participant_id,
+                "cohort": cohort,
+                "essential_goals": ["ration"],
+                "language": "en",
+                "setup_skipped": False,
+            },
+        )
+        assert profile_res.status_code == 200
+
+    for participant_id in cohort_assignments:
+        res = client.post(
+            "/api/pilot/app-log",
+            json={
+                "participant_id": participant_id,
+                "level": "info",
+                "message": f"cohort_signal:{participant_id}",
+                "language": "en",
+                "timestamp": "2026-03-22T12:00:00Z",
+                "context_event": {
+                    "event_type": "account_access_candidate",
+                    "source_app": "browser",
+                    "classification": "account_access_candidate",
+                    "message_family": "otp_verification",
+                    "has_otp": True,
+                    "has_url": True,
+                    "link_clicked": True,
+                    "link_scheme": "https",
+                    "url_host": f"secure.{domain}",
+                    "resolved_domain": domain,
+                    "domain_class": "bank",
+                },
+            },
+        )
+        assert res.status_code == 200
+
+    reputations = client.get(
+        "/api/pilot/entity-cohort-reputations",
+        params={"cohort": "women_led_household"},
+        headers=_admin_headers(),
+    )
+    assert reputations.status_code == 200
+    record = next(item for item in reputations.json()["entity_cohort_reputations"] if item["entity_key"] == domain)
+    assert record["cohort"] == "women_led_household"
+    assert record["unique_participant_count"] == 2
+
+    other_reputations = client.get(
+        "/api/pilot/entity-cohort-reputations",
+        params={"cohort": "daily_cashflow_worker"},
+        headers=_admin_headers(),
+    )
+    assert other_reputations.status_code == 200
+    other_record = next(item for item in other_reputations.json()["entity_cohort_reputations"] if item["entity_key"] == domain)
+    assert other_record["cohort"] == "daily_cashflow_worker"
+    assert other_record["unique_participant_count"] == 1
+
+    review = client.get(
+        "/api/pilot/review",
+        params={"participant_id": "cohort_a_p1"},
+        headers=_admin_headers(),
+    )
+    assert review.status_code == 200
+    assert any(item["entity_key"] == domain for item in review.json()["recent_entity_cohort_reputations"])
+
+
+def test_reviewer_override_pins_entity_trust_state(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    seed_payload = {
+        "event_id": "entity-review-seed-1",
+        "participant_id": "entity_review_p1",
+        "level": "info",
+        "message": "context_event:link_click:browser",
+        "language": "en",
+        "context_event": {
+            "event_type": "link_click",
+            "source_app": "browser",
+            "target_app": "Unknown Bank",
+            "classification": "observed",
+            "message_family": "clicked_link",
+            "has_url": True,
+            "link_clicked": True,
+            "link_scheme": "https",
+            "url_host": "secure.graminbank-review.co.in",
+            "resolved_domain": "graminbank-review.co.in",
+            "metadata": {"raw_url": "https://secure.graminbank-review.co.in/login"},
+        },
+    }
+    created = client.post("/api/pilot/app-log", json=seed_payload)
+    assert created.status_code == 200
+
+    review_res = client.post(
+        "/api/pilot/entities/review",
+        headers=_admin_headers(),
+        json={
+            "entity_key": "graminbank-review.co.in",
+            "entity_kind": "domain",
+            "trust_state": "blocked",
+            "review_status": "manual_override",
+            "note": "confirmed phishing infrastructure",
+        },
+    )
+    assert review_res.status_code == 200
+    assert review_res.json()["entity"]["trust_state"] == "blocked"
+    assert review_res.json()["entity"]["review_status"] == "manual_override"
+
+    followup_payload = {
+        "event_id": "entity-review-seed-2",
+        "participant_id": "entity_review_p1",
+        "level": "info",
+        "message": "context_event:notification_observed:bank",
+        "language": "en",
+        "context_event": {
+            "event_type": "notification_observed",
+            "source_app": "VM-GBANK",
+            "target_app": "Unknown Bank",
+            "classification": "observed",
+            "message_family": "statement_or_report",
+            "has_url": True,
+            "link_clicked": False,
+            "link_scheme": "https",
+            "url_host": "secure.graminbank-review.co.in",
+            "resolved_domain": "graminbank-review.co.in",
+        },
+    }
+    second = client.post("/api/pilot/app-log", json=followup_payload)
+    assert second.status_code == 200
+
+    entities = client.get(
+        "/api/pilot/entities",
+        params={"review_status": "manual_override"},
+        headers=_admin_headers(),
+    )
+    assert entities.status_code == 200
+    entity = next(item for item in entities.json()["entities"] if item["entity_key"] == "graminbank-review.co.in")
+    assert entity["trust_state"] == "blocked"
+    assert entity["review_status"] == "manual_override"
+    assert entity["evidence"]["last_review_note"] == "confirmed phishing infrastructure"
+
+
+def test_review_samples_can_be_labeled_and_exported_with_gold_filters(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    participant_id = "review_sample_live_p1"
+    correlation_id = "review-sample-corr-1"
+
+    profile_res = client.post(
+        "/api/literacy/essential-goals",
+        json={
+            "participant_id": participant_id,
+            "cohort": "women_led_household",
+            "essential_goals": ["ration", "school"],
+            "language": "en",
+            "setup_skipped": False,
+        },
+    )
+    assert profile_res.status_code == 200
+
+    first_event = client.post(
+        "/api/pilot/app-log",
+        json={
+            "event_id": "review-sample-event-1",
+            "participant_id": participant_id,
+            "level": "info",
+            "message": "context_event:link_click:browser",
+            "language": "en",
+            "timestamp": "2026-03-22T10:00:00Z",
+            "context_event": {
+                "event_type": "link_click",
+                "source_app": "browser",
+                "target_app": "Gramin Bank",
+                "correlation_id": correlation_id,
+                "classification": "observed",
+                "message_family": "clicked_link",
+                "has_url": True,
+                "link_clicked": True,
+                "link_scheme": "https",
+                "url_host": "secure.graminbank-live.co.in",
+                "resolved_domain": "graminbank-live.co.in",
+                "domain_class": "bank",
+                "metadata": {"raw_url": "https://secure.graminbank-live.co.in/login"},
+            },
+        },
+    )
+    assert first_event.status_code == 200
+
+    second_event = client.post(
+        "/api/pilot/app-log",
+        json={
+            "event_id": "review-sample-event-2",
+            "participant_id": participant_id,
+            "level": "info",
+            "message": "context_event:account_access_candidate",
+            "language": "en",
+            "timestamp": "2026-03-22T10:01:00Z",
+            "context_event": {
+                "event_type": "account_access_candidate",
+                "source_app": "browser",
+                "target_app": "Gramin Bank",
+                "correlation_id": correlation_id,
+                "classification": "account_access_candidate",
+                "message_family": "otp_verification",
+                "has_otp": True,
+                "has_url": True,
+                "link_clicked": True,
+                "link_scheme": "https",
+                "url_host": "secure.graminbank-live.co.in",
+                "resolved_domain": "graminbank-live.co.in",
+                "domain_class": "bank",
+            },
+        },
+    )
+    assert second_event.status_code == 200
+
+    created = client.post(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        json={
+            "sample_id": "review-live-1",
+            "participant_id": participant_id,
+            "correlation_id": correlation_id,
+            "source_tier": "live_reviewed_ground_truth",
+            "source_origin": "participant_trace",
+            "review_status": "queued",
+            "reviewer_id": "analyst_a",
+        },
+    )
+    assert created.status_code == 200
+    created_json = created.json()["sample"]
+    assert created_json["sample_id"] == "review-live-1"
+    assert created_json["review_status"] == "queued"
+    assert len(created_json["event_trace"]) >= 2
+    assert created_json["entity_context"]["entity_key"] == "graminbank-live.co.in"
+
+    approved = client.post(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        json={
+            "sample_id": "review-live-1",
+            "participant_id": participant_id,
+            "correlation_id": correlation_id,
+            "source_tier": "live_reviewed_ground_truth",
+            "source_origin": "participant_trace",
+            "label": "account_access_risk",
+            "review_status": "approved_ground_truth",
+            "reviewer_id": "analyst_a",
+            "note": "confirmed access-risk sequence",
+        },
+    )
+    assert approved.status_code == 200
+    approved_json = approved.json()["sample"]
+    assert approved_json["review_status"] == "approved_ground_truth"
+    assert approved_json["label"] == "account_access_risk"
+    assert approved_json["cohort"] == "women_led_household"
+    assert approved_json["language"] == "en"
+
+    bootstrap = client.post(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        json={
+            "sample_id": "review-bootstrap-1",
+            "source_tier": "bootstrap_public",
+            "source_origin": "website",
+            "label": "account_access_risk",
+            "review_status": "bootstrap_only",
+            "reviewer_id": "analyst_b",
+            "event_trace": [{"text": "public scam example"}],
+            "sequence_trace": [{"signal": "clicked_link"}],
+            "entity_context": {"resolved_domain": "example-phish.test"},
+            "language": "en",
+            "cohort": "unknown",
+        },
+    )
+    assert bootstrap.status_code == 200
+
+    uncertain = client.post(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        json={
+            "sample_id": "review-live-uncertain",
+            "participant_id": participant_id,
+            "correlation_id": correlation_id,
+            "source_tier": "live_reviewed_ground_truth",
+            "source_origin": "participant_trace",
+            "label": "uncertain",
+            "review_status": "approved_ground_truth",
+            "reviewer_id": "analyst_c",
+        },
+    )
+    assert uncertain.status_code == 200
+
+    review_samples = client.get(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        params={"participant_id": participant_id},
+    )
+    assert review_samples.status_code == 200
+    review_samples_json = review_samples.json()
+    assert review_samples_json["count"] >= 2
+    assert any(item["sample_id"] == "review-live-1" for item in review_samples_json["review_samples"])
+    assert review_samples_json["breakdown"]["by_source_tier"]
+
+    review = client.get(
+        "/api/pilot/review",
+        headers=_admin_headers(),
+        params={"participant_id": participant_id, "correlation_id": correlation_id},
+    )
+    assert review.status_code == 200
+    review_json = review.json()
+    assert any(item["sample_id"] == "review-live-1" for item in review_json["recent_review_samples"])
+    assert review_json["review_sample_breakdown"]["by_review_status"]
+
+    all_reviewed_export = client.get(
+        "/api/pilot/review-exports",
+        headers=_admin_headers(),
+        params={"mode": "all_reviewed_samples"},
+    )
+    assert all_reviewed_export.status_code == 200
+    all_records = all_reviewed_export.json()["records"]
+    assert any(item["sample_id"] == "review-live-1" for item in all_records)
+    assert any(item["sample_id"] == "review-bootstrap-1" for item in all_records)
+    assert all(item["export_version"] == all_reviewed_export.json()["export_version"] for item in all_records)
+
+    gold_export = client.get(
+        "/api/pilot/review-exports",
+        headers=_admin_headers(),
+        params={"mode": "gold_ground_truth_only"},
+    )
+    assert gold_export.status_code == 200
+    gold_records = gold_export.json()["records"]
+    assert [item["sample_id"] for item in gold_records] == ["review-live-1"]
+
+    gold_with_uncertain = client.get(
+        "/api/pilot/review-exports",
+        headers=_admin_headers(),
+        params={"mode": "gold_ground_truth_only", "include_uncertain": "true"},
+    )
+    assert gold_with_uncertain.status_code == 200
+    gold_with_uncertain_ids = {item["sample_id"] for item in gold_with_uncertain.json()["records"]}
+    assert "review-live-1" in gold_with_uncertain_ids
+    assert "review-live-uncertain" in gold_with_uncertain_ids
 
 
 def test_cors_origins_can_be_configured(tmp_path, monkeypatch):

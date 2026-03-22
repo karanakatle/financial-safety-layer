@@ -63,6 +63,75 @@ LITERACY_MESSAGE_CATALOG = {
         "next_essential_pressure_with_income": (
             "Keep part of the recent money received aside for {goal_names} first. Spend more only if it cannot wait."
         ),
+        "payment_inspection": {
+            "ui": {
+                "payment_risk_title": "Payment Risk Warning",
+                "payment_uncertain_title": "Pause And Verify",
+                "account_access_title": "Account Access Warning",
+                "payment_primary_action": "Pause and check first",
+                "account_access_primary_action": "Protect account first",
+                "payment_action_pause": "Pause",
+                "payment_action_secondary": "Decline",
+                "payment_action_tertiary": "Proceed",
+                "payment_action_confirm": "I understand, continue",
+                "account_access_action_pause": "Pause",
+                "account_access_action_secondary": "Protect account",
+                "account_access_action_tertiary": "Continue anyway",
+                "account_access_action_confirm": "I understand, continue",
+            },
+            "collect_request_confusion": {
+                "message": "This is not incoming money. Approving this request can send money from your account.",
+                "why": (
+                    "Collect requests, approval prompts, and autopay mandates can look like money is coming in,"
+                    " but approval usually authorizes a payment out from your account."
+                ),
+                "next": "Pause and verify why this person or business is asking you to approve a payment.",
+            },
+            "refund_reward_kyc_scam": {
+                "message": (
+                    "A real refund, reward, or KYC update should not require you to send money."
+                    " Approving this can send money from your account."
+                ),
+                "why": (
+                    "Scammers often use refund, cashback, reward, or KYC stories to make users approve"
+                    " a collect request or a fake verification fee."
+                ),
+                "next": "Do not approve inside the payment app. Check with the official app or support separately.",
+            },
+            "unknown_payee_or_unusual_amount": {
+                "message_template": "This request involves an unfamiliar payee or an amount that looks unusual. {direction_line} Pause before you approve it.",
+                "why": (
+                    "Arthamantri could not match a clearly known payee, or the amount is large enough"
+                    " to deserve manual verification."
+                ),
+                "next": "Verify the payee name and amount on a separate channel. Decline if anything feels unexpected.",
+            },
+            "unknown": {
+                "message_with_context_template": "This request is not fully clear yet. Pause and verify before you approve it. {direction_line}",
+                "message_without_context_template": "This payment request could not be read clearly. Pause and verify before you approve it. {direction_line}",
+                "why": "Arthamantri could not confidently interpret what this payment will do, so it is showing a cautious warning.",
+                "next": "Pause and verify the request source before continuing.",
+            },
+            "account_access_risk": {
+                "message": "This flow may give someone access to your bank or payment account.",
+                "why": (
+                    "A clicked link was followed by OTP, login, KYC, or banking-access steps."
+                    " That pattern is common in account takeover scams."
+                ),
+                "next": (
+                    "Do not share OTP, UPI PIN, banking password, or customer ID."
+                    " Check the account only from the official app or number."
+                ),
+                "why_suffix_risky_domain": "The linked domain also looks risky.",
+                "why_suffix_new_bank_like_domain": "The bank-like domain is still new or unverified.",
+                "why_suffix_cross_user_reputation": "Similar risk signals have also appeared for this entity across participants.",
+            },
+            "direction_line_outgoing": "If you approve, money can go out from your account.",
+            "direction_line_fallback": "Arthamantri still cannot confirm whether this will send money or receive money.",
+            "risky_link_suffix": "This request followed a risky link click, which increases the chance of a scam flow.",
+            "sequence_suffix_strong": "Recent app activity also matches a scam-like chain in the last few minutes.",
+            "sequence_suffix_medium": "Recent app activity around this request adds more risk context.",
+        },
     },
     "hi": {
         "pilot_disclaimer": (
@@ -122,6 +191,75 @@ LITERACY_MESSAGE_CATALOG = {
         "next_essential_pressure_with_income": (
             "हाल में मिले पैसे का कुछ हिस्सा {goal_names} के लिए पहले अलग रखें। ज्यादा खर्च तभी करें जब बहुत जरूरी हो।"
         ),
+        "payment_inspection": {
+            "ui": {
+                "payment_risk_title": "भुगतान जोखिम चेतावनी",
+                "payment_uncertain_title": "रुकें और जांचें",
+                "account_access_title": "अकाउंट एक्सेस चेतावनी",
+                "payment_primary_action": "रुकें और पहले जांचें",
+                "account_access_primary_action": "पहले अकाउंट सुरक्षित करें",
+                "payment_action_pause": "रुकें",
+                "payment_action_secondary": "अस्वीकार करें",
+                "payment_action_tertiary": "फिर भी आगे बढ़ें",
+                "payment_action_confirm": "मैं समझता/समझती हूँ, आगे बढ़ें",
+                "account_access_action_pause": "रुकें",
+                "account_access_action_secondary": "अकाउंट सुरक्षित करें",
+                "account_access_action_tertiary": "फिर भी जारी रखें",
+                "account_access_action_confirm": "मैं समझता/समझती हूँ, जारी रखें",
+            },
+            "collect_request_confusion": {
+                "message": "यह अनुरोध पैसा प्राप्त करने का नहीं है। इसे मंजूर करने पर आपके खाते से पैसा जा सकता है।",
+                "why": (
+                    "कलेक्ट अनुरोध, ऑटोपे या मंजूरी वाले प्रॉम्प्ट कई बार आने वाले पैसे जैसे दिखते हैं,"
+                    " लेकिन इन्हें स्वीकार करने पर भुगतान बाहर जा सकता है।"
+                ),
+                "next": "रुकें और अलग से पुष्टि करें कि सामने वाला आपसे पैसा क्यों मांग रहा है।",
+            },
+            "refund_reward_kyc_scam": {
+                "message": (
+                    "असली रिफंड, इनाम या KYC अपडेट के लिए आपको पैसा भेजने की जरूरत नहीं होनी चाहिए।"
+                    " यह मंजूरी आपके खाते से पैसा भेज सकती है।"
+                ),
+                "why": (
+                    "ठगी में अक्सर रिफंड, कैशबैक, इनाम या KYC के नाम पर ऐसा अनुरोध भेजा जाता है"
+                    " जिससे आप कलेक्ट या फीस जैसा भुगतान मंजूर कर दें।"
+                ),
+                "next": "भुगतान ऐप के अंदर मंजूरी न दें। आधिकारिक ऐप या सपोर्ट से अलग से जांच करें।",
+            },
+            "unknown_payee_or_unusual_amount": {
+                "message_template": "यह अनुरोध किसी अनजान प्राप्तकर्ता या असामान्य राशि जैसा दिख रहा है। {direction_line} मंजूरी देने से पहले रुककर जांच लें.",
+                "why": (
+                    "अर्थमंत्री को प्राप्तकर्ता की साफ पहचान नहीं मिली या राशि इतनी अलग दिखी कि"
+                    " हाथ से सत्यापन जरूरी हो गया।"
+                ),
+                "next": "प्राप्तकर्ता का नाम और राशि अलग से पुष्टि करें। कुछ भी अजीब लगे तो अस्वीकार करें।",
+            },
+            "unknown": {
+                "message_with_context_template": "यह अनुरोध पूरी तरह साफ नहीं है। आगे बढ़ने से पहले रुककर जांच लें। {direction_line}",
+                "message_without_context_template": "यह भुगतान अनुरोध साफ नहीं पढ़ा जा सका। आगे बढ़ने से पहले रुककर जांच लें। {direction_line}",
+                "why": "ऐप इस भुगतान के मतलब को भरोसे के साथ तय नहीं कर सका, इसलिए यह सावधानी वाली चेतावनी दिखा रहा है।",
+                "next": "रुकें और भेजने वाले या मांग करने वाले व्यक्ति से अलग से पुष्टि करें।",
+            },
+            "account_access_risk": {
+                "message": "यह फ्लो किसी को आपके बैंक या पेमेंट अकाउंट तक पहुँच दे सकता है।",
+                "why": (
+                    "एक खुले हुए लिंक के बाद OTP, लॉगिन, KYC या बैंक-एक्सेस जैसा कदम दिखा।"
+                    " यह पैटर्न अकाउंट टेकओवर ठगी में आम है।"
+                ),
+                "next": (
+                    "OTP, UPI PIN, बैंक पासवर्ड या ग्राहक आईडी साझा न करें।"
+                    " केवल आधिकारिक ऐप या नंबर से ही जाँच करें।"
+                ),
+                "why_suffix_risky_domain": "लिंक का डोमेन भी जोखिमभरा लग रहा है।",
+                "why_suffix_new_bank_like_domain": "बैंक जैसा दिखने वाला डोमेन अभी नया या अप्रमाणित है।",
+                "why_suffix_cross_user_reputation": "इसी एंटिटी के लिए अलग प्रतिभागियों में भी ऐसे जोखिम संकेत दिखे हैं।",
+            },
+            "direction_line_outgoing": "इस मंजूरी से आपके खाते से पैसा जा सकता है।",
+            "direction_line_fallback": "ऐप अभी साफ नहीं बता पा रहा कि पैसा जाएगा या आएगा।",
+            "risky_link_suffix": "इस अनुरोध से पहले एक जोखिमभरा लिंक खोला गया था, इसलिए ठगी की संभावना और बढ़ जाती है।",
+            "sequence_suffix_strong": "पिछले कुछ मिनटों की ऐप गतिविधि भी ठगी जैसे क्रम से मेल खा रही है।",
+            "sequence_suffix_medium": "इस अनुरोध के आसपास की हाल की ऐप गतिविधि जोखिम को बढ़ाती है।",
+        },
     },
 }
 

@@ -18,6 +18,8 @@ object SupportEscalationLauncher {
         nextSafeAction: String,
         essentialGoalImpact: String,
         primaryActionLabel: String,
+        focusedActionLabels: List<String>,
+        proceedConfirmationLabel: String,
         useFocusedPaymentActions: Boolean,
     ): Boolean {
         val supportIntent = Intent(context, MainActivity::class.java).apply {
@@ -31,6 +33,14 @@ object SupportEscalationLauncher {
             putExtra(AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION, nextSafeAction)
             putExtra(AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT, essentialGoalImpact)
             putExtra(AppConstants.IntentExtras.ALERT_PRIMARY_ACTION_LABEL, primaryActionLabel)
+            putStringArrayListExtra(
+                AppConstants.IntentExtras.ALERT_FOCUSED_ACTION_LABELS,
+                ArrayList(focusedActionLabels),
+            )
+            putExtra(
+                AppConstants.IntentExtras.ALERT_PROCEED_CONFIRMATION_LABEL,
+                proceedConfirmationLabel,
+            )
             putExtra(AppConstants.IntentExtras.ALERT_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             if (context !is Activity) {

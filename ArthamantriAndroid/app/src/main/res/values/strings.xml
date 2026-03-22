@@ -312,6 +312,11 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_payment_risk_title">Payment Risk Warning</string>
     <string name="alert_payment_uncertain_title">Pause And Verify</string>
     <string name="alert_payment_ack_long">Pause and check first</string>
+    <string name="alert_access_risk_title">Account Access Warning</string>
+    <string name="alert_access_ack_long">Protect account first</string>
+    <string name="alert_action_protect_account">Protect account</string>
+    <string name="alert_action_continue_anyway">Continue anyway</string>
+    <string name="alert_access_proceed_confirmation_confirm">I understand, continue</string>
     <string name="alert_payment_fallback_body">Arthamantri could not confirm this payment in time. Treat it as risky until you verify it.</string>
     <string name="alert_payment_fallback_why">Live analysis is unavailable or delayed, so the app is showing a cautious fallback instead of saying the request is safe.</string>
     <string name="alert_payment_fallback_next">Do not approve yet. Verify the sender, payee, and reason on a separate channel.</string>

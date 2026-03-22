@@ -10,6 +10,7 @@ import android.os.IBinder
 import android.util.Log
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
 import kotlinx.coroutines.CoroutineScope
@@ -65,17 +66,31 @@ class AppUsageForegroundService : Service() {
                             } else {
                                 pkg
                             }
+                            val recentLinkContext = RecentLinkContextTracker.currentSnapshot(this@AppUsageForegroundService)
                             LiteracyRepository.submitContextEvent(
                                 context = this@AppUsageForegroundService,
                                 eventType = AppConstants.ContextEvents.EVENT_APP_OPEN,
                                 sourceApp = pkg,
                                 targetApp = targetApp,
                                 classification = AppConstants.ContextEvents.CLASSIFICATION_OBSERVED,
+                                linkClicked = recentLinkContext?.signals?.linkClicked,
+                                linkScheme = recentLinkContext?.signals?.linkScheme,
+                                urlHost = recentLinkContext?.signals?.urlHost,
+                                resolvedDomain = recentLinkContext?.signals?.resolvedDomain,
+                                hasUrl = recentLinkContext?.signals?.let {
+                                    it.linkScheme == "http" || it.linkScheme == "https"
+                                },
+                                hasUpiDeepLink = recentLinkContext?.signals?.linkScheme == "upi",
                                 metadata = buildMap {
                                     put("package_name", pkg)
                                     put("is_upi_package", isUpiPackage.toString())
                                     if (lastUpiSignalAtMs > 0L) {
                                         put("last_upi_signal_at_ms", lastUpiSignalAtMs.toString())
+                                    }
+                                    recentLinkContext?.let {
+                                        put("link_context_source", "recent_click")
+                                        put("link_age_ms", (System.currentTimeMillis() - it.capturedAtMs).toString())
+                                        put("raw_url", it.signals.rawUrl)
                                     }
                                 },
                             )

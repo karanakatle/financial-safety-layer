@@ -8,6 +8,9 @@ import android.util.Log
 import com.arthamantri.android.R
 import com.arthamantri.android.config.AppConfig
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.LinkContextSignalExtractor
+import com.arthamantri.android.core.LinkContextSignals
+import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
@@ -43,9 +46,14 @@ class BankSmsReceiver : BroadcastReceiver() {
         val suppressionReason = StructuredMessageSignalExtractor.suppressionReason(signals)
         val setupState = PaymentAppSetupStateTracker.currentSnapshot(context).state
         val parsed = SmsParser.parseSignal(sender, body, setupState = setupState)
+        val messageLinkContext = LinkContextSignalExtractor.fromText(body, linkClicked = false)
+        val recentLinkContext = RecentLinkContextTracker.currentSnapshot(context)
+        val effectiveLinkContext = recentLinkContext?.signals ?: messageLinkContext
         val shouldTrackContext =
-            parsed != null || suppressionReason != null || signals.isSensitiveAccessSignal || signals.hasStrongPaymentSignal
+            parsed != null || suppressionReason != null || signals.isSensitiveAccessSignal || signals.hasStrongPaymentSignal || signals.hasUrl
         val correlationId = UUID.randomUUID().toString()
+        val shouldCreateAccessCandidate = signals.isSensitiveAccessSignal ||
+            (signals.isOtpVerification && recentLinkContext != null)
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -67,11 +75,19 @@ class BankSmsReceiver : BroadcastReceiver() {
                         hasUpiHandle = signals.hasUpiHandle,
                         hasUpiDeepLink = signals.hasUpiDeepLink,
                         hasUrl = signals.hasUrl,
-                        metadata = mapOf("source" to "sms"),
+                        linkClicked = effectiveLinkContext?.linkClicked,
+                        linkScheme = effectiveLinkContext?.linkScheme,
+                        urlHost = effectiveLinkContext?.urlHost,
+                        resolvedDomain = effectiveLinkContext?.resolvedDomain,
+                        metadata = buildLinkContextMetadata(
+                            source = "sms",
+                            linkSignals = effectiveLinkContext,
+                            recentLinkCapturedAtMs = recentLinkContext?.capturedAtMs,
+                        ),
                     )
                 }
 
-                if (signals.isSensitiveAccessSignal) {
+                if (shouldCreateAccessCandidate) {
                     LiteracyRepository.submitContextEvent(
                         context = context,
                         eventType = AppConstants.ContextEvents.EVENT_ACCOUNT_ACCESS_CANDIDATE,
@@ -85,7 +101,15 @@ class BankSmsReceiver : BroadcastReceiver() {
                         hasUpiHandle = signals.hasUpiHandle,
                         hasUpiDeepLink = signals.hasUpiDeepLink,
                         hasUrl = signals.hasUrl,
-                        metadata = mapOf("source" to "sms"),
+                        linkClicked = effectiveLinkContext?.linkClicked,
+                        linkScheme = effectiveLinkContext?.linkScheme,
+                        urlHost = effectiveLinkContext?.urlHost,
+                        resolvedDomain = effectiveLinkContext?.resolvedDomain,
+                        metadata = buildLinkContextMetadata(
+                            source = "sms",
+                            linkSignals = effectiveLinkContext,
+                            recentLinkCapturedAtMs = recentLinkContext?.capturedAtMs,
+                        ),
                     )
                 }
 
@@ -203,5 +227,20 @@ class BankSmsReceiver : BroadcastReceiver() {
             language = LiteracyRepository.language(context),
             participantId = LiteracyRepository.participantId(context),
         )
+    }
+
+    private fun buildLinkContextMetadata(
+        source: String,
+        linkSignals: LinkContextSignals?,
+        recentLinkCapturedAtMs: Long?,
+    ): Map<String, String> = buildMap {
+        put("source", source)
+        linkSignals?.let {
+            put("raw_url", it.rawUrl)
+            put("link_context_source", if (it.linkClicked) "recent_click" else "message_text")
+        }
+        recentLinkCapturedAtMs?.let {
+            put("link_age_ms", (System.currentTimeMillis() - it).toString())
+        }
     }
 }

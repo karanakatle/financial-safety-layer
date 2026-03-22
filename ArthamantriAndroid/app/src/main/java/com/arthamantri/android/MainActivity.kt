@@ -48,6 +48,8 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.core.os.LocaleListCompat
 import com.arthamantri.android.BuildConfig
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.LinkContextSignalExtractor
+import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.model.EssentialGoalEnvelopeDto
 import com.arthamantri.android.model.EssentialGoalProfileDto
 import com.arthamantri.android.notify.AlertNotifier
@@ -57,6 +59,7 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
     private data class LanguageOption(
@@ -272,6 +275,7 @@ class MainActivity : AppCompatActivity() {
         mainContentContainer.post { continueOnboardingFlow() }
         maybeRestoreHelpDialogAfterLanguageSwitch()
         maybeHandleSupportEscalationIntent(intent)
+        maybeCaptureInboundLinkIntent(intent)
 
         if (shouldRestoreDrawerState) {
             drawerLayout.post { drawerLayout.openDrawer(GravityCompat.START) }
@@ -282,6 +286,50 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         maybeHandleSupportEscalationIntent(intent)
+        maybeCaptureInboundLinkIntent(intent)
+    }
+
+    private fun maybeCaptureInboundLinkIntent(intent: Intent?) {
+        val incomingIntent = intent ?: return
+        if (incomingIntent.getBooleanExtra(AppConstants.IntentExtras.INBOUND_LINK_CAPTURED, false)) {
+            return
+        }
+        val linkContext = LinkContextSignalExtractor.fromIntent(incomingIntent) ?: return
+        incomingIntent.putExtra(AppConstants.IntentExtras.INBOUND_LINK_CAPTURED, true)
+
+        val sourceApp = incomingIntent.getStringExtra(EXTRA_APP_PACKAGE)?.takeIf { it.isNotBlank() }
+            ?: referrer?.takeIf { it.scheme == "android-app" }?.host
+            ?: referrer?.host
+
+        RecentLinkContextTracker.recordClick(
+            context = this,
+            linkSignals = linkContext,
+            sourceApp = sourceApp,
+        )
+
+        CoroutineScope(Dispatchers.IO).launch {
+            LiteracyRepository.submitContextEvent(
+                context = this@MainActivity,
+                eventType = AppConstants.ContextEvents.EVENT_LINK_CLICK,
+                sourceApp = sourceApp,
+                targetApp = packageName,
+                correlationId = UUID.randomUUID().toString(),
+                classification = AppConstants.ContextEvents.CLASSIFICATION_OBSERVED,
+                messageFamily = "clicked_link",
+                hasUpiDeepLink = linkContext.linkScheme == "upi",
+                hasUrl = linkContext.linkScheme == "http" || linkContext.linkScheme == "https",
+                linkClicked = true,
+                linkScheme = linkContext.linkScheme,
+                urlHost = linkContext.urlHost,
+                resolvedDomain = linkContext.resolvedDomain,
+                metadata = buildMap {
+                    put("raw_url", linkContext.rawUrl)
+                    if (!sourceApp.isNullOrBlank()) {
+                        put("referrer_source_app", sourceApp)
+                    }
+                },
+            )
+        }
     }
 
     private fun applyEdgeToEdgeInsets(

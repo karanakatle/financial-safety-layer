@@ -16,11 +16,14 @@ def record_payment_warning_generated(
     inspection: dict,
     timestamp: str,
 ) -> None:
+    alert_family = str(inspection.get("alert_family") or "payment")
+    telemetry_family = "account_access_warning" if alert_family == "account_access" else "payment_warning"
+    event_name = "account_access_inspection" if alert_family == "account_access" else "upi_request_inspection"
     pilot_storage.add_unified_telemetry(
         participant_id=participant_id,
-        telemetry_family="payment_warning",
+        telemetry_family=telemetry_family,
         record_type="generated",
-        event_name="upi_request_inspection",
+        event_name=event_name,
         alert_id=inspection.get("alert_id"),
         source_route="/api/literacy/upi-request-inspect",
         source=str(getattr(payload, "source", "") or "android"),
@@ -32,16 +35,26 @@ def record_payment_warning_generated(
         risk_level=str(inspection.get("risk_level") or ""),
         summary_text=str(inspection.get("message") or ""),
         context={
+            "alert_family": alert_family,
             "why_this_alert": inspection.get("why_this_alert"),
             "next_best_action": inspection.get("next_best_action"),
             "actions": list(inspection.get("actions") or []),
             "request_kind": getattr(payload, "request_kind", None),
             "payee_label": getattr(payload, "payee_label", None),
             "payee_handle": getattr(payload, "payee_handle", None),
+            "link_scheme": getattr(payload, "link_scheme", None),
+            "url_host": getattr(payload, "url_host", None),
+            "resolved_domain": getattr(payload, "resolved_domain", None),
+            "domain_class": getattr(payload, "domain_class", None),
+            "sequence_score": inspection.get("sequence_score"),
+            "sequence_window": inspection.get("sequence_window"),
+            "sequence_summary": inspection.get("sequence_summary"),
+            "sequence_trace": list(inspection.get("sequence_trace") or []),
         },
         extensions={
             "raw_text": getattr(payload, "raw_text", None),
             "language": getattr(payload, "language", None),
+            "link_clicked": getattr(payload, "link_clicked", None),
         },
     )
 
