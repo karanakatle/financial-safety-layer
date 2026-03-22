@@ -798,13 +798,14 @@ def literacy_upi_request_inspect(payload: UPIRequestInspectIn) -> dict:
         alert_id=str(uuid4()),
     )
     inspection_payload = inspection.model_dump()
-    record_payment_warning_generated(
-        pilot_storage=pilot_storage,
-        participant_id=participant_id,
-        payload=payload,
-        inspection=inspection_payload,
-        timestamp=event_timestamp,
-    )
+    if inspection_payload.get("should_warn", True):
+        record_payment_warning_generated(
+            pilot_storage=pilot_storage,
+            participant_id=participant_id,
+            payload=payload,
+            inspection=inspection_payload,
+            timestamp=event_timestamp,
+        )
     return inspection_payload
 
 

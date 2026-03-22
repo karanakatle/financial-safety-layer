@@ -22,16 +22,13 @@ class SmsParserTest {
     }
 
     @Test
-    fun `parser detects income signal from credit sms`() {
+    fun `parser suppresses benign income signal from credit sms`() {
         val parsed = SmsParser.parseSignal(
             sender = "VK-HDFCBK",
             message = "Rs 12000 credited to your account as salary",
         )
 
-        assertNotNull(parsed)
-        assertEquals(AppConstants.Domain.SMS_SIGNAL_INCOME, parsed?.signalType)
-        assertEquals(AppConstants.Domain.SMS_SIGNAL_CONFIRMED, parsed?.confidence)
-        assertEquals(12000.0, parsed?.amount)
+        assertNull(parsed)
     }
 
     @Test

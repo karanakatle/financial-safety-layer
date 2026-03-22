@@ -79,6 +79,8 @@ class UPIRequestInspectIn(BaseModel):
 
 class UPIRequestInspectOut(BaseModel):
     scenario: str
+    classification: str = "payment_outflow_risk"
+    should_warn: bool = True
     risk_level: Literal["low", "medium", "high", "critical"]
     message: str
     why_this_alert: str

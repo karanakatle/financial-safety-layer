@@ -36,6 +36,8 @@ data class UpiRequestInspectRequest(
 
 data class UpiRequestInspectResponse(
     val scenario: String? = null,
+    val classification: String? = null,
+    val should_warn: Boolean = true,
     val risk_level: String? = null,
     val message: String? = null,
     val why_this_alert: String? = null,

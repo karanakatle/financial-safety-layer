@@ -17,6 +17,8 @@ def inspect_payment_request(
 
     return UPIRequestInspectOut(
         scenario=decision.scenario,
+        classification=decision.classification,
+        should_warn=decision.should_warn,
         risk_level=decision.risk_level,
         message=decision.message,
         why_this_alert=decision.why_this_alert,

@@ -20,6 +20,9 @@ object PaymentInspectionAlertPresenter {
         payeeHandle: String,
         rawText: String,
     ): Boolean {
+        if (!inspection.should_warn) {
+            return false
+        }
         if (!hasMeaningfulPaymentContext(requestKind, amount, payeeLabel, payeeHandle, rawText)) {
             return false
         }
