@@ -121,13 +121,80 @@ def test_upi_request_inspect_falls_back_safely_for_partial_payload(tmp_path, mon
 
     assert res.status_code == 200
     payload = res.json()
-    assert payload["scenario"] == "unknown"
-    assert payload["risk_level"] == "medium"
-    assert "रुक" in payload["message"] or "जांच" in payload["message"]
-    assert "भरोसे" in payload["why_this_alert"] or "सावधानी" in payload["why_this_alert"]
-    assert "पुष्टि" in payload["next_best_action"] or "जांच" in payload["next_best_action"]
+    assert payload["scenario"] == "ignore_benign"
+    assert payload["classification"] == "ignore_benign"
+    assert payload["should_warn"] is False
+    assert payload["risk_level"] == "low"
+    assert payload["message"] == ""
+    assert payload["why_this_alert"] == ""
+    assert payload["next_best_action"] == ""
     assert payload["actions"] == ["pause", "decline", "proceed"]
     assert isinstance(payload["alert_id"], str) and payload["alert_id"]
+
+
+def test_upi_request_inspect_ignores_registration_success_notifications(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_ignore_setup",
+            "language": "en",
+            "app_name": "PhonePe",
+            "request_kind": "unknown_request",
+            "raw_text": "Use PhonePe on your current device! You have successfully registered your PhonePe account.",
+            "source": "notification",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["classification"] == "ignore_benign"
+    assert payload["should_warn"] is False
+    assert payload["message"] == ""
+
+
+def test_upi_request_inspect_ignores_call_metadata_from_whatsapp(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_ignore_call",
+            "language": "en",
+            "app_name": "WhatsApp",
+            "request_kind": "unknown_request",
+            "payee_label": "Rajendra Gopani",
+            "raw_text": "Rajendra Gopani Incoming voice call",
+            "source": "notification",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["classification"] == "ignore_benign"
+    assert payload["should_warn"] is False
+
+
+def test_upi_request_inspect_stores_otp_access_signals_without_warning(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_store_only",
+            "language": "en",
+            "app_name": "ICICI Bank",
+            "request_kind": "unknown_request",
+            "raw_text": "Dear Customer, 489647 is the OTP for your request initiated through ICICI Bank Mobile Banking.",
+            "source": "notification",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["classification"] == "store_only_account_access"
+    assert payload["should_warn"] is False
 
 
 def test_upi_request_inspect_persists_unified_payment_telemetry(tmp_path, monkeypatch):
@@ -175,3 +242,31 @@ def test_upi_request_inspect_persists_unified_payment_telemetry(tmp_path, monkey
     assert summary["telemetry_comparison"]["payment_warning"]["generated_count"] >= 1
     assert summary["telemetry_comparison"]["payment_warning"]["action_count"] >= 1
     assert summary["recent_unified_telemetry"][0]["telemetry_family"] == "payment_warning"
+
+
+def test_upi_request_inspect_does_not_persist_ignored_payment_warning_telemetry(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    inspect_res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_ignore_telemetry",
+            "language": "en",
+            "app_name": "PhonePe",
+            "request_kind": "unknown_request",
+            "raw_text": "Use PhonePe on your current device! You have successfully registered your PhonePe account.",
+            "source": "notification",
+            "timestamp": "2026-03-22T06:48:54Z",
+        },
+    )
+    assert inspect_res.status_code == 200
+    assert inspect_res.json()["should_warn"] is False
+
+    summary_res = client.get(
+        "/api/pilot/summary",
+        params={"participant_id": "p_payment_ignore_telemetry", "limit": 10},
+        headers=_admin_headers(),
+    )
+    assert summary_res.status_code == 200
+    summary = summary_res.json()
+    assert summary["telemetry_comparison"]["payment_warning"]["generated_count"] == 0

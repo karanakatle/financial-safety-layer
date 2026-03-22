@@ -26,7 +26,7 @@ class PaymentInspectionNotificationParserTest {
     }
 
     @Test
-    fun `parser keeps unknown request kind for generic upi notification`() {
+    fun `parser ignores generic upi notification without payment intent`() {
         val signal = PaymentInspectionNotificationParser.parse(
             packageName = "com.phonepe.app",
             appName = "PhonePe",
@@ -36,9 +36,7 @@ class PaymentInspectionNotificationParserTest {
             isUpiPackage = true,
         )
 
-        assertNotNull(signal)
-        assertEquals(AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN, signal?.requestKind)
-        assertEquals(null, signal?.amount)
+        assertNull(signal)
     }
 
     @Test

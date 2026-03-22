@@ -3,41 +3,30 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from backend.api_models import UPIRequestInspectIn
+from backend.literacy.structured_message_signals import extract_message_signals
 
 
 @dataclass(frozen=True)
 class PaymentScenarioDecision:
     scenario: str
+    classification: str
+    should_warn: bool
     risk_level: str
     message: str
     why_this_alert: str
     next_best_action: str
 
 
+IGNORE_BENIGN_CLASSIFICATION = "ignore_benign"
+STORE_ONLY_ACCOUNT_ACCESS_CLASSIFICATION = "store_only_account_access"
+PAYMENT_OUTFLOW_RISK_CLASSIFICATION = "payment_outflow_risk"
 COLLECT_SCENARIO = "collect_request_confusion"
 REFUND_SCENARIO = "refund_reward_kyc_scam"
 UNKNOWN_PAYEE_SCENARIO = "unknown_payee_or_unusual_amount"
 UNKNOWN_SCENARIO = "unknown"
+IGNORE_BENIGN_SCENARIO = "ignore_benign"
+STORE_ONLY_ACCOUNT_ACCESS_SCENARIO = "store_only_account_access"
 
-_COLLECT_KEYWORDS = (
-    "collect",
-    "collect request",
-    "request money",
-    "approve request",
-    "approve collect",
-    "autopay",
-    "mandate",
-)
-_REFUND_SCAM_KEYWORDS = (
-    "refund",
-    "cashback",
-    "reward",
-    "prize",
-    "bonus",
-    "kyc",
-    "verify account",
-    "update account",
-)
 _GENERIC_PAYEE_MARKERS = {
     "",
     "unknown",
@@ -49,14 +38,44 @@ _GENERIC_PAYEE_MARKERS = {
 }
 _UNUSUAL_AMOUNT_HIGH = 10000.0
 _UNUSUAL_AMOUNT_MEDIUM = 5000.0
+_REFUND_SCAM_KEYWORDS = ("refund", "cashback", "reward", "prize", "bonus", "kyc", "verify account", "update account")
 
 
 def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) -> PaymentScenarioDecision:
     raw_text = _normalize(payload.raw_text)
+    signals = extract_message_signals(raw_text)
     app_name = _normalize(payload.app_name)
     payee_label = _normalize(payload.payee_label)
     payee_handle = _normalize(payload.payee_handle)
     request_kind = _normalize((payload.request_kind or "").replace("_", " ")).lower()
+
+    if signals.is_call_metadata:
+        return _ignore_benign_decision(language)
+    if signals.is_setup_or_registration:
+        return _ignore_benign_decision(language)
+    if signals.is_statement_or_report:
+        return _ignore_benign_decision(language)
+    if signals.is_post_transaction_confirmation:
+        return _ignore_benign_decision(language)
+    if signals.is_receive_only:
+        return _ignore_benign_decision(language)
+    if signals.is_emi_status:
+        return _ignore_benign_decision(language)
+    if signals.is_marketing_or_product_status or signals.is_portfolio_info:
+        return _ignore_benign_decision(language)
+    if signals.is_otp_verification:
+        if signals.is_sensitive_access_signal:
+            return _store_only_account_access_decision(language)
+        return _ignore_benign_decision(language)
+    if signals.is_sensitive_access_signal:
+        return _store_only_account_access_decision(language)
+    if not _has_strong_payment_signal(
+        raw_text=raw_text,
+        request_kind=request_kind,
+        payee_handle=payee_handle,
+        signals=signals,
+    ):
+        return _ignore_benign_decision(language)
 
     if _looks_like_refund_reward_kyc_scam(raw_text, request_kind):
         return _refund_reward_kyc_decision(language)
@@ -71,6 +90,7 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
         payee_handle=payee_handle,
         amount=payload.amount,
         request_kind=request_kind,
+        signals=signals,
     ):
         return _unknown_payee_or_unusual_amount_decision(
             language=language,
@@ -88,7 +108,14 @@ def classify_payment_scenario(payload: UPIRequestInspectIn, *, language: str) ->
 def _looks_like_collect_request(raw_text: str, request_kind: str) -> bool:
     if request_kind in {"collect", "collect request"}:
         return True
-    return any(keyword in raw_text for keyword in _COLLECT_KEYWORDS)
+    return (
+        "request money" in raw_text
+        or "approve request" in raw_text
+        or "approve collect" in raw_text
+        or "collect" in raw_text
+        or "mandate" in raw_text
+        or "autopay" in raw_text
+    )
 
 
 def _looks_like_refund_reward_kyc_scam(raw_text: str, request_kind: str) -> bool:
@@ -96,7 +123,7 @@ def _looks_like_refund_reward_kyc_scam(raw_text: str, request_kind: str) -> bool
         return False
     if request_kind in {"collect", "collect request", "refund request", "unknown request"}:
         return True
-    return any(keyword in raw_text for keyword in _COLLECT_KEYWORDS) or "fee" in raw_text or "pay" in raw_text
+    return _looks_like_collect_request(raw_text, request_kind) or "fee" in raw_text or "pay" in raw_text
 
 
 def _looks_like_unknown_payee_or_unusual_amount(
@@ -107,8 +134,14 @@ def _looks_like_unknown_payee_or_unusual_amount(
     payee_handle: str,
     amount: float | None,
     request_kind: str,
+    signals,
 ) -> bool:
-    has_payment_signal = bool(raw_text or app_name or request_kind or amount not in (None, 0))
+    has_payment_signal = _has_strong_payment_signal(
+        raw_text=raw_text,
+        request_kind=request_kind,
+        payee_handle=payee_handle,
+        signals=signals,
+    )
     if not has_payment_signal:
         return False
 
@@ -129,6 +162,8 @@ def _collect_request_decision(language: str) -> PaymentScenarioDecision:
     if language == "hi":
         return PaymentScenarioDecision(
             scenario=COLLECT_SCENARIO,
+            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+            should_warn=True,
             risk_level="high",
             message="यह अनुरोध पैसा प्राप्त करने का नहीं है। इसे मंजूर करने पर आपके खाते से पैसा जा सकता है।",
             why_this_alert=(
@@ -140,6 +175,8 @@ def _collect_request_decision(language: str) -> PaymentScenarioDecision:
 
     return PaymentScenarioDecision(
         scenario=COLLECT_SCENARIO,
+        classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+        should_warn=True,
         risk_level="high",
         message="This is not incoming money. Approving this request can send money from your account.",
         why_this_alert=(
@@ -154,6 +191,8 @@ def _refund_reward_kyc_decision(language: str) -> PaymentScenarioDecision:
     if language == "hi":
         return PaymentScenarioDecision(
             scenario=REFUND_SCENARIO,
+            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+            should_warn=True,
             risk_level="high",
             message=(
                 "असली रिफंड, इनाम या KYC अपडेट के लिए आपको पैसा भेजने की जरूरत नहीं होनी चाहिए।"
@@ -168,6 +207,8 @@ def _refund_reward_kyc_decision(language: str) -> PaymentScenarioDecision:
 
     return PaymentScenarioDecision(
         scenario=REFUND_SCENARIO,
+        classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+        should_warn=True,
         risk_level="high",
         message=(
             "A real refund, reward, or KYC update should not require you to send money."
@@ -193,6 +234,8 @@ def _unknown_payee_or_unusual_amount_decision(
     if language == "hi":
         return PaymentScenarioDecision(
             scenario=UNKNOWN_PAYEE_SCENARIO,
+            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+            should_warn=True,
             risk_level=risk_level,
             message=(
                 "यह अनुरोध किसी अनजान प्राप्तकर्ता या असामान्य राशि जैसा दिख रहा है। "
@@ -207,6 +250,8 @@ def _unknown_payee_or_unusual_amount_decision(
 
     return PaymentScenarioDecision(
         scenario=UNKNOWN_PAYEE_SCENARIO,
+        classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+        should_warn=True,
         risk_level=risk_level,
         message=(
             "This request involves an unfamiliar payee or an amount that looks unusual. "
@@ -233,6 +278,8 @@ def _fallback_decision(language: str, *, has_context: bool, request_kind: str) -
             message = f"{message} {direction_line}"
         return PaymentScenarioDecision(
             scenario=UNKNOWN_SCENARIO,
+            classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+            should_warn=True,
             risk_level="medium",
             message=message,
             why_this_alert=(
@@ -250,6 +297,8 @@ def _fallback_decision(language: str, *, has_context: bool, request_kind: str) -
         message = f"{message} {direction_line}"
     return PaymentScenarioDecision(
         scenario=UNKNOWN_SCENARIO,
+        classification=PAYMENT_OUTFLOW_RISK_CLASSIFICATION,
+        should_warn=True,
         risk_level="medium",
         message=message,
         why_this_alert=(
@@ -278,3 +327,35 @@ def _direction_line(language: str, request_kind: str, fallback: bool = False) ->
 
 def _normalize(value: str | None) -> str:
     return " ".join((value or "").split()).lower()
+
+
+def _ignore_benign_decision(language: str) -> PaymentScenarioDecision:
+    return PaymentScenarioDecision(
+        scenario=IGNORE_BENIGN_SCENARIO,
+        classification=IGNORE_BENIGN_CLASSIFICATION,
+        should_warn=False,
+        risk_level="low",
+        message="",
+        why_this_alert="",
+        next_best_action="",
+    )
+
+
+def _store_only_account_access_decision(language: str) -> PaymentScenarioDecision:
+    return PaymentScenarioDecision(
+        scenario=STORE_ONLY_ACCOUNT_ACCESS_SCENARIO,
+        classification=STORE_ONLY_ACCOUNT_ACCESS_CLASSIFICATION,
+        should_warn=False,
+        risk_level="low",
+        message="",
+        why_this_alert="",
+        next_best_action="",
+    )
+
+
+def _has_strong_payment_signal(*, raw_text: str, request_kind: str, payee_handle: str, signals) -> bool:
+    if request_kind in {"collect", "collect request", "send money", "refund request"}:
+        return True
+    if payee_handle:
+        return True
+    return signals.has_strong_payment_signal

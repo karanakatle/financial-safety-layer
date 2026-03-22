@@ -1,6 +1,7 @@
 package com.arthamantri.android.sms
 
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.StructuredMessageSignalExtractor
 
 data class ParsedSmsSignal(
     val signalType: String,
@@ -17,6 +18,21 @@ object SmsParser {
 
     fun parseSignal(sender: String?, message: String): ParsedSmsSignal? {
         val body = message.lowercase()
+        val signals = StructuredMessageSignalExtractor.extract(message)
+        if (
+            signals.isCallMetadata ||
+            signals.isSetupOrRegistration ||
+            signals.isOtpVerification ||
+            signals.isReceiveOnly ||
+            signals.isPostTransactionConfirmation ||
+            signals.isStatementOrReport ||
+            signals.isEmiStatus ||
+            signals.isPortfolioInfo ||
+            signals.isMarketingOrProductStatus ||
+            signals.isSensitiveAccessSignal
+        ) {
+            return null
+        }
         val amount = extractAmountValue(message)
         val looksLikeDebit = AppConstants.Parsing.SMS_DEBIT_KEYWORDS.any { body.contains(it) }
         val looksLikeIncome = AppConstants.Parsing.SMS_CREDIT_KEYWORDS.any { body.contains(it) }

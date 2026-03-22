@@ -1,6 +1,7 @@
 package com.arthamantri.android.notify
 
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.sms.SmsParser
 
 data class PaymentInspectionNotificationSignal(
@@ -15,6 +16,15 @@ data class PaymentInspectionNotificationSignal(
 
 object PaymentInspectionNotificationParser {
     private val payeeHandleRegex = Regex("""([A-Za-z0-9.\-_]{2,})@([A-Za-z]{2,})""")
+    private val upiDeepLinkRegex = Regex("""upi://pay\b""", RegexOption.IGNORE_CASE)
+    private val sendMoneyKeywords = listOf(
+        "send money",
+        "approve payment",
+        "payment request",
+        "pay to",
+        "payment to",
+        "scan and pay",
+    )
     private val labelPrefixRegex = Regex(
         """(?:from|to|by|for)\s+([A-Za-z][A-Za-z0-9 .&\-_]{2,40})""",
         RegexOption.IGNORE_CASE,
@@ -38,20 +48,39 @@ object PaymentInspectionNotificationParser {
             return null
         }
 
-        val lower = rawText.lowercase()
-        val looksRelevant = isUpiPackage ||
-            AppConstants.PaymentInspection.NOTIFICATION_REQUEST_KEYWORDS.any { lower.contains(it) } ||
-            AppConstants.PaymentInspection.NOTIFICATION_REFUND_KEYWORDS.any { lower.contains(it) }
-        if (!looksRelevant) {
+        val signals = StructuredMessageSignalExtractor.extract(rawText)
+        if (
+            signals.isCallMetadata ||
+            signals.isSetupOrRegistration ||
+            signals.isOtpVerification ||
+            signals.isReceiveOnly ||
+            signals.isPostTransactionConfirmation ||
+            signals.isStatementOrReport ||
+            signals.isEmiStatus ||
+            signals.isPortfolioInfo ||
+            signals.isMarketingOrProductStatus ||
+            signals.isSensitiveAccessSignal
+        ) {
+            return null
+        }
+
+        val lower = signals.normalizedText
+        val hasCollectKeyword = AppConstants.PaymentInspection.NOTIFICATION_REQUEST_KEYWORDS.any { lower.contains(it) }
+        val hasRefundKeyword = AppConstants.PaymentInspection.NOTIFICATION_REFUND_KEYWORDS.any { lower.contains(it) }
+        val hasSendKeyword = sendMoneyKeywords.any { lower.contains(it) }
+        val hasUpiHandle = payeeHandleRegex.containsMatchIn(rawText)
+        val hasUpiDeepLink = upiDeepLinkRegex.containsMatchIn(rawText)
+        val hasStrongPaymentSignal = hasCollectKeyword || hasRefundKeyword || hasSendKeyword || hasUpiHandle || hasUpiDeepLink
+        if (!hasStrongPaymentSignal) {
             return null
         }
 
         val requestKind = when {
-            AppConstants.PaymentInspection.NOTIFICATION_REFUND_KEYWORDS.any { lower.contains(it) } ->
+            hasRefundKeyword ->
                 AppConstants.PaymentInspection.REQUEST_KIND_REFUND
-            AppConstants.PaymentInspection.NOTIFICATION_REQUEST_KEYWORDS.any { lower.contains(it) } ->
+            hasCollectKeyword ->
                 AppConstants.PaymentInspection.REQUEST_KIND_COLLECT
-            lower.contains("send money") || lower.contains("pay ") ->
+            hasSendKeyword || hasUpiDeepLink ->
                 AppConstants.PaymentInspection.REQUEST_KIND_SEND
             else -> AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN
         }

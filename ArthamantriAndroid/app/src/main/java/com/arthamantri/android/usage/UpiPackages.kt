@@ -14,7 +14,6 @@ object UpiPackages {
         "in.org.npci.upiapp" to "BHIM",
         "com.dreamplug.androidapp" to "CRED",
         "in.amazon.mShop.android.shopping" to "Amazon",
-        "com.whatsapp" to "WhatsApp",
         "com.mobikwik_new" to "MobiKwik",
         "in.swiggy.android" to "Swiggy",
         "com.freecharge.android" to "Freecharge",

@@ -8,12 +8,9 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
-import java.time.Instant
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.notify.AlertNotifier
-import com.arthamantri.android.notify.PaymentInspectionAlertPresenter
-import com.arthamantri.android.repo.LiteracyRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -55,8 +52,9 @@ class AppUsageForegroundService : Service() {
                     val pkg = foregroundPackageName()
                     if (pkg != null && pkg != lastForegroundPackage) {
                         lastForegroundPackage = pkg
+                        // Foreground app switches alone are too noisy to treat as payment intent.
                         if (UpiPackages.isUpiPackage(this@AppUsageForegroundService, pkg)) {
-                            maybeSignalUpiOpen(pkg)
+                            lastUpiSignalAtMs = System.currentTimeMillis()
                         }
                     }
                 } catch (e: Exception) {
@@ -68,66 +66,6 @@ class AppUsageForegroundService : Service() {
                 }
                 delay(AppConstants.Timing.MONITOR_LOOP_DELAY_MS)
             }
-        }
-    }
-
-    private suspend fun maybeSignalUpiOpen(packageName: String) {
-        val now = System.currentTimeMillis()
-        if (now - lastUpiSignalAtMs < AppConstants.Timing.UPI_SIGNAL_DEBOUNCE_MS) {
-            return
-        }
-        lastUpiSignalAtMs = now
-
-        try {
-            val appName = UpiPackages.displayName(this, packageName)
-            val inspection = LiteracyRepository.inspectUpiRequest(
-                context = this,
-                appName = appName,
-                requestKind = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
-                amount = null,
-                rawText = "",
-                source = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
-                timestamp = Instant.ofEpochMilli(now).toString(),
-            )
-            val paymentWarningShown = PaymentInspectionAlertPresenter.maybeShow(
-                context = this,
-                inspection = inspection,
-                requestKind = AppConstants.PaymentInspection.REQUEST_KIND_UNKNOWN,
-                amount = null,
-                payeeLabel = "",
-                payeeHandle = "",
-                rawText = "",
-            )
-            if (paymentWarningShown) {
-                return
-            }
-            val alert = LiteracyRepository.notifyUpiOpen(
-                context = this,
-                appName = appName,
-                intentAmount = 0.0,
-            )
-
-            if (alert != null) {
-                AlertNotifier.show(
-                    this,
-                    title = getString(R.string.alert_title_default),
-                    body = alert.message ?: getString(R.string.alert_body_default),
-                    alertId = alert.alert_id,
-                    severity = alert.severity ?: "medium",
-                    pauseSeconds = alert.pause_seconds ?: 0,
-                    whyThisAlert = alert.why_this_alert,
-                    nextSafeAction = alert.next_best_action,
-                    essentialGoalImpact = alert.essential_goal_impact,
-                    alertFamily = AppConstants.Domain.ALERT_FAMILY_CASHFLOW,
-                    showUsefulnessFeedback = true,
-                )
-            }
-        } catch (e: Exception) {
-            Log.e(
-                AppConstants.LogTags.APP_USAGE_SERVICE,
-                AppConstants.LogMessages.APP_USAGE_NOTIFY_UPI_FAILED,
-                e,
-            )
         }
     }
 

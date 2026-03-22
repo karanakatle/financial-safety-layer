@@ -6,6 +6,7 @@ import android.util.Log
 import java.time.Instant
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.sms.SmsParser
 import com.arthamantri.android.usage.UpiPackages
@@ -149,8 +150,26 @@ class TransactionNotificationListenerService : NotificationListenerService() {
     }
 
     private fun shouldInspect(pkg: String, payload: String): Boolean {
+        val signals = StructuredMessageSignalExtractor.extract(payload)
+        if (
+            signals.isCallMetadata ||
+            signals.isSetupOrRegistration ||
+            signals.isOtpVerification ||
+            signals.isReceiveOnly ||
+            signals.isPostTransactionConfirmation ||
+            signals.isStatementOrReport ||
+            signals.isEmiStatus ||
+            signals.isPortfolioInfo ||
+            signals.isMarketingOrProductStatus ||
+            signals.isSensitiveAccessSignal
+        ) {
+            return false
+        }
+
         if (UpiPackages.isUpiPackage(this, pkg)) {
-            return true
+            if (signals.hasStrongPaymentSignal) {
+                return true
+            }
         }
 
         val lower = payload.lowercase()
