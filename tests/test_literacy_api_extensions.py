@@ -711,6 +711,128 @@ def test_client_fallback_app_logs_replay_idempotently_into_unified_telemetry(tmp
     assert review_json["recent_unified_telemetry"][0]["event_name"] == "payment_fallback_shown"
 
 
+def test_context_events_can_be_ingested_and_filtered_for_review(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    notification_payload = {
+        "event_id": "context-event-1",
+        "participant_id": "context_p1",
+        "level": "info",
+        "message": "context_event:notification_observed:com.phonepe.app",
+        "language": "en",
+        "context_event": {
+            "event_type": "notification_observed",
+            "source_app": "com.phonepe.app",
+            "target_app": "PhonePe",
+            "correlation_id": "corr-123",
+            "classification": "suppressed",
+            "setup_state": "unknown",
+            "suppression_reason": "setup_registration",
+            "message_family": "setup_registration",
+            "has_otp": False,
+            "has_upi_handle": False,
+            "has_upi_deeplink": False,
+            "has_url": False,
+            "metadata": {"source": "notification"},
+        },
+    }
+    payment_candidate_payload = {
+        "event_id": "context-event-2",
+        "participant_id": "context_p1",
+        "level": "info",
+        "message": "context_event:payment_candidate:com.phonepe.app",
+        "language": "en",
+        "context_event": {
+            "event_type": "payment_candidate",
+            "source_app": "com.phonepe.app",
+            "target_app": "PhonePe",
+            "correlation_id": "corr-123",
+            "classification": "payment_candidate",
+            "setup_state": "unknown",
+            "message_family": "payment_signal",
+            "amount": 2500,
+            "has_otp": False,
+            "has_upi_handle": True,
+            "has_upi_deeplink": False,
+            "has_url": False,
+            "metadata": {"request_kind": "collect_request"},
+        },
+    }
+
+    first = client.post("/api/pilot/app-log", json=notification_payload)
+    second = client.post("/api/pilot/app-log", json=payment_candidate_payload)
+    assert first.status_code == 200
+    assert second.status_code == 200
+
+    context_events = client.get(
+        "/api/pilot/context-events",
+        params={
+            "participant_id": "context_p1",
+            "event_type": "payment_candidate",
+            "correlation_id": "corr-123",
+            "limit": 10,
+        },
+        headers=_admin_headers(),
+    )
+    assert context_events.status_code == 200
+    events_json = context_events.json()
+    assert events_json["count"] == 1
+    assert events_json["events"][0]["event_type"] == "payment_candidate"
+    assert events_json["events"][0]["correlation_id"] == "corr-123"
+    assert events_json["events"][0]["metadata"]["request_kind"] == "collect_request"
+    assert events_json["events"][0]["has_upi_handle"] is True
+    assert events_json["breakdown"]["by_event_type"][0]["count"] >= 1
+
+    review = client.get(
+        "/api/pilot/review",
+        params={"participant_id": "context_p1", "correlation_id": "corr-123", "limit": 10},
+        headers=_admin_headers(),
+    )
+    assert review.status_code == 200
+    review_json = review.json()
+    assert len(review_json["recent_context_events"]) == 2
+    assert {record["event_type"] for record in review_json["recent_context_events"]} == {
+        "notification_observed",
+        "payment_candidate",
+    }
+
+
+def test_pilot_analytics_exposes_context_event_breakdown(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    payload = {
+        "event_id": "context-event-breakdown-1",
+        "participant_id": "context_breakdown_p1",
+        "level": "info",
+        "message": "context_event:account_access_candidate:VM-IDFCFB",
+        "language": "en",
+        "context_event": {
+            "event_type": "account_access_candidate",
+            "source_app": "VM-IDFCFB",
+            "correlation_id": "corr-breakdown-1",
+            "classification": "account_access_candidate",
+            "setup_state": "unknown",
+            "message_family": "sensitive_access_signal",
+            "has_otp": True,
+            "has_upi_handle": False,
+            "has_upi_deeplink": False,
+            "has_url": True,
+            "metadata": {"source": "sms"},
+        },
+    }
+    created = client.post("/api/pilot/app-log", json=payload)
+    assert created.status_code == 200
+
+    analytics = client.get(
+        "/api/pilot/analytics",
+        params={"participant_id": "context_breakdown_p1", "limit": 10},
+        headers=_admin_headers(),
+    )
+    assert analytics.status_code == 200
+    analytics_json = analytics.json()
+    assert analytics_json["recent_context_events"][0]["event_type"] == "account_access_candidate"
+    assert analytics_json["context_event_breakdown"]["by_event_type"][0]["event_type"] == "account_access_candidate"
+    assert analytics_json["context_event_breakdown"]["by_classification"][0]["classification"] == "account_access_candidate"
+
+
 def test_cors_origins_can_be_configured(tmp_path, monkeypatch):
     monkeypatch.setenv("PILOT_DB_PATH", str(tmp_path / "pilot_research.db"))
     monkeypatch.setenv("VOICE_PROVIDER", "bhashini")

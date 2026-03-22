@@ -2,6 +2,8 @@ package com.arthamantri.android.sms
 
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.core.StructuredMessageSignalExtractor
+import com.arthamantri.android.usage.PaymentAppSetupState
+import com.arthamantri.android.usage.isActiveOnboardingState
 
 data class ParsedSmsSignal(
     val signalType: String,
@@ -16,7 +18,11 @@ object SmsParser {
         Regex(it, RegexOption.IGNORE_CASE)
     }
 
-    fun parseSignal(sender: String?, message: String): ParsedSmsSignal? {
+    fun parseSignal(
+        sender: String?,
+        message: String,
+        setupState: PaymentAppSetupState = PaymentAppSetupState.IDLE,
+    ): ParsedSmsSignal? {
         val body = message.lowercase()
         val signals = StructuredMessageSignalExtractor.extract(message)
         if (
@@ -75,6 +81,13 @@ object SmsParser {
             AppConstants.Domain.SMS_SIGNAL_PARTIAL_CONFIDENCE
         } else {
             AppConstants.Domain.SMS_SIGNAL_CONFIRMED
+        }
+
+        if (setupState.isActiveOnboardingState() &&
+            category == AppConstants.Domain.CATEGORY_UPI &&
+            signalType == AppConstants.Domain.SMS_SIGNAL_PARTIAL
+        ) {
+            return null
         }
 
         return ParsedSmsSignal(

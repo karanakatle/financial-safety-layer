@@ -17,6 +17,14 @@ def _admin_headers() -> dict[str, str]:
     return {"x-pilot-admin-key": "pilot-admin-local"}
 
 
+def _onboarding_apps() -> list[tuple[str, str]]:
+    return [
+        ("PhonePe", "com.phonepe.app"),
+        ("Google Pay", "com.google.android.apps.nbu.paisa.user"),
+        ("Paytm", "net.one97.paytm"),
+    ]
+
+
 def test_upi_request_inspect_returns_structured_contract(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 
@@ -195,6 +203,110 @@ def test_upi_request_inspect_stores_otp_access_signals_without_warning(tmp_path,
     payload = res.json()
     assert payload["classification"] == "store_only_account_access"
     assert payload["should_warn"] is False
+
+
+def test_upi_request_inspect_suppresses_ambiguous_setup_context_when_setup_state_is_active(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_setup_active",
+            "language": "en",
+            "app_name": "PhonePe",
+            "request_kind": "unknown_request",
+            "payee_handle": "helper@upi",
+            "raw_text": "Complete verification to continue setup",
+            "source": "notification",
+            "setup_state": "phone_verification",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["classification"] == "ignore_benign"
+    assert payload["should_warn"] is False
+
+
+def test_upi_request_inspect_keeps_explicit_collect_visible_during_setup(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/upi-request-inspect",
+        json={
+            "participant_id": "p_payment_setup_collect",
+            "language": "en",
+            "app_name": "PhonePe",
+            "request_kind": "collect_request",
+            "amount": 2500,
+            "payee_label": "Merchant Desk",
+            "payee_handle": "merchant@upi",
+            "raw_text": "Approve collect request of Rs 2500",
+            "source": "notification",
+            "setup_state": "phone_verification",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["classification"] == "payment_outflow_risk"
+    assert payload["should_warn"] is True
+
+
+def test_upi_request_inspect_suppresses_setup_fixtures_for_phonepe_gpay_and_paytm(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    fixtures = [
+        ("registration_success", "Use {app} on your current device! You have successfully registered your {app} account."),
+        ("phone_verification", "Verify mobile number to continue setup. Your verification code is 456789."),
+        ("bank_account_fetch", "Link bank account to continue. Bank account fetch in progress for {app}."),
+        ("upi_pin_setup", "Set UPI PIN to complete setup for {app}."),
+    ]
+
+    for app_name, _package_name in _onboarding_apps():
+        for setup_state, template in fixtures:
+            res = client.post(
+                "/api/literacy/upi-request-inspect",
+                json={
+                    "participant_id": f"setup_fixture_{app_name}_{setup_state}".replace(" ", "_").lower(),
+                    "language": "en",
+                    "app_name": app_name,
+                    "request_kind": "unknown_request",
+                    "raw_text": template.format(app=app_name),
+                    "source": "notification",
+                    "setup_state": setup_state,
+                },
+            )
+
+            assert res.status_code == 200
+            payload = res.json()
+            assert payload["classification"] == "ignore_benign", (app_name, setup_state, payload)
+            assert payload["should_warn"] is False, (app_name, setup_state, payload)
+
+
+def test_upi_request_inspect_keeps_explicit_collect_fixtures_visible_for_phonepe_gpay_and_paytm(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    for app_name, _package_name in _onboarding_apps():
+        res = client.post(
+            "/api/literacy/upi-request-inspect",
+            json={
+                "participant_id": f"setup_collect_{app_name}".replace(" ", "_").lower(),
+                "language": "en",
+                "app_name": app_name,
+                "request_kind": "collect_request",
+                "amount": 2500,
+                "payee_label": "Merchant Desk",
+                "payee_handle": "merchant@upi",
+                "raw_text": "Approve collect request of Rs 2500",
+                "source": "notification",
+                "setup_state": "bank_account_fetch",
+            },
+        )
+
+        assert res.status_code == 200
+        payload = res.json()
+        assert payload["classification"] == "payment_outflow_risk", (app_name, payload)
+        assert payload["should_warn"] is True, (app_name, payload)
 
 
 def test_upi_request_inspect_persists_unified_payment_telemetry(tmp_path, monkeypatch):

@@ -126,6 +126,35 @@ object StructuredMessageSignalExtractor {
         )
     }
 
+    fun messageFamily(signals: StructuredMessageSignals): String = when {
+        signals.isCallMetadata -> "call_metadata"
+        signals.isSetupOrRegistration -> "setup_registration"
+        signals.isOtpVerification -> "otp_verification"
+        signals.isReceiveOnly -> "receive_only"
+        signals.isPostTransactionConfirmation -> "post_transaction_confirmation"
+        signals.isStatementOrReport -> "statement_or_report"
+        signals.isEmiStatus -> "emi_status"
+        signals.isPortfolioInfo -> "portfolio_info"
+        signals.isMarketingOrProductStatus -> "marketing_or_product_status"
+        signals.isSensitiveAccessSignal -> "sensitive_access_signal"
+        signals.hasStrongPaymentSignal -> "payment_signal"
+        else -> "unclassified"
+    }
+
+    fun suppressionReason(signals: StructuredMessageSignals): String? = when {
+        signals.isCallMetadata -> "call_metadata"
+        signals.isSetupOrRegistration -> "setup_registration"
+        signals.isOtpVerification -> if (signals.isSensitiveAccessSignal) "otp_store_only_candidate" else "otp_verification"
+        signals.isReceiveOnly -> "receive_only"
+        signals.isPostTransactionConfirmation -> "post_transaction_confirmation"
+        signals.isStatementOrReport -> "statement_or_report"
+        signals.isEmiStatus -> "emi_status"
+        signals.isPortfolioInfo -> "portfolio_info"
+        signals.isMarketingOrProductStatus -> "marketing_or_product_status"
+        signals.isSensitiveAccessSignal -> "sensitive_access_signal"
+        else -> null
+    }
+
     private fun normalize(text: String): String = " ${text.lowercase().replace(Regex("\\s+"), " ").trim()} "
 
     private fun hasPhrase(text: String, phrase: String): Boolean = text.contains(" ${phrase.lowercase()} ")
@@ -135,6 +164,7 @@ object StructuredMessageSignalExtractor {
     private fun hasAnyWord(text: String, vararg words: String): Boolean = words.any { hasWord(text, it) || hasPhrase(text, it) }
 
     private fun hasAllWords(text: String, vararg words: String): Boolean = words.all { hasWord(text, it) || hasPhrase(text, it) }
-}
+
     private fun wordRegex(word: String): Regex =
         Regex("""(^|[^\p{L}\p{N}])${Regex.escape(word.lowercase())}([^\p{L}\p{N}]|$)""")
+}

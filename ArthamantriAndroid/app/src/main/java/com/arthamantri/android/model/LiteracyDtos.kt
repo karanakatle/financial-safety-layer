@@ -31,6 +31,7 @@ data class UpiRequestInspectRequest(
     val payee_handle: String = "",
     val raw_text: String = "",
     val source: String = AppConstants.PaymentInspection.SOURCE_FOREGROUND_APP,
+    val setup_state: String? = null,
     val timestamp: String? = null,
 )
 
@@ -149,6 +150,23 @@ data class PilotFeedbackResponse(
     val feedback_count: Int = 0,
 )
 
+data class PilotContextEvent(
+    val event_type: String,
+    val source_app: String? = null,
+    val target_app: String? = null,
+    val correlation_id: String? = null,
+    val classification: String? = null,
+    val setup_state: String? = null,
+    val suppression_reason: String? = null,
+    val message_family: String? = null,
+    val amount: Double? = null,
+    val has_otp: Boolean? = null,
+    val has_upi_handle: Boolean? = null,
+    val has_upi_deeplink: Boolean? = null,
+    val has_url: Boolean? = null,
+    val metadata: Map<String, String> = emptyMap(),
+)
+
 data class PilotAppLogRequest(
     val event_id: String? = null,
     val participant_id: String,
@@ -156,6 +174,7 @@ data class PilotAppLogRequest(
     val message: String,
     val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
     val timestamp: String? = null,
+    val context_event: PilotContextEvent? = null,
 )
 
 data class PilotAppLogResponse(

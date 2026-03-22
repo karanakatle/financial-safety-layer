@@ -26,6 +26,9 @@ object AppConstants {
         const val KEY_DRAWER_OPEN = "drawer_open"
         const val KEY_RESTORE_DRAWER_ON_RETURN = "restore_drawer_on_return"
         const val KEY_OFFLINE_TELEMETRY_QUEUE = "offline_telemetry_queue"
+        const val KEY_PAYMENT_APP_SETUP_STATE = "payment_app_setup_state"
+        const val KEY_PAYMENT_APP_SETUP_SOURCE_APP = "payment_app_setup_source_app"
+        const val KEY_PAYMENT_APP_SETUP_UPDATED_AT_MS = "payment_app_setup_updated_at_ms"
 
         const val APP_CONFIG_PREFS = "arthamantri_android_prefs"
         const val KEY_BASE_URL = "base_url"
@@ -116,6 +119,23 @@ object AppConstants {
         const val ALERT_FAMILY_CASHFLOW = "cashflow"
         const val LOCAL_FALLBACK_ALERT_PREFIX = "local-cashflow-fallback"
         const val LOCAL_PAYMENT_FALLBACK_ALERT_PREFIX = "local-payment-fallback"
+    }
+
+    object ContextEvents {
+        const val EVENT_NOTIFICATION_OBSERVED = "notification_observed"
+        const val EVENT_SMS_OBSERVED = "sms_observed"
+        const val EVENT_APP_OPEN = "app_open"
+        const val EVENT_PAYMENT_CANDIDATE = "payment_candidate"
+        const val EVENT_ACCOUNT_ACCESS_CANDIDATE = "account_access_candidate"
+        const val EVENT_SETUP_STATE_TRANSITION = "setup_state_transition"
+        const val EVENT_ALERT_ACTION = "alert_action"
+
+        const val CLASSIFICATION_OBSERVED = "observed"
+        const val CLASSIFICATION_SUPPRESSED = "suppressed"
+        const val CLASSIFICATION_PAYMENT_CANDIDATE = "payment_candidate"
+        const val CLASSIFICATION_ACCOUNT_ACCESS_CANDIDATE = "account_access_candidate"
+
+        const val SETUP_STATE_UNKNOWN = "unknown"
     }
 
     object PaymentInspection {
@@ -211,6 +231,7 @@ object AppConstants {
         const val BANK_SMS_RECEIVER = "BankSmsReceiver"
         const val APP_USAGE_SERVICE = "AppUsageService"
         const val TXN_NOTIFICATION_LISTENER = "TxnNotifListener"
+        const val DEBUG_OBSERVABILITY = "DebugObservability"
     }
 
     object LogMessages {
