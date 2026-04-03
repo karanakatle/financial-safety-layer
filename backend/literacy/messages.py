@@ -51,6 +51,12 @@ LITERACY_MESSAGE_CATALOG = {
         "cashflow_message_essential_pressure": "Today's spending is starting to press on money needed for essentials.",
         "cashflow_message_over_limit_essentials": "Today's spending can reduce money needed for essentials.",
         "cashflow_message_upi_open": "Paying now can disturb the money kept aside for today.",
+        "cashflow_message_within_safer_limit": "This looks within your safer limit for today.",
+        "cashflow_message_watch_personalized": "This looks close to the safer amount for today.",
+        "cashflow_message_burden_personalized": "This may add pressure to money needed for essentials.",
+        "cashflow_message_high_pressure_overlay": "This payment looks likely to burden important needs like {goal_names}.",
+        "cashflow_message_learning_suffix": "The app is still learning your pattern, so this guidance will get sharper over the next few days.",
+        "cashflow_message_low_confidence": "This needs a soft pause. The estimate is still broad, so treat it as a caution signal rather than a precise limit.",
         "why_daily_limit_template": (
             "Today's spending is about Rs {projected_spend} against a safer amount of about Rs {daily_safe_limit}."
         ),
@@ -62,6 +68,9 @@ LITERACY_MESSAGE_CATALOG = {
         "why_suffix_catastrophic": "This amount is much higher than usual for the day.",
         "why_suffix_upi_open": "The warning stayed active when the payment app was opened.",
         "why_suffix_anomaly": "This amount looks higher than recent spending messages.",
+        "why_learning_suffix": "Routine overlays stay off while the app learns for about {min_days}-{max_days} days.",
+        "why_low_confidence_suffix": "Some inputs are still approximate, so the app is keeping the wording intentionally soft.",
+        "why_overlay_suffix": "This rose to a stronger warning because balance, essentials, and recent pressure all point in the same direction for {goal_names}.",
         "next_high_risk": "Pause here, verify what still must be paid today, and reduce the amount if you can.",
         "next_upi_open": "Pay only if it cannot wait today. Otherwise stop here and do it later.",
         "next_default": "Pause non-essential spending today and review what still must be paid.",
@@ -69,6 +78,9 @@ LITERACY_MESSAGE_CATALOG = {
         "next_essential_pressure_with_income": (
             "Keep part of the recent money received aside for {goal_names} first. Spend more only if it cannot wait."
         ),
+        "next_learning_suffix": "Use this as a calm check-in while the app learns your routine.",
+        "next_low_confidence_suffix": "If the amount is not urgent, wait for a clearer picture before spending more.",
+        "next_overlay_high_pressure_suffix": "Pause here and confirm this payment cannot wait before proceeding.",
         "payment_inspection": {
             "ui": {
                 "payment_risk_title": "Payment Risk Warning",
@@ -187,6 +199,12 @@ LITERACY_MESSAGE_CATALOG = {
         "cashflow_message_essential_pressure": "आज का खर्च जरूरी जरूरतों के लिए रखे पैसे पर दबाव डालने लगा है।",
         "cashflow_message_over_limit_essentials": "आज का खर्च जरूरी जरूरतों के पैसे को कम कर सकता है।",
         "cashflow_message_upi_open": "अभी भुगतान करने से आज के लिए अलग रखा पैसा बिगड़ सकता है।",
+        "cashflow_message_within_safer_limit": "यह आज की आपकी सुरक्षित सीमा के भीतर लगता है।",
+        "cashflow_message_watch_personalized": "यह आज के सुरक्षित खर्च के काफी करीब लगता है।",
+        "cashflow_message_burden_personalized": "यह जरूरी जरूरतों के लिए रखे पैसे पर दबाव बढ़ा सकता है।",
+        "cashflow_message_high_pressure_overlay": "यह भुगतान {goal_names} जैसी जरूरी जरूरतों पर ज्यादा दबाव डाल सकता है।",
+        "cashflow_message_learning_suffix": "ऐप अभी आपका पैटर्न सीख रहा है, इसलिए यह सलाह अगले कुछ दिनों में और बेहतर होगी।",
+        "cashflow_message_low_confidence": "यह एक हल्की सावधानी वाली चेतावनी है। अनुमान अभी चौड़ा है, इसलिए इसे पक्की सीमा नहीं मानें।",
         "why_daily_limit_template": "आज का खर्च लगभग ₹{projected_spend} है और आज का सुरक्षित खर्च लगभग ₹{daily_safe_limit} है।",
         "why_essential_pressure_template": (
             "{goal_names} के लिए पैसा अलग रखने के बाद आज खर्च के लिए लगभग ₹{protected_limit} ही सुरक्षित बचता है।"
@@ -196,6 +214,9 @@ LITERACY_MESSAGE_CATALOG = {
         "why_suffix_catastrophic": "यह राशि आज के हिसाब से काफी बड़ी है।",
         "why_suffix_upi_open": "भुगतान ऐप खुलने पर भी यह चेतावनी बनी रही।",
         "why_suffix_anomaly": "यह राशि हाल के खर्च की तुलना में ज्यादा लग रही है।",
+        "why_learning_suffix": "ऐप लगभग {min_days}-{max_days} दिनों तक सीखते समय नियमित ओवरले नहीं दिखाता।",
+        "why_low_confidence_suffix": "कुछ संकेत अभी अनुमान पर आधारित हैं, इसलिए भाषा जानबूझकर नरम रखी गई है।",
+        "why_overlay_suffix": "{goal_names} से जुड़ी जरूरतें, बैलेंस और हाल का दबाव एक साथ मजबूत जोखिम दिखा रहे हैं।",
         "next_high_risk": "यहीं रुकें, आज क्या जरूरी है उसे जांचें, और हो सके तो राशि कम करें।",
         "next_upi_open": "भुगतान केवल तभी करें जब यह आज ही जरूरी हो। नहीं तो इसे बाद में करें।",
         "next_default": "आज अनावश्यक खर्च रोकें और पहले देखें कि क्या सच में जरूरी है।",
@@ -203,6 +224,9 @@ LITERACY_MESSAGE_CATALOG = {
         "next_essential_pressure_with_income": (
             "हाल में मिले पैसे का कुछ हिस्सा {goal_names} के लिए पहले अलग रखें। ज्यादा खर्च तभी करें जब बहुत जरूरी हो।"
         ),
+        "next_learning_suffix": "इसे एक शांत संकेत की तरह लें, जब तक ऐप आपकी दिनचर्या सीख रहा है।",
+        "next_low_confidence_suffix": "अगर भुगतान जरूरी नहीं है, तो थोड़ा रुककर ज्यादा साफ संकेत का इंतजार करें।",
+        "next_overlay_high_pressure_suffix": "आगे बढ़ने से पहले रुककर पक्का करें कि यह भुगतान अभी टाला नहीं जा सकता।",
         "payment_inspection": {
             "ui": {
                 "payment_risk_title": "भुगतान जोखिम चेतावनी",

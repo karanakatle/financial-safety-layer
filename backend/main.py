@@ -33,15 +33,13 @@ from backend.literacy import (
     infer_goal_context,
     goal_impact_text,
     localize_alert,
-    next_action_text,
     policy_for_participant,
     persist_literacy_monitor,
-    primary_cashflow_message,
+    personalized_guidance_copy,
     recent_financial_context,
     auto_recalibrate_policy,
     resolve_experiment_variant,
     risk_level_from_score,
-    why_text,
 )
 from backend.literacy.essential_goal_setup import (
     active_priority_limit,
@@ -55,6 +53,7 @@ from backend.literacy.essential_goal_setup import (
     supported_cohort_ids,
     supported_goal_ids,
 )
+from backend.literacy.expense_personalization import build_expense_personalization
 from backend.literacy.domain_intelligence import enrich_domain_context
 from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
 from backend.literacy.entity_trust import (
@@ -524,6 +523,8 @@ def _apply_contextual_alert_intensity(
     warmup_active: bool,
     language: str,
     essential_profile: dict | None,
+    current_balance_snapshot: float | None = None,
+    first_event_date: str | None = None,
 ) -> dict | None:
     localized_alert = localize_alert(
         alert,
@@ -546,6 +547,20 @@ def _apply_contextual_alert_intensity(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
         limit=10,
+    )
+    personalization = build_expense_personalization(
+        amount=float(amount),
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        essential_profile=essential_profile,
+        financial_context=financial_context,
+        upi_open_flag=upi_open_flag,
+        current_balance_amount=current_balance_snapshot,
+        current_balance_source="observed_balance" if current_balance_snapshot is not None else None,
+        recent_amounts=pilot_storage.recent_spend_amounts(participant_id, limit=20),
+        event_timestamp=timestamp,
+        first_event_date=first_event_date,
     )
     non_essential_confidence = (
         float(goal_context["confidence"])
@@ -601,15 +616,7 @@ def _apply_contextual_alert_intensity(
     risk_level = risk_level_from_score(float(features["risk_score"]))
     goal_impact = goal_impact_text(language, envelope, projected_spend)
     reason = str(localized_alert.get("reason") or "")
-    primary_message = primary_cashflow_message(
-        language=language,
-        reason=reason,
-        projected_spend=projected_spend,
-        daily_safe_limit=daily_safe_limit,
-        envelope=envelope,
-        upi_open_flag=upi_open_flag,
-    )
-    why_this = why_text(
+    personalized_copy = personalized_guidance_copy(
         language=language,
         reason=reason,
         risk_level=risk_level,
@@ -620,16 +627,7 @@ def _apply_contextual_alert_intensity(
         spend_ratio=float(features["spend_ratio"]),
         txn_anomaly_score=float(features["txn_anomaly_score"]),
         upi_open_flag=upi_open_flag,
-    )
-    next_action = next_action_text(
-        language=language,
-        risk_level=risk_level,
-        reason=reason,
-        projected_spend=projected_spend,
-        daily_safe_limit=daily_safe_limit,
-        envelope=envelope,
-        financial_context=financial_context,
-        upi_open_flag=upi_open_flag,
+        personalization=personalization,
     )
 
     contextual_alert = dict(localized_alert)
@@ -646,8 +644,8 @@ def _apply_contextual_alert_intensity(
         upi_open_flag=upi_open_flag,
         pause_seconds=int(features["pause_seconds"]),
     )
-    contextual_alert["why_this_alert"] = why_this
-    contextual_alert["next_best_action"] = next_action
+    contextual_alert["why_this_alert"] = personalized_copy["why_this_alert"]
+    contextual_alert["next_best_action"] = personalized_copy["next_best_action"]
     contextual_alert["essential_goal_impact"] = goal_impact
     contextual_alert["essential_goals"] = envelope.get("essential_goals", [])
     contextual_alert["goal_reserve_ratio"] = envelope.get("reserve_ratio")
@@ -656,7 +654,17 @@ def _apply_contextual_alert_intensity(
     contextual_alert["txn_goal_confidence"] = goal_context["confidence"]
     contextual_alert["txn_goal_confidence_gate_passed"] = goal_context["gate_passed"]
     contextual_alert["txn_goal_inference_source"] = goal_context["source"]
-    contextual_alert["message"] = primary_message
+    contextual_alert["expense_personalization"] = personalization
+    contextual_alert["pressure_score"] = personalization["pressure_score"]
+    contextual_alert["pressure_state"] = personalization["pressure_state"]
+    contextual_alert["bounded_confidence"] = personalization["bounded_confidence"]
+    contextual_alert["learning_period"] = personalization["learning_period"]
+    contextual_alert["delivery_surface"] = personalized_copy["delivery_surface"]
+    contextual_alert["message_family"] = personalized_copy["message_family"]
+    contextual_alert["overlay_eligible"] = bool((personalization.get("delivery") or {}).get("overlay_eligible"))
+    contextual_alert["deterministic_baseline"] = bool(personalization.get("deterministic_baseline"))
+    contextual_alert["future_extension_hooks"] = personalization.get("future_extensions", {})
+    contextual_alert["message"] = personalized_copy["message"]
     contextual_alert["priority"] = {
         "hard": "critical",
         "medium": "high",
@@ -807,6 +815,12 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
                 warmup_active=monitor.warmup_active,
                 language=language,
                 essential_profile=profile,
+                current_balance_snapshot=(
+                    float(transaction_result.get("balance"))
+                    if isinstance(transaction_result, dict) and transaction_result.get("balance") is not None
+                    else None
+                ),
+                first_event_date=monitor.first_event_date,
             )
             if contextual is None:
                 record_cashflow_fallback(
@@ -945,6 +959,8 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
             warmup_active=monitor.warmup_active,
             language=language,
             essential_profile=profile,
+            current_balance_snapshot=float(participant_agent.state_snapshot().get("balance") or 0.0),
+            first_event_date=monitor.first_event_date,
         )
         if alert:
             record_cashflow_alert_generated(
