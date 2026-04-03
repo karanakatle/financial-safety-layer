@@ -25,6 +25,7 @@ import android.view.ViewGroup
 import android.widget.ArrayAdapter
 import android.widget.AdapterView
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.LinearLayout
@@ -48,12 +49,17 @@ import androidx.drawerlayout.widget.DrawerLayout
 import androidx.core.os.LocaleListCompat
 import com.arthamantri.android.BuildConfig
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.EssentialGoalSelectionPlan
+import com.arthamantri.android.core.EssentialGoalSetupConfig
+import com.arthamantri.android.core.EssentialGoalSetupConfigLoader
+import com.arthamantri.android.core.EssentialGoalSetupPlanner
 import com.arthamantri.android.core.LinkContextSignalExtractor
 import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.model.EssentialGoalEnvelopeDto
 import com.arthamantri.android.model.EssentialGoalProfileDto
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
+import com.arthamantri.android.savings.SavingsNudgeScheduler
 import com.arthamantri.android.usage.AppUsageForegroundService
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.CoroutineScope
@@ -82,6 +88,13 @@ class MainActivity : AppCompatActivity() {
         val whyThisAlert: String,
         val nextSafeAction: String,
         val essentialGoalImpact: String,
+    )
+
+    private data class CachedMoneySetupSelection(
+        val cohort: String,
+        val goals: List<String>,
+        val bucketId: String?,
+        val selectionSource: String?,
     )
 
     private enum class FacilitatorStepProgress {
@@ -146,6 +159,7 @@ class MainActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
         setContentView(R.layout.activity_main)
+        SavingsNudgeScheduler.scheduleDaily(this)
 
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
@@ -538,41 +552,31 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showMoneySetupDialog() {
-        val cohortCodes = listOf("women_led_household", "daily_cashflow_worker")
+        val setupConfig = EssentialGoalSetupConfigLoader.load(this)
+        val cachedSelection = cachedMoneySetupSelection(setupConfig)
+        val cohortCodes = setupConfig.cohorts.map { it.id }
         val cohortLabels = cohortCodes.map { cohortDisplayName(it) }
-        val goalCodes = listOf(
-            "",
-            "ration",
-            "school",
-            "fuel",
-            "medicine",
-            "rent",
-            "mobile_recharge",
-            "loan_repayment",
-        )
-        val goalLabels = listOf(getString(R.string.money_setup_none)) + goalCodes.drop(1).map { goalDisplayName(it) }
 
         val contentView = LayoutInflater.from(this).inflate(R.layout.dialog_money_setup, null)
         val cohortSpinner = contentView.findViewById<Spinner>(R.id.moneySetupCohortSpinner)
-        val goalOneSpinner = contentView.findViewById<Spinner>(R.id.moneySetupGoalOneSpinner)
-        val goalTwoSpinner = contentView.findViewById<Spinner>(R.id.moneySetupGoalTwoSpinner)
+        val affordabilityLabel = contentView.findViewById<TextView>(R.id.moneySetupAffordabilityLabel)
+        val affordabilitySpinner = contentView.findViewById<Spinner>(R.id.moneySetupAffordabilitySpinner)
+        val affordabilityHelp = contentView.findViewById<TextView>(R.id.moneySetupAffordabilityHelp)
+        val currentBalanceInput = contentView.findViewById<EditText>(R.id.moneySetupCurrentBalanceInput)
+        val selectedSummary = contentView.findViewById<TextView>(R.id.moneySetupSelectedSummary)
+        val seedPreview = contentView.findViewById<TextView>(R.id.moneySetupSeedPreview)
+        val goalsContainer = contentView.findViewById<LinearLayout>(R.id.moneySetupGoalsContainer)
         val primaryButton = contentView.findViewById<Button>(R.id.moneySetupPrimaryButton)
         val secondaryButton = contentView.findViewById<Button>(R.id.moneySetupSecondaryButton)
+        val selectedGoals = linkedSetOf<String>().apply { addAll(cachedSelection.goals) }
+        val selectionOrder = cachedSelection.goals.toMutableList()
+        var currentCohort = cachedSelection.cohort
         cohortSpinner.adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
             cohortLabels,
         ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
-        goalOneSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            goalLabels,
-        ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
-        goalTwoSpinner.adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_spinner_item,
-            goalLabels,
-        ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        cohortSpinner.setSelection(cohortCodes.indexOf(currentCohort).coerceAtLeast(0))
 
         primaryButton.backgroundTintList = null
         secondaryButton.backgroundTintList = null
@@ -590,18 +594,142 @@ class MainActivity : AppCompatActivity() {
                 secondaryButton.isEnabled = enabled
             }
 
+            fun currentBucketId(): String? {
+                val cohort = setupConfig.cohort(currentCohort)
+                val index = affordabilitySpinner.selectedItemPosition
+                return if (index <= 0) {
+                    null
+                } else {
+                    cohort.affordabilityPrompt.buckets.getOrNull(index - 1)?.id
+                }
+            }
+
+            fun currentBalanceAmount(): Double? {
+                val text = currentBalanceInput.text?.toString()?.trim().orEmpty()
+                return text.toDoubleOrNull()
+            }
+
+            fun refreshSelectionPreview() {
+                val ordered = selectionOrder.filter { selectedGoals.contains(it) }
+                if (ordered.isEmpty()) {
+                    selectedSummary.text = getString(R.string.money_setup_selected_summary_empty)
+                    val seededPlan = EssentialGoalSetupPlanner.seeded(
+                        config = setupConfig,
+                        cohortId = currentCohort,
+                        affordabilityBucketId = currentBucketId(),
+                    )
+                    seedPreview.visibility = View.VISIBLE
+                    seedPreview.text = getString(
+                        R.string.money_setup_seed_preview,
+                        seededPlan.activePriorityEssentials.joinToString(", ") { goalDisplayName(it) },
+                    )
+                    primaryButton.text = getString(R.string.money_setup_continue_with_suggestions)
+                } else {
+                    selectedSummary.text = getString(
+                        R.string.money_setup_selected_summary_count,
+                        ordered.size,
+                        minOf(ordered.size, setupConfig.activePriorityLimit),
+                    )
+                    seedPreview.visibility = View.GONE
+                    primaryButton.text = getString(R.string.money_setup_save_continue)
+                }
+            }
+
+            fun renderGoalChecklist() {
+                goalsContainer.removeAllViews()
+                val cohort = setupConfig.cohort(currentCohort)
+                cohort.supportedCategories.forEach { goalId ->
+                    val checkBox = CheckBox(this).apply {
+                        text = goalDisplayName(goalId)
+                        isChecked = selectedGoals.contains(goalId)
+                        setTextColor(ContextCompat.getColor(this@MainActivity, R.color.text_primary))
+                        textSize = 15f
+                        setPadding(0, 8, 0, 8)
+                        setOnCheckedChangeListener { _, isChecked ->
+                            if (isChecked) {
+                                selectedGoals += goalId
+                                if (!selectionOrder.contains(goalId)) {
+                                    selectionOrder += goalId
+                                }
+                            } else {
+                                selectedGoals -= goalId
+                                selectionOrder.remove(goalId)
+                            }
+                            refreshSelectionPreview()
+                        }
+                    }
+                    goalsContainer.addView(checkBox)
+                }
+            }
+
+            fun updateAffordabilityViews(restoredBucketId: String?) {
+                val cohort = setupConfig.cohort(currentCohort)
+                affordabilityLabel.text = resolveConfigString(cohort.affordabilityPrompt.labelKey)
+                affordabilityHelp.text = resolveConfigString(cohort.affordabilityPrompt.helpKey)
+                val bucketLabels = listOf(getString(R.string.money_setup_affordability_none)) +
+                    cohort.affordabilityPrompt.buckets.map { resolveConfigString(it.labelKey) }
+                affordabilitySpinner.adapter = ArrayAdapter(
+                    this,
+                    android.R.layout.simple_spinner_item,
+                    bucketLabels,
+                ).also { adapter -> adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+                val restoredIndex = cohort.affordabilityPrompt.buckets.indexOfFirst { it.id == restoredBucketId }
+                affordabilitySpinner.setSelection(if (restoredIndex >= 0) restoredIndex + 1 else 0)
+            }
+
+            affordabilitySpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    refreshSelectionPreview()
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+
+            cohortSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    currentCohort = cohortCodes.getOrNull(position) ?: setupConfig.cohorts.first().id
+                    updateAffordabilityViews(
+                        restoredBucketId = if (currentCohort == cachedSelection.cohort) cachedSelection.bucketId else null,
+                    )
+                    renderGoalChecklist()
+                    refreshSelectionPreview()
+                }
+
+                override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            }
+
+            updateAffordabilityViews(cachedSelection.bucketId)
+            renderGoalChecklist()
+            refreshSelectionPreview()
+
             primaryButton.setOnClickListener {
                 setButtonsEnabled(false)
                 moneySetupHandled = true
-                val cohort = cohortCodes.getOrNull(cohortSpinner.selectedItemPosition) ?: "daily_cashflow_worker"
-                val selectedGoals = listOf(
-                    goalCodes.getOrNull(goalOneSpinner.selectedItemPosition).orEmpty(),
-                    goalCodes.getOrNull(goalTwoSpinner.selectedItemPosition).orEmpty(),
-                ).filter { it.isNotBlank() }.distinct().take(2)
+                val ordered = selectionOrder.filter { selectedGoals.contains(it) }
+                val plan: EssentialGoalSelectionPlan = if (ordered.isEmpty()) {
+                    EssentialGoalSetupPlanner.seeded(
+                        config = setupConfig,
+                        cohortId = currentCohort,
+                        affordabilityBucketId = currentBucketId(),
+                    )
+                } else {
+                    EssentialGoalSetupPlanner.userSelected(
+                        config = setupConfig,
+                        cohortId = currentCohort,
+                        orderedSelections = ordered,
+                        affordabilityBucketId = currentBucketId(),
+                    )
+                }
                 persistMoneySetup(
-                    cohort = cohort,
-                    goals = selectedGoals,
-                    setupSkipped = selectedGoals.isEmpty(),
+                    cohort = currentCohort,
+                    activeGoals = plan.activePriorityEssentials,
+                    allSelectedGoals = plan.allSelectedEssentials,
+                    selectionSource = plan.selectionSource,
+                    goalSourceMap = plan.goalSourceMap,
+                    affordabilityQuestionKey = plan.affordabilityQuestionKey,
+                    affordabilityBucketId = plan.affordabilityBucketId,
+                    setupSkipped = false,
+                    currentBalanceAmount = currentBalanceAmount(),
                     dialog = dialog,
                 )
             }
@@ -610,9 +738,15 @@ class MainActivity : AppCompatActivity() {
                 setButtonsEnabled(false)
                 moneySetupHandled = true
                 persistMoneySetup(
-                    cohort = "daily_cashflow_worker",
-                    goals = emptyList(),
+                    cohort = currentCohort,
+                    activeGoals = emptyList(),
+                    allSelectedGoals = emptyList(),
+                    selectionSource = "skipped",
+                    goalSourceMap = emptyMap(),
+                    affordabilityQuestionKey = setupConfig.cohort(currentCohort).affordabilityPrompt.questionKey.ifBlank { null },
+                    affordabilityBucketId = currentBucketId(),
                     setupSkipped = true,
+                    currentBalanceAmount = currentBalanceAmount(),
                     dialog = dialog,
                 )
             }
@@ -1159,13 +1293,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun persistMoneySetup(
         cohort: String,
-        goals: List<String>,
+        activeGoals: List<String>,
+        allSelectedGoals: List<String>,
+        selectionSource: String?,
+        goalSourceMap: Map<String, String>,
+        affordabilityQuestionKey: String?,
+        affordabilityBucketId: String?,
         setupSkipped: Boolean,
+        currentBalanceAmount: Double?,
         dialog: AlertDialog,
     ) {
         cacheMoneySetupSelection(
             cohort = cohort,
-            goals = goals,
+            goals = activeGoals,
+            affordabilityBucketId = affordabilityBucketId,
+            selectionSource = selectionSource,
             done = true,
             skipped = setupSkipped,
         )
@@ -1174,27 +1316,58 @@ class MainActivity : AppCompatActivity() {
         continueOnboardingFlow()
 
         CoroutineScope(Dispatchers.IO).launch {
-            val response = runCatching {
+            val goalResponse = runCatching {
                 LiteracyRepository.saveEssentialGoals(
                     context = this@MainActivity,
                     cohort = cohort,
-                    essentialGoals = goals,
+                    essentialGoals = activeGoals,
+                    allSelectedEssentials = allSelectedGoals,
+                    selectionSource = selectionSource,
+                    goalSourceMap = goalSourceMap,
+                    affordabilityQuestionKey = affordabilityQuestionKey,
+                    affordabilityBucketId = affordabilityBucketId,
                     setupSkipped = setupSkipped,
                 )
             }
+            val balanceResponse = if (goalResponse.isSuccess && currentBalanceAmount != null) {
+                runCatching {
+                    LiteracyRepository.saveCurrentBalance(
+                        context = this@MainActivity,
+                        amount = currentBalanceAmount,
+                    )
+                }
+            } else {
+                null
+            }
             runOnUiThread {
-                response.onSuccess { saved ->
+                goalResponse.onSuccess { saved ->
+                    val savedGoals = profileGoals(saved.profile)
                     cacheMoneySetupSelection(
                         cohort = saved.profile?.cohort ?: cohort,
-                        goals = saved.profile?.essential_goals?.filter { it.isNotBlank() } ?: goals,
+                        goals = savedGoals,
+                        affordabilityBucketId = saved.profile?.affordability_bucket_id ?: affordabilityBucketId,
+                        selectionSource = saved.profile?.selection_source ?: selectionSource,
                         done = true,
                         skipped = saved.profile?.setup_skipped == true || setupSkipped,
                     )
                     updateMoneySetupSummary(saved.profile, saved.envelope)
                     if (!setupSkipped) {
-                        toast(getString(R.string.toast_money_setup_saved))
+                        val toastRes = if ((saved.profile?.selection_source ?: selectionSource) == "system_auto_seeded") {
+                            R.string.toast_money_setup_seeded
+                        } else {
+                            R.string.toast_money_setup_saved
+                        }
+                        toast(getString(toastRes))
                     }
-                    sendAppLog("info", "money_setup_saved:$cohort:${goals.joinToString("|")}")
+                    if (currentBalanceAmount != null) {
+                        balanceResponse?.onSuccess {
+                            toast(getString(R.string.toast_current_balance_saved))
+                        }?.onFailure { error ->
+                            sendAppLog("error", "current_balance_save_failed:${error.message}")
+                        }
+                    }
+                    SavingsNudgeScheduler.scheduleDaily(this@MainActivity)
+                    sendAppLog("info", "money_setup_saved:$cohort:${savedGoals.joinToString("|")}")
                 }.onFailure { error ->
                     applyLocalMoneySetupFallback()
                     toast(getString(R.string.toast_money_setup_failed))
@@ -1230,7 +1403,7 @@ class MainActivity : AppCompatActivity() {
             applyLocalMoneySetupFallback()
             return
         }
-        val goals = profile.essential_goals.filter { it.isNotBlank() }
+        val goals = profileGoals(profile)
         if (profile.setup_skipped == true) {
             moneySetupLine.text = getString(R.string.money_setup_skipped)
             return
@@ -1243,8 +1416,13 @@ class MainActivity : AppCompatActivity() {
         val protectedLimit = ((envelope?.protected_limit ?: 0.0).toInt()).coerceAtLeast(0)
         val goalText = goals.joinToString(", ") { goalDisplayName(it) }
         val cohortText = cohortDisplayName(profile.cohort ?: "daily_cashflow_worker")
+        val summaryRes = if (profile.selection_source == "system_auto_seeded") {
+            R.string.money_setup_summary_suggested
+        } else {
+            R.string.money_setup_summary
+        }
         moneySetupLine.text = getString(
-            R.string.money_setup_summary,
+            summaryRes,
             cohortText,
             goalText,
             reservePercent,
@@ -1253,6 +1431,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun cohortDisplayName(cohortCode: String): String {
+        val setupConfig = runCatching { EssentialGoalSetupConfigLoader.load(this) }.getOrNull()
+        val cohort = setupConfig?.cohorts?.firstOrNull { it.id == cohortCode }
+        if (cohort != null) {
+            return resolveConfigString(cohort.labelKey)
+        }
         return when (cohortCode) {
             "women_led_household" -> getString(R.string.cohort_women_led_household)
             "daily_cashflow_worker" -> getString(R.string.cohort_daily_cashflow_worker)
@@ -1261,14 +1444,26 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun goalDisplayName(goalCode: String): String {
+        val setupConfig = runCatching { EssentialGoalSetupConfigLoader.load(this) }.getOrNull()
+        val normalizedCode = setupConfig?.normalizeGoalId(goalCode).orEmpty().ifBlank { goalCode }
+        val category = setupConfig?.category(normalizedCode)
+        if (category != null) {
+            return resolveConfigString(category.labelKey)
+        }
         return when (goalCode) {
             "ration" -> getString(R.string.goal_ration)
             "school" -> getString(R.string.goal_school)
             "fuel" -> getString(R.string.goal_fuel)
+            "cooking_fuel" -> getString(R.string.goal_cooking_fuel)
             "medicine" -> getString(R.string.goal_medicine)
             "rent" -> getString(R.string.goal_rent)
+            "electricity" -> getString(R.string.goal_electricity)
+            "water" -> getString(R.string.goal_water)
+            "transport" -> getString(R.string.goal_transport)
             "mobile_recharge" -> getString(R.string.goal_mobile_recharge)
             "loan_repayment" -> getString(R.string.goal_loan_repayment)
+            "work_inputs" -> getString(R.string.goal_work_inputs)
+            "family_care" -> getString(R.string.goal_family_care)
             else -> goalCode
         }
     }
@@ -2438,6 +2633,8 @@ class MainActivity : AppCompatActivity() {
     private fun cacheMoneySetupSelection(
         cohort: String,
         goals: List<String>,
+        affordabilityBucketId: String?,
+        selectionSource: String?,
         done: Boolean,
         skipped: Boolean,
     ) {
@@ -2447,6 +2644,8 @@ class MainActivity : AppCompatActivity() {
             .putBoolean(AppConstants.Prefs.KEY_MONEY_SETUP_SKIPPED, skipped)
             .putString(AppConstants.Prefs.KEY_MONEY_SETUP_COHORT, cohort)
             .putString(AppConstants.Prefs.KEY_MONEY_SETUP_GOALS, goals.joinToString("|"))
+            .putString(AppConstants.Prefs.KEY_MONEY_SETUP_BUCKET, affordabilityBucketId)
+            .putString(AppConstants.Prefs.KEY_MONEY_SETUP_SELECTION_SOURCE, selectionSource)
             .apply()
     }
 
@@ -2469,6 +2668,49 @@ class MainActivity : AppCompatActivity() {
                 goals.joinToString(", ") { goalDisplayName(it) },
             )
             else -> getString(R.string.money_setup_pending)
+        }
+    }
+
+    private fun cachedMoneySetupSelection(config: EssentialGoalSetupConfig): CachedMoneySetupSelection {
+        val prefs = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
+        val cohort = config.cohort(
+            prefs.getString(AppConstants.Prefs.KEY_MONEY_SETUP_COHORT, config.cohorts.firstOrNull()?.id)
+                ?: config.cohorts.firstOrNull()?.id.orEmpty(),
+        ).id
+        val goals = prefs.getString(AppConstants.Prefs.KEY_MONEY_SETUP_GOALS, null)
+            .orEmpty()
+            .split("|")
+            .mapNotNull { config.normalizeGoalId(it).takeIf { goalId -> goalId.isNotBlank() } }
+            .distinct()
+        return CachedMoneySetupSelection(
+            cohort = cohort,
+            goals = goals,
+            bucketId = prefs.getString(AppConstants.Prefs.KEY_MONEY_SETUP_BUCKET, null),
+            selectionSource = prefs.getString(AppConstants.Prefs.KEY_MONEY_SETUP_SELECTION_SOURCE, null),
+        )
+    }
+
+    private fun profileGoals(profile: EssentialGoalProfileDto?): List<String> {
+        if (profile == null) {
+            return emptyList()
+        }
+        val active = profile.active_priority_essentials.filter { it.isNotBlank() }
+        return if (active.isNotEmpty()) {
+            active
+        } else {
+            profile.essential_goals.filter { it.isNotBlank() }
+        }
+    }
+
+    private fun resolveConfigString(labelKey: String): String {
+        if (labelKey.isBlank()) {
+            return ""
+        }
+        val resId = resources.getIdentifier(labelKey, "string", packageName)
+        return if (resId != 0) {
+            getString(resId)
+        } else {
+            labelKey.replace("_", " ")
         }
     }
 

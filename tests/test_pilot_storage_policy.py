@@ -110,7 +110,15 @@ def test_essential_goal_profile_upsert_and_get(tmp_path):
     storage.upsert_essential_goal_profile(
         participant_id="p1",
         cohort="daily_cashflow_worker",
-        essential_goals=["fuel", "ration"],
+        essential_goals=["cooking_fuel", "ration"],
+        all_selected_essentials=["cooking_fuel", "ration", "rent"],
+        active_priority_essentials=["cooking_fuel", "ration"],
+        selection_source="user_selected",
+        goal_source_map={"cooking_fuel": "user_selected", "ration": "user_selected", "rent": "user_selected"},
+        affordability_question_key="daily_earnings_range",
+        affordability_bucket_id="500_749",
+        ranking_metadata={"config_version": "essential_goal_setup_v1"},
+        config_version="essential_goal_setup_v1",
         language="en",
         setup_skipped=False,
         timestamp="2026-03-08T00:00:00",
@@ -119,8 +127,46 @@ def test_essential_goal_profile_upsert_and_get(tmp_path):
     profile = storage.get_essential_goal_profile("p1")
     assert profile is not None
     assert profile["cohort"] == "daily_cashflow_worker"
-    assert profile["essential_goals"] == ["fuel", "ration"]
+    assert profile["essential_goals"] == ["cooking_fuel", "ration"]
+    assert profile["all_selected_essentials"] == ["cooking_fuel", "ration", "rent"]
+    assert profile["active_priority_essentials"] == ["cooking_fuel", "ration"]
+    assert profile["selection_source"] == "user_selected"
+    assert profile["affordability_bucket_id"] == "500_749"
     assert profile["setup_skipped"] is False
+
+
+def test_current_balance_upsert_replaces_latest_and_retains_history(tmp_path):
+    db = tmp_path / "pilot_balance.db"
+    storage = PilotStorage(str(db))
+
+    storage.upsert_current_balance(
+        participant_id="p1",
+        amount=1200.0,
+        source="self_reported",
+        captured_at="2026-03-08T08:00:00",
+        updated_at="2026-03-08T08:00:00",
+    )
+    first = storage.get_current_balance("p1")
+    assert first is not None
+    assert first["amount"] == 1200.0
+    assert first["source"] == "self_reported"
+
+    storage.upsert_current_balance(
+        participant_id="p1",
+        amount=1500.0,
+        source="self_reported",
+        captured_at="2026-03-08T10:30:00",
+        updated_at="2026-03-08T10:30:00",
+    )
+
+    latest = storage.get_current_balance("p1")
+    history = storage.list_current_balance_history("p1", limit=10)
+    assert latest is not None
+    assert latest["amount"] == 1500.0
+    assert latest["captured_at"] == "2026-03-08T10:30:00"
+    assert len(history) == 1
+    assert history[0]["amount"] == 1200.0
+    assert history[0]["source"] == "self_reported"
 
 
 def test_experiment_assignment_and_event_export(tmp_path):

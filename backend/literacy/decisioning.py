@@ -8,10 +8,30 @@ from backend.literacy.messages import (
 
 def effective_goal_profile(profile: dict | None) -> dict:
     if profile:
-        return profile
+        active = list(profile.get("active_priority_essentials") or profile.get("essential_goals") or [])
+        all_selected = list(profile.get("all_selected_essentials") or active)
+        selection_source = str(profile.get("selection_source") or ("skipped" if profile.get("setup_skipped") else "user_selected"))
+        goal_source_map = dict(profile.get("goal_source_map") or {})
+        ranking_metadata = dict(profile.get("ranking_metadata") or {})
+        return {
+            **profile,
+            "essential_goals": active,
+            "all_selected_essentials": all_selected,
+            "active_priority_essentials": active,
+            "selection_source": selection_source,
+            "goal_source_map": goal_source_map,
+            "ranking_metadata": ranking_metadata,
+        }
     return {
         "cohort": "daily_cashflow_worker",
         "essential_goals": [],
+        "all_selected_essentials": [],
+        "active_priority_essentials": [],
+        "selection_source": "skipped",
+        "goal_source_map": {},
+        "affordability_question_key": None,
+        "affordability_bucket_id": None,
+        "ranking_metadata": {},
         "language": "en",
         "setup_skipped": True,
     }
@@ -19,16 +39,23 @@ def effective_goal_profile(profile: dict | None) -> dict:
 
 def essential_goal_envelope(profile: dict | None, daily_safe_limit: float, cohort_normalizer) -> dict:
     active = effective_goal_profile(profile)
-    goals = list(active.get("essential_goals") or [])
+    goals = list(active.get("active_priority_essentials") or active.get("essential_goals") or [])
+    all_selected = list(active.get("all_selected_essentials") or goals)
     cohort = cohort_normalizer(active.get("cohort"))
 
     base_ratio = 0.18 if cohort == "women_led_household" else 0.22
-    ratio = max(0.15, min(0.35, base_ratio + (0.05 * min(len(goals), 2))))
+    ratio = max(0.15, min(0.4, base_ratio + (0.03 * min(len(goals), 4))))
     reserve_amount = round(daily_safe_limit * ratio, 2)
     protected_limit = round(max(daily_safe_limit - reserve_amount, daily_safe_limit * 0.55), 2)
     return {
         "cohort": cohort,
         "essential_goals": goals,
+        "all_selected_essentials": all_selected,
+        "active_priority_essentials": goals,
+        "selection_source": active.get("selection_source"),
+        "affordability_question_key": active.get("affordability_question_key"),
+        "affordability_bucket_id": active.get("affordability_bucket_id"),
+        "ranking_metadata": dict(active.get("ranking_metadata") or {}),
         "reserve_ratio": round(ratio, 3),
         "reserve_amount": reserve_amount,
         "protected_limit": protected_limit,
@@ -246,3 +273,97 @@ def next_action_text(
     if upi_open_flag or reason == "upi_open_after_threshold_warning":
         return literacy_message(language, "next_upi_open")
     return literacy_message(language, "next_default")
+
+
+def personalized_guidance_copy(
+    *,
+    language: str,
+    reason: str,
+    risk_level: str,
+    projected_spend: float,
+    daily_safe_limit: float,
+    envelope: dict,
+    financial_context: dict | None,
+    spend_ratio: float,
+    txn_anomaly_score: float,
+    upi_open_flag: bool,
+    personalization: dict,
+) -> dict:
+    delivery = dict(personalization.get("delivery") or {})
+    learning_period = dict(personalization.get("learning_period") or {})
+    pressure_state = str(personalization.get("pressure_state") or "watch_this_expense")
+    confidence_label = str((personalization.get("bounded_confidence") or {}).get("label") or "bounded_medium")
+    goal_names = localized_goal_names(language, envelope)
+
+    why = why_text(
+        language=language,
+        reason=reason,
+        risk_level=risk_level,
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        financial_context=financial_context,
+        spend_ratio=spend_ratio,
+        txn_anomaly_score=txn_anomaly_score,
+        upi_open_flag=upi_open_flag,
+    )
+    next_action = next_action_text(
+        language=language,
+        risk_level=risk_level,
+        reason=reason,
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        financial_context=financial_context,
+        upi_open_flag=upi_open_flag,
+    )
+
+    if confidence_label == "bounded_low":
+        message = literacy_message(language, "cashflow_message_low_confidence")
+        why = " ".join([why, literacy_message(language, "why_low_confidence_suffix")]).strip()
+        next_action = " ".join([next_action, literacy_message(language, "next_low_confidence_suffix")]).strip()
+    else:
+        if delivery.get("surface") == "overlay":
+            message = literacy_message(language, "cashflow_message_high_pressure_overlay", goal_names=goal_names)
+            why = " ".join([why, literacy_message(language, "why_overlay_suffix", goal_names=goal_names)]).strip()
+            next_action = " ".join(
+                [next_action, literacy_message(language, "next_overlay_high_pressure_suffix", goal_names=goal_names)]
+            ).strip()
+        elif pressure_state == "within_safer_limit":
+            message = literacy_message(language, "cashflow_message_within_safer_limit")
+        elif pressure_state == "watch_this_expense":
+            message = literacy_message(language, "cashflow_message_watch_personalized")
+        elif pressure_state == "this_adds_burden":
+            message = literacy_message(language, "cashflow_message_burden_personalized")
+        else:
+            message = primary_cashflow_message(
+                language=language,
+                reason=reason,
+                projected_spend=projected_spend,
+                daily_safe_limit=daily_safe_limit,
+                envelope=envelope,
+                upi_open_flag=upi_open_flag,
+            )
+
+        if learning_period.get("status") == "still_learning":
+            message = " ".join([message, literacy_message(language, "cashflow_message_learning_suffix")]).strip()
+            why = " ".join(
+                [
+                    why,
+                    literacy_message(
+                        language,
+                        "why_learning_suffix",
+                        min_days=learning_period.get("window_days", {}).get("minimum", 7),
+                        max_days=learning_period.get("window_days", {}).get("maximum", 14),
+                    ),
+                ]
+            ).strip()
+            next_action = " ".join([next_action, literacy_message(language, "next_learning_suffix")]).strip()
+
+    return {
+        "message": message,
+        "why_this_alert": why,
+        "next_best_action": next_action,
+        "message_family": delivery.get("message_family", "personalized_notification_watch_this_expense"),
+        "delivery_surface": delivery.get("surface", "notification"),
+    }

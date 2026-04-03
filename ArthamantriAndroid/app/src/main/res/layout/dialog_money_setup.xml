@@ -1,148 +1,223 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@drawable/bg_help_dialog"
-    android:orientation="vertical"
-    android:padding="18dp">
-
-    <TextView
-        android:id="@+id/moneySetupTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/dialog_money_setup_title"
-        android:textColor="@color/text_primary"
-        android:textSize="24sp"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/moneySetupSubtitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/dialog_money_setup_message"
-        android:textColor="@color/text_secondary"
-        android:textSize="13sp" />
+    android:fillViewport="true">
 
     <LinearLayout
-        android:id="@+id/moneySetupHintBox"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:background="@drawable/bg_help_steps"
+        android:background="@drawable/bg_help_dialog"
         android:orientation="vertical"
-        android:padding="12dp">
+        android:padding="18dp">
 
         <TextView
-            android:id="@+id/moneySetupHintTitle"
+            android:id="@+id/moneySetupTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/dialog_money_setup_hint_title"
+            android:text="@string/dialog_money_setup_title"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/moneySetupSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="@string/dialog_money_setup_message"
+            android:textColor="@color/text_secondary"
+            android:textSize="13sp" />
+
+        <LinearLayout
+            android:id="@+id/moneySetupHintBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:background="@drawable/bg_help_steps"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:id="@+id/moneySetupHintTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/dialog_money_setup_hint_title"
+                android:textColor="@color/text_primary"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/moneySetupHintBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="@string/dialog_money_setup_hint_body"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/moneySetupCohortLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/money_setup_cohort_label"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/moneySetupCohortSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_help_spinner"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp" />
+
+        <TextView
+            android:id="@+id/moneySetupAffordabilityLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/money_setup_affordability_label"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/moneySetupAffordabilitySpinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_help_spinner"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp" />
+
+        <TextView
+            android:id="@+id/moneySetupAffordabilityHelp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/money_setup_affordability_help"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/moneySetupCurrentBalanceLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/money_setup_current_balance_label"
+            android:textColor="@color/text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/moneySetupCurrentBalanceInput"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="6dp"
+            android:background="@drawable/bg_help_spinner"
+            android:hint="@string/money_setup_current_balance_hint"
+            android:inputType="numberDecimal"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:textColor="@color/text_primary"
+            android:textColorHint="@color/text_secondary" />
+
+        <TextView
+            android:id="@+id/moneySetupCurrentBalanceHelp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/money_setup_current_balance_help"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <TextView
+            android:id="@+id/moneySetupGoalsLabel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:text="@string/money_setup_goals_label"
             android:textColor="@color/text_primary"
             android:textSize="14sp"
             android:textStyle="bold" />
 
         <TextView
-            android:id="@+id/moneySetupHintBody"
+            android:id="@+id/moneySetupSelectionHint"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:text="@string/dialog_money_setup_hint_body"
+            android:text="@string/money_setup_selection_hint"
             android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
-    </LinearLayout>
+            android:textSize="12sp" />
 
-    <TextView
-        android:id="@+id/moneySetupCohortLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="@string/money_setup_cohort_label"
-        android:textColor="@color/text_primary"
-        android:textSize="14sp"
-        android:textStyle="bold" />
-
-    <Spinner
-        android:id="@+id/moneySetupCohortSpinner"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="6dp"
-        android:background="@drawable/bg_help_spinner"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp" />
-
-    <TextView
-        android:id="@+id/moneySetupGoalOneLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="@string/money_setup_goal1_label"
-        android:textColor="@color/text_primary"
-        android:textSize="14sp"
-        android:textStyle="bold" />
-
-    <Spinner
-        android:id="@+id/moneySetupGoalOneSpinner"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="6dp"
-        android:background="@drawable/bg_help_spinner"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp" />
-
-    <TextView
-        android:id="@+id/moneySetupGoalTwoLabel"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:text="@string/money_setup_goal2_label"
-        android:textColor="@color/text_primary"
-        android:textSize="14sp"
-        android:textStyle="bold" />
-
-    <Spinner
-        android:id="@+id/moneySetupGoalTwoSpinner"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="6dp"
-        android:background="@drawable/bg_help_spinner"
-        android:paddingStart="10dp"
-        android:paddingEnd="10dp" />
-
-    <LinearLayout
-        android:id="@+id/moneySetupActions"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:orientation="vertical">
-
-        <Button
-            android:id="@+id/moneySetupPrimaryButton"
+        <TextView
+            android:id="@+id/moneySetupSelectedSummary"
             android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:background="@drawable/bg_btn_primary"
-            android:backgroundTint="@null"
-            app:backgroundTint="@null"
-            android:text="@string/money_setup_save_continue"
-            android:textAllCaps="false"
-            android:textColor="@color/btn_primary_text"
-            android:textSize="17sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/moneySetupSecondaryButton"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            android:background="@drawable/bg_btn_language_exit"
-            android:backgroundTint="@null"
-            app:backgroundTint="@null"
-            android:text="@string/money_setup_skip"
-            android:textAllCaps="false"
-            android:textColor="@color/btn_secondary_text"
-            android:textSize="16sp"
+            android:text="@string/money_setup_selected_summary_empty"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp"
             android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/moneySetupSeedPreview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/money_setup_seed_preview_empty"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:id="@+id/moneySetupGoalsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:background="@drawable/bg_help_steps"
+            android:orientation="vertical"
+            android:padding="10dp" />
+
+        <LinearLayout
+            android:id="@+id/moneySetupActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/moneySetupPrimaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_btn_primary"
+                android:backgroundTint="@null"
+                android:text="@string/money_setup_save_continue"
+                android:textAllCaps="false"
+                android:textColor="@color/btn_primary_text"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
+
+            <Button
+                android:id="@+id/moneySetupSecondaryButton"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/bg_btn_language_exit"
+                android:backgroundTint="@null"
+                android:text="@string/money_setup_skip"
+                android:textAllCaps="false"
+                android:textColor="@color/btn_secondary_text"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="@null" />
+        </LinearLayout>
     </LinearLayout>
 
-</LinearLayout>
+</ScrollView>

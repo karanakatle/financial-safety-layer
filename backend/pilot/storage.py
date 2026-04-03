@@ -257,6 +257,23 @@ class PilotStorage:
                     updated_at TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS current_balance (
+                    participant_id TEXT PRIMARY KEY,
+                    amount REAL NOT NULL,
+                    source TEXT NOT NULL,
+                    captured_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS current_balance_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    participant_id TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    source TEXT NOT NULL,
+                    captured_at TEXT NOT NULL,
+                    replaced_at TEXT NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS experiment_assignment (
                     participant_id TEXT NOT NULL,
                     experiment_name TEXT NOT NULL,
@@ -385,6 +402,14 @@ class PilotStorage:
             self._ensure_column(conn, "app_logs", "metadata_json TEXT NOT NULL DEFAULT '{}'")
             self._ensure_column(conn, "alert_feedback", "event_id TEXT")
             self._ensure_column(conn, "unified_telemetry", "event_id TEXT")
+            self._ensure_column(conn, "essential_goal_profile", "all_selected_essentials TEXT NOT NULL DEFAULT '[]'")
+            self._ensure_column(conn, "essential_goal_profile", "active_priority_essentials TEXT NOT NULL DEFAULT '[]'")
+            self._ensure_column(conn, "essential_goal_profile", "selection_source TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "essential_goal_profile", "goal_source_map_json TEXT NOT NULL DEFAULT '{}'")
+            self._ensure_column(conn, "essential_goal_profile", "affordability_question_key TEXT")
+            self._ensure_column(conn, "essential_goal_profile", "affordability_bucket_id TEXT")
+            self._ensure_column(conn, "essential_goal_profile", "ranking_metadata_json TEXT NOT NULL DEFAULT '{}'")
+            self._ensure_column(conn, "essential_goal_profile", "config_version TEXT NOT NULL DEFAULT ''")
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_app_logs_event_id ON app_logs(event_id) WHERE event_id IS NOT NULL"
             )
@@ -393,6 +418,9 @@ class PilotStorage:
             )
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_unified_telemetry_event_id ON unified_telemetry(event_id) WHERE event_id IS NOT NULL"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_current_balance_history_participant ON current_balance_history(participant_id, replaced_at DESC)"
             )
 
     def _json_text(self, value: dict | None) -> str:
@@ -1602,6 +1630,8 @@ class PilotStorage:
             conn.execute("DELETE FROM goal_feedback WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM alert_goal_context WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM unified_telemetry WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM current_balance WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM current_balance_history WHERE participant_id=?", (participant_id,))
 
     def get_participant_policy(self, participant_id: str) -> dict | None:
         with self._connect() as conn:
@@ -1903,6 +1933,104 @@ class PilotStorage:
                 (participant_id, limit),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def financial_signals_between(
+        self,
+        participant_id: str,
+        *,
+        since_timestamp: str,
+        until_timestamp: str,
+    ) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT event_type, source, signal_type, signal_confidence, category, amount, note, timestamp
+                FROM literacy_events
+                WHERE participant_id=?
+                  AND event_type IN ('sms_ingest_event', 'sms_partial_context')
+                  AND timestamp >= ?
+                  AND timestamp <= ?
+                ORDER BY timestamp ASC, id ASC
+                """,
+                (participant_id, since_timestamp, until_timestamp),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_current_balance(self, participant_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT participant_id, amount, source, captured_at, updated_at
+                FROM current_balance
+                WHERE participant_id=?
+                """,
+                (participant_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def list_current_balance_history(self, participant_id: str, limit: int = 20) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT participant_id, amount, source, captured_at, replaced_at
+                FROM current_balance_history
+                WHERE participant_id=?
+                ORDER BY replaced_at DESC, id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def upsert_current_balance(
+        self,
+        *,
+        participant_id: str,
+        amount: float,
+        source: str,
+        captured_at: str,
+        updated_at: str,
+    ) -> None:
+        with self._connect() as conn:
+            existing = conn.execute(
+                """
+                SELECT amount, source, captured_at
+                FROM current_balance
+                WHERE participant_id=?
+                """,
+                (participant_id,),
+            ).fetchone()
+            if existing is not None:
+                conn.execute(
+                    """
+                    INSERT INTO current_balance_history (
+                        participant_id, amount, source, captured_at, replaced_at
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        participant_id,
+                        float(existing["amount"]),
+                        str(existing["source"]),
+                        str(existing["captured_at"]),
+                        updated_at,
+                    ),
+                )
+            conn.execute(
+                """
+                INSERT INTO current_balance (
+                    participant_id, amount, source, captured_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(participant_id)
+                DO UPDATE SET
+                    amount=excluded.amount,
+                    source=excluded.source,
+                    captured_at=excluded.captured_at,
+                    updated_at=excluded.updated_at
+                """,
+                (participant_id, amount, source, captured_at, updated_at),
+            )
 
     def count_recent_dismissals(self, participant_id: str, since_timestamp: str) -> int:
         with self._connect() as conn:
@@ -2242,7 +2370,10 @@ class PilotStorage:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT participant_id, cohort, essential_goals, language, setup_skipped, created_at, updated_at
+                SELECT participant_id, cohort, essential_goals, all_selected_essentials,
+                       active_priority_essentials, selection_source, goal_source_map_json,
+                       affordability_question_key, affordability_bucket_id, ranking_metadata_json,
+                       config_version, language, setup_skipped, created_at, updated_at
                 FROM essential_goal_profile
                 WHERE participant_id=?
                 """,
@@ -2251,8 +2382,14 @@ class PilotStorage:
             if not row:
                 return None
             data = dict(row)
-            goals = data.get("essential_goals") or "[]"
-            data["essential_goals"] = json.loads(goals)
+            goals = self._parse_json_list(data.get("essential_goals"))
+            all_selected = self._parse_json_list(data.get("all_selected_essentials"))
+            active = self._parse_json_list(data.get("active_priority_essentials"))
+            data["essential_goals"] = active or goals
+            data["all_selected_essentials"] = all_selected or active or goals
+            data["active_priority_essentials"] = active or goals
+            data["goal_source_map"] = self._parse_json_object(data.pop("goal_source_map_json", None))
+            data["ranking_metadata"] = self._parse_json_object(data.pop("ranking_metadata_json", None))
             data["setup_skipped"] = bool(data.get("setup_skipped", 0))
             return data
 
@@ -2261,22 +2398,45 @@ class PilotStorage:
         participant_id: str,
         cohort: str,
         essential_goals: list[str],
+        all_selected_essentials: list[str],
+        active_priority_essentials: list[str],
+        selection_source: str,
+        goal_source_map: dict,
+        affordability_question_key: str | None,
+        affordability_bucket_id: str | None,
+        ranking_metadata: dict,
+        config_version: str,
         language: str,
         setup_skipped: bool,
         timestamp: str,
     ) -> None:
         goals_json = json.dumps(essential_goals, ensure_ascii=True)
+        all_selected_json = json.dumps(all_selected_essentials, ensure_ascii=True)
+        active_json = json.dumps(active_priority_essentials, ensure_ascii=True)
+        goal_source_map_json = self._json_text(goal_source_map)
+        ranking_metadata_json = self._json_text(ranking_metadata)
         with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO essential_goal_profile (
-                    participant_id, cohort, essential_goals, language, setup_skipped, created_at, updated_at
+                    participant_id, cohort, essential_goals, all_selected_essentials,
+                    active_priority_essentials, selection_source, goal_source_map_json,
+                    affordability_question_key, affordability_bucket_id, ranking_metadata_json,
+                    config_version, language, setup_skipped, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(participant_id)
                 DO UPDATE SET
                     cohort=excluded.cohort,
                     essential_goals=excluded.essential_goals,
+                    all_selected_essentials=excluded.all_selected_essentials,
+                    active_priority_essentials=excluded.active_priority_essentials,
+                    selection_source=excluded.selection_source,
+                    goal_source_map_json=excluded.goal_source_map_json,
+                    affordability_question_key=excluded.affordability_question_key,
+                    affordability_bucket_id=excluded.affordability_bucket_id,
+                    ranking_metadata_json=excluded.ranking_metadata_json,
+                    config_version=excluded.config_version,
                     language=excluded.language,
                     setup_skipped=excluded.setup_skipped,
                     updated_at=excluded.updated_at
@@ -2285,6 +2445,14 @@ class PilotStorage:
                     participant_id,
                     cohort,
                     goals_json,
+                    all_selected_json,
+                    active_json,
+                    selection_source,
+                    goal_source_map_json,
+                    affordability_question_key,
+                    affordability_bucket_id,
+                    ranking_metadata_json,
+                    config_version,
                     language,
                     1 if setup_skipped else 0,
                     timestamp,

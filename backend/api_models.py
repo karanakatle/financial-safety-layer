@@ -111,6 +111,21 @@ class LiteracyPolicyUpsertIn(BaseModel):
     warning_ratio: float = Field(gt=0, lt=1.0)
 
 
+class CurrentBalanceUpsertIn(BaseModel):
+    participant_id: str = "global_user"
+    amount: float = Field(ge=0)
+    source: Literal["self_reported"] = "self_reported"
+    language: str = "en"
+    timestamp: Optional[str] = None
+
+
+class EodSavingsPreviewIn(BaseModel):
+    participant_id: str = "global_user"
+    language: str = "en"
+    channel: Literal["notification", "whatsapp"] = "notification"
+    timestamp: Optional[str] = None
+
+
 class LiteracyAlertFeedbackIn(BaseModel):
     event_id: Optional[str] = None
     alert_id: str
@@ -216,6 +231,13 @@ class EssentialGoalProfileUpsertIn(BaseModel):
     participant_id: str
     cohort: str = "daily_cashflow_worker"
     essential_goals: list[str] = Field(default_factory=list)
+    all_selected_essentials: list[str] = Field(default_factory=list)
+    active_priority_essentials: list[str] = Field(default_factory=list)
+    selection_source: Optional[str] = None
+    goal_source_map: dict[str, str] = Field(default_factory=dict)
+    affordability_question_key: Optional[str] = None
+    affordability_bucket_id: Optional[str] = None
+    ranking_metadata: dict = Field(default_factory=dict)
     language: str = "en"
     setup_skipped: bool = False
 

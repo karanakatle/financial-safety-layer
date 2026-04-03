@@ -5,24 +5,28 @@ import android.provider.Settings
 import com.arthamantri.android.api.ApiClient
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.core.RecentLinkContextTracker
+import com.arthamantri.android.model.CurrentBalanceRequest
+import com.arthamantri.android.model.CurrentBalanceResponse
+import com.arthamantri.android.model.EodSavingsPreviewRequest
+import com.arthamantri.android.model.EodSavingsPreviewResponse
+import com.arthamantri.android.model.EssentialGoalProfileRequest
+import com.arthamantri.android.model.EssentialGoalProfileResponse
+import com.arthamantri.android.model.ExperimentAssignmentRequest
 import com.arthamantri.android.model.LiteracyAlert
 import com.arthamantri.android.model.LiteracyAlertFeedbackRequest
 import com.arthamantri.android.model.LiteracyState
-import com.arthamantri.android.model.PilotContextEvent
 import com.arthamantri.android.model.PilotAppLogRequest
 import com.arthamantri.android.model.PilotConsentRequest
 import com.arthamantri.android.model.PilotFeedbackRequest
 import com.arthamantri.android.model.PilotMetaResponse
-import com.arthamantri.android.model.EssentialGoalProfileRequest
-import com.arthamantri.android.model.EssentialGoalProfileResponse
-import com.arthamantri.android.model.ExperimentAssignmentRequest
+import com.arthamantri.android.model.PilotContextEvent
 import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.UpiRequestInspectRequest
 import com.arthamantri.android.model.UpiRequestInspectResponse
 import com.arthamantri.android.model.UpiOpenRequest
+import com.arthamantri.android.usage.PaymentAppSetupStateTracker
 import java.time.Instant
 import java.util.UUID
-import com.arthamantri.android.usage.PaymentAppSetupStateTracker
 
 object LiteracyRepository {
     data class SmsSendResult(
@@ -307,6 +311,11 @@ object LiteracyRepository {
         context: Context,
         cohort: String,
         essentialGoals: List<String>,
+        allSelectedEssentials: List<String>,
+        selectionSource: String?,
+        goalSourceMap: Map<String, String>,
+        affordabilityQuestionKey: String?,
+        affordabilityBucketId: String?,
         setupSkipped: Boolean,
     ): EssentialGoalProfileResponse {
         val participantId = resolveParticipantId(context)
@@ -316,8 +325,53 @@ object LiteracyRepository {
                 participant_id = participantId,
                 cohort = cohort,
                 essential_goals = essentialGoals,
+                all_selected_essentials = allSelectedEssentials,
+                active_priority_essentials = essentialGoals,
+                selection_source = selectionSource,
+                goal_source_map = goalSourceMap,
+                affordability_question_key = affordabilityQuestionKey,
+                affordability_bucket_id = affordabilityBucketId,
                 language = language,
                 setup_skipped = setupSkipped,
+            )
+        )
+    }
+
+    suspend fun getCurrentBalance(context: Context): CurrentBalanceResponse {
+        val participantId = resolveParticipantId(context)
+        return ApiClient.literacyApi(context).currentBalance(participantId)
+    }
+
+    suspend fun saveCurrentBalance(
+        context: Context,
+        amount: Double,
+        timestamp: String? = null,
+    ): CurrentBalanceResponse {
+        val participantId = resolveParticipantId(context)
+        val language = resolveLanguage(context)
+        return ApiClient.literacyApi(context).upsertCurrentBalance(
+            CurrentBalanceRequest(
+                participant_id = participantId,
+                amount = amount,
+                language = language,
+                timestamp = timestamp,
+            )
+        )
+    }
+
+    suspend fun fetchEndOfDaySavingsPreview(
+        context: Context,
+        channel: String = "notification",
+        timestamp: String? = null,
+    ): EodSavingsPreviewResponse {
+        val participantId = resolveParticipantId(context)
+        val language = resolveLanguage(context)
+        return ApiClient.literacyApi(context).eodSavingsPreview(
+            EodSavingsPreviewRequest(
+                participant_id = participantId,
+                language = language,
+                channel = channel,
+                timestamp = timestamp,
             )
         )
     }

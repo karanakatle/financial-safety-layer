@@ -12,6 +12,8 @@ from uuid import uuid4
 from backend.utils.logger import logger
 
 from backend.api_models import (
+    CurrentBalanceUpsertIn,
+    EodSavingsPreviewIn,
     EssentialGoalProfileUpsertIn,
     EssentialTxnFeedbackIn,
     LiteracyAlertFeedbackIn,
@@ -33,16 +35,28 @@ from backend.literacy import (
     infer_goal_context,
     goal_impact_text,
     localize_alert,
-    next_action_text,
     policy_for_participant,
     persist_literacy_monitor,
-    primary_cashflow_message,
+    personalized_guidance_copy,
     recent_financial_context,
     auto_recalibrate_policy,
     resolve_experiment_variant,
     risk_level_from_score,
-    why_text,
 )
+from backend.literacy.essential_goal_setup import (
+    active_priority_limit,
+    affordability_question_key,
+    config_version as essential_goal_config_version,
+    deterministic_seed_order,
+    goal_setup_payload,
+    normalize_affordability_bucket_id,
+    normalize_cohort_id,
+    normalize_goal_id,
+    supported_cohort_ids,
+    supported_goal_ids,
+)
+from backend.literacy.expense_personalization import build_expense_personalization
+from backend.literacy.balance_savings import build_balance_savings_response, current_balance_contract
 from backend.literacy.domain_intelligence import enrich_domain_context
 from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
 from backend.literacy.entity_trust import (
@@ -75,27 +89,25 @@ LITERACY_POLICY = load_literacy_policy()
 voice = get_voice_provider()
 pilot_storage = PilotStorage(os.getenv("PILOT_DB_PATH", "data/pilot_research.db"))
 
-SUPPORTED_COHORTS = {"women_led_household", "daily_cashflow_worker"}
-SUPPORTED_ESSENTIAL_GOALS = {
-    "ration",
-    "school",
-    "fuel",
-    "medicine",
-    "rent",
-    "mobile_recharge",
-    "loan_repayment",
-}
+SUPPORTED_COHORTS = supported_cohort_ids()
+SUPPORTED_ESSENTIAL_GOALS = supported_goal_ids()
 GOAL_NON_ESSENTIAL = "non_essential"
 SUPPORTED_GOAL_FEEDBACK_VALUES = SUPPORTED_ESSENTIAL_GOALS | {GOAL_NON_ESSENTIAL}
+SUPPORTED_SELECTION_SOURCES = set(goal_setup_payload().get("selection_sources") or []) | {"skipped"}
 GOAL_CONFIDENCE_GATE = 0.72
 MERCHANT_KEYWORD_MAP = {
-    "fuel": {"petrol", "diesel", "hpcl", "indianoil", "bharat", "bpcl", "ioc"},
+    "cooking_fuel": {"petrol", "diesel", "gas", "cylinder", "hpcl", "indianoil", "bharat", "bpcl", "ioc"},
     "ration": {"kirana", "grocery", "supermarket", "ration", "mart", "provision"},
     "school": {"school", "tuition", "fees", "education", "uniform", "books"},
     "medicine": {"medical", "pharmacy", "chemist", "hospital", "clinic", "med"},
     "rent": {"rent", "landlord", "house rent", "room rent"},
+    "electricity": {"electricity", "power", "bill", "eb", "bijli"},
+    "water": {"water", "jal", "pani", "water bill"},
+    "transport": {"auto", "bus", "metro", "train", "cab", "fare", "travel"},
     "mobile_recharge": {"recharge", "topup", "prepaid", "postpaid", "airtel", "jio", "vi"},
     "loan_repayment": {"loan", "emi", "repayment", "nbfc", "finance"},
+    "work_inputs": {"stock", "material", "tools", "supply", "fertilizer", "seed", "wholesale"},
+    "family_care": {"childcare", "elder", "care", "family", "milk", "baby"},
 }
 NON_ESSENTIAL_KEYWORDS = {
     "liquor",
@@ -359,29 +371,103 @@ def _normalized_language(language: str | None) -> str:
 
 def _normalized_cohort(cohort: str | None) -> str:
     value = (cohort or "").strip().lower().replace("-", "_").replace(" ", "_")
-    if value in SUPPORTED_COHORTS:
-        return value
-    return "daily_cashflow_worker"
+    return normalize_cohort_id(value)
 
 
-def _normalized_goals(goals: list[str] | None) -> list[str]:
+def _normalized_goals(goals: list[str] | None, *, limit: int | None = None) -> list[str]:
     if not goals:
         return []
     normalized: list[str] = []
     seen: set[str] = set()
     for goal in goals:
-        value = (goal or "").strip().lower().replace("-", "_").replace(" ", "_")
+        value = normalize_goal_id(goal)
         if value in SUPPORTED_ESSENTIAL_GOALS and value not in seen:
             seen.add(value)
             normalized.append(value)
-    return normalized[:2]
+    return normalized[:limit] if limit is not None else normalized
 
 
 def _normalized_goal_feedback_value(value: str | None) -> str:
-    raw = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    raw = normalize_goal_id(value) or (value or "").strip().lower().replace("-", "_").replace(" ", "_")
     if raw in SUPPORTED_GOAL_FEEDBACK_VALUES:
         return raw
     return "unknown"
+
+
+def _normalized_selection_source(value: str | None, *, default: str = "user_selected") -> str:
+    normalized = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return normalized if normalized in SUPPORTED_SELECTION_SOURCES else default
+
+
+def _normalized_goal_source_map(goal_source_map: dict | None, goals: list[str], default_source: str) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for goal_id in goals:
+        source = _normalized_selection_source((goal_source_map or {}).get(goal_id), default=default_source)
+        normalized[goal_id] = source
+    return normalized
+
+
+def _resolved_goal_profile_payload(payload: EssentialGoalProfileUpsertIn) -> dict:
+    cohort = _normalized_cohort(payload.cohort)
+    configured_limit = active_priority_limit()
+    setup_skipped = bool(payload.setup_skipped)
+    prompt_key = affordability_question_key(cohort)
+    normalized_bucket_id = normalize_affordability_bucket_id(cohort, payload.affordability_bucket_id)
+    normalized_question_key = prompt_key or (payload.affordability_question_key or "").strip() or None
+    all_selected = _normalized_goals(payload.all_selected_essentials or payload.essential_goals)
+    active_selected = _normalized_goals(payload.active_priority_essentials, limit=configured_limit)
+
+    used_seed = False
+    if setup_skipped:
+        all_selected = []
+        active_selected = []
+        selection_source = "skipped"
+        goal_source_map: dict[str, str] = {}
+    else:
+        if not all_selected and not active_selected:
+            seeded = deterministic_seed_order(cohort, normalized_bucket_id)[:configured_limit]
+            all_selected = list(seeded)
+            active_selected = list(seeded)
+            selection_source = "system_auto_seeded"
+            used_seed = True
+        else:
+            if not all_selected:
+                all_selected = list(active_selected)
+            if not active_selected:
+                active_selected = list(all_selected[:configured_limit])
+            selection_source = _normalized_selection_source(payload.selection_source, default="user_selected")
+        goal_source_map = _normalized_goal_source_map(
+            payload.goal_source_map,
+            all_selected,
+            "system_auto_seeded" if used_seed else selection_source,
+        )
+
+    ranking_metadata = {
+        **dict(payload.ranking_metadata or {}),
+        "config_version": essential_goal_config_version(),
+        "deterministic_mode": True,
+        "active_priority_limit": configured_limit,
+        "selection_source": selection_source,
+        "user_choice_precedence": True,
+        "future_ranking_inputs": list(goal_setup_payload().get("future_ranking_inputs") or []),
+    }
+    if normalized_question_key:
+        ranking_metadata["affordability_question_key"] = normalized_question_key
+    if normalized_bucket_id:
+        ranking_metadata["affordability_bucket_id"] = normalized_bucket_id
+
+    return {
+        "cohort": cohort,
+        "essential_goals": list(active_selected),
+        "all_selected_essentials": list(all_selected),
+        "active_priority_essentials": list(active_selected),
+        "selection_source": selection_source,
+        "goal_source_map": goal_source_map,
+        "affordability_question_key": normalized_question_key,
+        "affordability_bucket_id": normalized_bucket_id,
+        "ranking_metadata": ranking_metadata,
+        "setup_skipped": setup_skipped,
+    }
 
 
 def _infer_goal_context(
@@ -440,6 +526,8 @@ def _apply_contextual_alert_intensity(
     warmup_active: bool,
     language: str,
     essential_profile: dict | None,
+    current_balance_snapshot: float | None = None,
+    first_event_date: str | None = None,
 ) -> dict | None:
     localized_alert = localize_alert(
         alert,
@@ -462,6 +550,20 @@ def _apply_contextual_alert_intensity(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
         limit=10,
+    )
+    personalization = build_expense_personalization(
+        amount=float(amount),
+        projected_spend=projected_spend,
+        daily_safe_limit=daily_safe_limit,
+        envelope=envelope,
+        essential_profile=essential_profile,
+        financial_context=financial_context,
+        upi_open_flag=upi_open_flag,
+        current_balance_amount=current_balance_snapshot,
+        current_balance_source="observed_balance" if current_balance_snapshot is not None else None,
+        recent_amounts=pilot_storage.recent_spend_amounts(participant_id, limit=20),
+        event_timestamp=timestamp,
+        first_event_date=first_event_date,
     )
     non_essential_confidence = (
         float(goal_context["confidence"])
@@ -517,15 +619,7 @@ def _apply_contextual_alert_intensity(
     risk_level = risk_level_from_score(float(features["risk_score"]))
     goal_impact = goal_impact_text(language, envelope, projected_spend)
     reason = str(localized_alert.get("reason") or "")
-    primary_message = primary_cashflow_message(
-        language=language,
-        reason=reason,
-        projected_spend=projected_spend,
-        daily_safe_limit=daily_safe_limit,
-        envelope=envelope,
-        upi_open_flag=upi_open_flag,
-    )
-    why_this = why_text(
+    personalized_copy = personalized_guidance_copy(
         language=language,
         reason=reason,
         risk_level=risk_level,
@@ -536,16 +630,7 @@ def _apply_contextual_alert_intensity(
         spend_ratio=float(features["spend_ratio"]),
         txn_anomaly_score=float(features["txn_anomaly_score"]),
         upi_open_flag=upi_open_flag,
-    )
-    next_action = next_action_text(
-        language=language,
-        risk_level=risk_level,
-        reason=reason,
-        projected_spend=projected_spend,
-        daily_safe_limit=daily_safe_limit,
-        envelope=envelope,
-        financial_context=financial_context,
-        upi_open_flag=upi_open_flag,
+        personalization=personalization,
     )
 
     contextual_alert = dict(localized_alert)
@@ -562,8 +647,8 @@ def _apply_contextual_alert_intensity(
         upi_open_flag=upi_open_flag,
         pause_seconds=int(features["pause_seconds"]),
     )
-    contextual_alert["why_this_alert"] = why_this
-    contextual_alert["next_best_action"] = next_action
+    contextual_alert["why_this_alert"] = personalized_copy["why_this_alert"]
+    contextual_alert["next_best_action"] = personalized_copy["next_best_action"]
     contextual_alert["essential_goal_impact"] = goal_impact
     contextual_alert["essential_goals"] = envelope.get("essential_goals", [])
     contextual_alert["goal_reserve_ratio"] = envelope.get("reserve_ratio")
@@ -572,7 +657,17 @@ def _apply_contextual_alert_intensity(
     contextual_alert["txn_goal_confidence"] = goal_context["confidence"]
     contextual_alert["txn_goal_confidence_gate_passed"] = goal_context["gate_passed"]
     contextual_alert["txn_goal_inference_source"] = goal_context["source"]
-    contextual_alert["message"] = primary_message
+    contextual_alert["expense_personalization"] = personalization
+    contextual_alert["pressure_score"] = personalization["pressure_score"]
+    contextual_alert["pressure_state"] = personalization["pressure_state"]
+    contextual_alert["bounded_confidence"] = personalization["bounded_confidence"]
+    contextual_alert["learning_period"] = personalization["learning_period"]
+    contextual_alert["delivery_surface"] = personalized_copy["delivery_surface"]
+    contextual_alert["message_family"] = personalized_copy["message_family"]
+    contextual_alert["overlay_eligible"] = bool((personalization.get("delivery") or {}).get("overlay_eligible"))
+    contextual_alert["deterministic_baseline"] = bool(personalization.get("deterministic_baseline"))
+    contextual_alert["future_extension_hooks"] = personalization.get("future_extensions", {})
+    contextual_alert["message"] = personalized_copy["message"]
     contextual_alert["priority"] = {
         "hard": "critical",
         "medium": "high",
@@ -723,6 +818,12 @@ def literacy_sms_ingest(payload: SMSIngestIn) -> dict:
                 warmup_active=monitor.warmup_active,
                 language=language,
                 essential_profile=profile,
+                current_balance_snapshot=(
+                    float(transaction_result.get("balance"))
+                    if isinstance(transaction_result, dict) and transaction_result.get("balance") is not None
+                    else None
+                ),
+                first_event_date=monitor.first_event_date,
             )
             if contextual is None:
                 record_cashflow_fallback(
@@ -861,6 +962,8 @@ def literacy_upi_open(payload: UPIOpenIn) -> dict:
             warmup_active=monitor.warmup_active,
             language=language,
             essential_profile=profile,
+            current_balance_snapshot=float(participant_agent.state_snapshot().get("balance") or 0.0),
+            first_event_date=monitor.first_event_date,
         )
         if alert:
             record_cashflow_alert_generated(
@@ -1005,6 +1108,19 @@ def literacy_status(participant_id: str = "global_user") -> dict:
     return {"participant_id": participant_id, **monitor.status()}
 
 
+def _signals_since_current_balance(participant_id: str, current_balance: dict | None, as_of_timestamp: str) -> list[dict]:
+    if not current_balance:
+        return []
+    captured_at = str(current_balance.get("captured_at") or "").strip()
+    if not captured_at:
+        return []
+    return pilot_storage.financial_signals_between(
+        participant_id,
+        since_timestamp=captured_at,
+        until_timestamp=as_of_timestamp,
+    )
+
+
 @app.get("/api/literacy/policy")
 def literacy_policy_get(participant_id: str = "global_user") -> dict:
     daily_safe_limit, warning_ratio = policy_for_participant(
@@ -1059,6 +1175,52 @@ def literacy_essential_goals_get(participant_id: str = "global_user") -> dict:
         "envelope": essential_goal_envelope(profile, daily_safe_limit, _normalized_cohort),
         "supported_cohorts": sorted(SUPPORTED_COHORTS),
         "supported_essential_goals": sorted(SUPPORTED_ESSENTIAL_GOALS),
+        "setup_config_version": essential_goal_config_version(),
+        "setup_config": goal_setup_payload(),
+    }
+
+
+@app.get("/api/literacy/current-balance")
+def literacy_current_balance_get(participant_id: str = "global_user") -> dict:
+    current_balance = pilot_storage.get_current_balance(participant_id)
+    return {
+        "participant_id": participant_id,
+        "current_balance": current_balance_contract(current_balance),
+        "history": pilot_storage.list_current_balance_history(participant_id, limit=10),
+        "supported_sources": ["self_reported", "estimated", "verified"],
+    }
+
+
+@app.post("/api/literacy/current-balance")
+def literacy_current_balance_upsert(payload: CurrentBalanceUpsertIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    captured_at = payload.timestamp or datetime.utcnow().isoformat()
+    updated_at = datetime.utcnow().isoformat()
+    pilot_storage.upsert_current_balance(
+        participant_id=participant_id,
+        amount=float(payload.amount),
+        source=payload.source,
+        captured_at=captured_at,
+        updated_at=updated_at,
+    )
+    pilot_storage.add_literacy_event(
+        participant_id=participant_id,
+        event_type="current_balance_reported",
+        source="user_input",
+        signal_type="balance",
+        signal_confidence="self_reported",
+        category="current_balance",
+        amount=float(payload.amount),
+        note="self_reported_current_balance",
+        timestamp=updated_at,
+    )
+    current_balance = pilot_storage.get_current_balance(participant_id)
+    return {
+        "ok": True,
+        "participant_id": participant_id,
+        "current_balance": current_balance_contract(current_balance),
+        "history": pilot_storage.list_current_balance_history(participant_id, limit=10),
+        "supported_sources": ["self_reported", "estimated", "verified"],
     }
 
 
@@ -1066,18 +1228,25 @@ def literacy_essential_goals_get(participant_id: str = "global_user") -> dict:
 def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"
     language = _normalized_language(payload.language)
-    cohort = _normalized_cohort(payload.cohort)
-    goals = _normalized_goals(payload.essential_goals)
-    setup_skipped = bool(payload.setup_skipped)
+    resolved_profile = _resolved_goal_profile_payload(payload)
     now_iso = datetime.utcnow().isoformat()
     pilot_storage.upsert_essential_goal_profile(
         participant_id=participant_id,
-        cohort=cohort,
-        essential_goals=goals,
+        cohort=resolved_profile["cohort"],
+        essential_goals=resolved_profile["essential_goals"],
+        all_selected_essentials=resolved_profile["all_selected_essentials"],
+        active_priority_essentials=resolved_profile["active_priority_essentials"],
+        selection_source=resolved_profile["selection_source"],
+        goal_source_map=resolved_profile["goal_source_map"],
+        affordability_question_key=resolved_profile["affordability_question_key"],
+        affordability_bucket_id=resolved_profile["affordability_bucket_id"],
+        ranking_metadata=resolved_profile["ranking_metadata"],
+        config_version=essential_goal_config_version(),
         language=language,
-        setup_skipped=setup_skipped,
+        setup_skipped=resolved_profile["setup_skipped"],
         timestamp=now_iso,
     )
+    stored_profile = pilot_storage.get_essential_goal_profile(participant_id)
     daily_safe_limit, _ = policy_for_participant(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
@@ -1086,13 +1255,52 @@ def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> di
     return {
         "ok": True,
         "participant_id": participant_id,
-        "profile": effective_goal_profile(pilot_storage.get_essential_goal_profile(participant_id)),
+        "profile": effective_goal_profile(stored_profile),
         "envelope": essential_goal_envelope(
-            pilot_storage.get_essential_goal_profile(participant_id),
+            stored_profile,
             daily_safe_limit,
             _normalized_cohort,
         ),
+        "setup_config_version": essential_goal_config_version(),
+        "setup_config": goal_setup_payload(),
     }
+
+
+@app.post("/api/literacy/eod-savings-preview")
+def literacy_eod_savings_preview(payload: EodSavingsPreviewIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    language = _normalized_language(payload.language)
+    as_of_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    profile = pilot_storage.get_essential_goal_profile(participant_id)
+    current_balance = pilot_storage.get_current_balance(participant_id)
+    signals_since_baseline = _signals_since_current_balance(
+        participant_id=participant_id,
+        current_balance=current_balance,
+        as_of_timestamp=as_of_timestamp,
+    )
+    response = build_balance_savings_response(
+        participant_id=participant_id,
+        cohort=str((profile or {}).get("cohort") or "daily_cashflow_worker"),
+        language=language,
+        current_balance=current_balance,
+        signals_since_baseline=signals_since_baseline,
+        as_of_timestamp=as_of_timestamp,
+    )
+    response["requested_channel"] = payload.channel
+    pilot_storage.add_experiment_event(
+        participant_id=participant_id,
+        experiment_name="balance_savings_nudges_v1",
+        variant="deterministic_phase_1",
+        event_type="eod_savings_preview",
+        payload={
+            "requested_channel": payload.channel,
+            "decision_state": response["nudge"]["decision_state"],
+            "suggested_amount": response["nudge"]["suggested_amount"],
+            "confidence_label": response["estimate"]["confidence"]["label"],
+        },
+        timestamp=as_of_timestamp,
+    )
+    return response
 
 
 @app.get("/api/literacy/debug-trace")
@@ -1100,8 +1308,10 @@ def literacy_debug_trace(request: Request, participant_id: str = "global_user", 
     require_pilot_admin(request)
     safe_limit = max(1, min(limit, 200))
     profile = pilot_storage.get_essential_goal_profile(participant_id)
+    current_balance = pilot_storage.get_current_balance(participant_id)
     policy = pilot_storage.get_participant_policy(participant_id)
     assignment = pilot_storage.get_experiment_assignment(participant_id, "adaptive_alerts_v1")
+    trace_timestamp = datetime.utcnow().isoformat()
     return {
         "participant_id": participant_id,
         "status": literacy_status(participant_id),
@@ -1113,10 +1323,24 @@ def literacy_debug_trace(request: Request, participant_id: str = "global_user", 
             "source": "default",
         },
         "essential_goal_profile": effective_goal_profile(profile),
+        "current_balance": current_balance_contract(current_balance),
+        "current_balance_history": pilot_storage.list_current_balance_history(participant_id, limit=safe_limit),
         "essential_goal_envelope": essential_goal_envelope(
             profile,
             float((policy or {}).get("daily_safe_limit") or LITERACY_POLICY.daily_safe_limit),
             _normalized_cohort,
+        ),
+        "eod_savings_preview": build_balance_savings_response(
+            participant_id=participant_id,
+            cohort=str((profile or {}).get("cohort") or "daily_cashflow_worker"),
+            language="en",
+            current_balance=current_balance,
+            signals_since_baseline=_signals_since_current_balance(
+                participant_id=participant_id,
+                current_balance=current_balance,
+                as_of_timestamp=trace_timestamp,
+            ),
+            as_of_timestamp=trace_timestamp,
         ),
         "experiment_assignment": assignment,
         "recent_literacy_events": pilot_storage.recent_literacy_events(participant_id, safe_limit),

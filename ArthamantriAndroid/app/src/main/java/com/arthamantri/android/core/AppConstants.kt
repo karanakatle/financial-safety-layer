@@ -16,6 +16,8 @@ object AppConstants {
         const val KEY_MONEY_SETUP_SKIPPED = "money_setup_skipped"
         const val KEY_MONEY_SETUP_COHORT = "money_setup_cohort"
         const val KEY_MONEY_SETUP_GOALS = "money_setup_goals"
+        const val KEY_MONEY_SETUP_BUCKET = "money_setup_bucket"
+        const val KEY_MONEY_SETUP_SELECTION_SOURCE = "money_setup_selection_source"
         const val KEY_PERMISSION_ONBOARDING_DONE = "permission_onboarding_done"
         const val KEY_GUIDED_PERMISSION_FLOW_ACTIVE = "guided_permission_flow_active"
         const val KEY_MONITORING_ACTIVE = "monitoring_active"
@@ -47,8 +49,10 @@ object AppConstants {
 
     object Notifications {
         const val SAFETY_CHANNEL_ID = "arthamantri_safety_alerts"
+        const val SAVINGS_CHANNEL_ID = "arthamantri_savings_nudges"
         const val FOREGROUND_SERVICE_ID = 3201
         const val FULL_SCREEN_INTENT_ID = 4201
+        const val SAVINGS_NUDGE_REQUEST_CODE = 5201
     }
 
     object Timing {
@@ -128,8 +132,13 @@ object AppConstants {
         const val ALERT_FAMILY_PAYMENT = "payment"
         const val ALERT_FAMILY_ACCOUNT_ACCESS = "account_access"
         const val ALERT_FAMILY_CASHFLOW = "cashflow"
+        const val ALERT_FAMILY_SAVINGS = "savings"
         const val LOCAL_FALLBACK_ALERT_PREFIX = "local-cashflow-fallback"
         const val LOCAL_PAYMENT_FALLBACK_ALERT_PREFIX = "local-payment-fallback"
+    }
+
+    object BroadcastActions {
+        const val RUN_SAVINGS_NUDGE = "com.arthamantri.android.action.RUN_SAVINGS_NUDGE"
     }
 
     object ContextEvents {
