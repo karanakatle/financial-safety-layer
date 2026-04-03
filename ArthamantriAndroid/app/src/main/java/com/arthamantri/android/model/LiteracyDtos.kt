@@ -243,6 +243,75 @@ data class EssentialGoalProfileResponse(
     val setup_config_version: String? = null,
 )
 
+data class CurrentBalanceRequest(
+    val participant_id: String,
+    val amount: Double,
+    val source: String = "self_reported",
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
+    val timestamp: String? = null,
+)
+
+data class CurrentBalanceRecordDto(
+    val amount: Double? = null,
+    val source: String? = null,
+    val captured_at: String? = null,
+    val updated_at: String? = null,
+)
+
+data class CurrentBalanceResponse(
+    val ok: Boolean? = null,
+    val participant_id: String? = null,
+    val current_balance: CurrentBalanceRecordDto? = null,
+)
+
+data class EodSavingsPreviewRequest(
+    val participant_id: String,
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
+    val channel: String = "notification",
+    val timestamp: String? = null,
+)
+
+data class SavingsEstimateConfidenceDto(
+    val score: Double? = null,
+    val label: String? = null,
+)
+
+data class SavingsEstimateDto(
+    val opening_balance_for_day: Double? = null,
+    val estimated_closing_balance: Double? = null,
+    val observed_credits_today: Double? = null,
+    val observed_debits_today: Double? = null,
+    val observed_net_today: Double? = null,
+    val positive_day_surplus: Double? = null,
+    val visibility_state: String? = null,
+    val explanation: String? = null,
+    val confidence: SavingsEstimateConfidenceDto? = null,
+)
+
+data class SavingsDeliveryDto(
+    val channel: String? = null,
+    val surface: String? = null,
+)
+
+data class SavingsNudgeDto(
+    val decision_state: String? = null,
+    val suggested_amount: Double? = null,
+    val title: String? = null,
+    val message: String? = null,
+    val why_this_nudge: String? = null,
+    val next_best_action: String? = null,
+    val delivery: SavingsDeliveryDto? = null,
+    val should_notify: Boolean? = null,
+)
+
+data class EodSavingsPreviewResponse(
+    val participant_id: String? = null,
+    val language: String? = null,
+    val current_balance: CurrentBalanceRecordDto? = null,
+    val estimate: SavingsEstimateDto? = null,
+    val nudge: SavingsNudgeDto? = null,
+)
+
 data class ExperimentAssignmentRequest(
     val participant_id: String,
     val experiment_name: String = "adaptive_alerts_v1",

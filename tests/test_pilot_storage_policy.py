@@ -135,6 +135,40 @@ def test_essential_goal_profile_upsert_and_get(tmp_path):
     assert profile["setup_skipped"] is False
 
 
+def test_current_balance_upsert_replaces_latest_and_retains_history(tmp_path):
+    db = tmp_path / "pilot_balance.db"
+    storage = PilotStorage(str(db))
+
+    storage.upsert_current_balance(
+        participant_id="p1",
+        amount=1200.0,
+        source="self_reported",
+        captured_at="2026-03-08T08:00:00",
+        updated_at="2026-03-08T08:00:00",
+    )
+    first = storage.get_current_balance("p1")
+    assert first is not None
+    assert first["amount"] == 1200.0
+    assert first["source"] == "self_reported"
+
+    storage.upsert_current_balance(
+        participant_id="p1",
+        amount=1500.0,
+        source="self_reported",
+        captured_at="2026-03-08T10:30:00",
+        updated_at="2026-03-08T10:30:00",
+    )
+
+    latest = storage.get_current_balance("p1")
+    history = storage.list_current_balance_history("p1", limit=10)
+    assert latest is not None
+    assert latest["amount"] == 1500.0
+    assert latest["captured_at"] == "2026-03-08T10:30:00"
+    assert len(history) == 1
+    assert history[0]["amount"] == 1200.0
+    assert history[0]["source"] == "self_reported"
+
+
 def test_experiment_assignment_and_event_export(tmp_path):
     db = tmp_path / "pilot_research_events.db"
     storage = PilotStorage(str(db))

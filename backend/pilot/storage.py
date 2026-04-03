@@ -257,6 +257,23 @@ class PilotStorage:
                     updated_at TEXT NOT NULL
                 );
 
+                CREATE TABLE IF NOT EXISTS current_balance (
+                    participant_id TEXT PRIMARY KEY,
+                    amount REAL NOT NULL,
+                    source TEXT NOT NULL,
+                    captured_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS current_balance_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    participant_id TEXT NOT NULL,
+                    amount REAL NOT NULL,
+                    source TEXT NOT NULL,
+                    captured_at TEXT NOT NULL,
+                    replaced_at TEXT NOT NULL
+                );
+
                 CREATE TABLE IF NOT EXISTS experiment_assignment (
                     participant_id TEXT NOT NULL,
                     experiment_name TEXT NOT NULL,
@@ -401,6 +418,9 @@ class PilotStorage:
             )
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_unified_telemetry_event_id ON unified_telemetry(event_id) WHERE event_id IS NOT NULL"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_current_balance_history_participant ON current_balance_history(participant_id, replaced_at DESC)"
             )
 
     def _json_text(self, value: dict | None) -> str:
@@ -1610,6 +1630,8 @@ class PilotStorage:
             conn.execute("DELETE FROM goal_feedback WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM alert_goal_context WHERE participant_id=?", (participant_id,))
             conn.execute("DELETE FROM unified_telemetry WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM current_balance WHERE participant_id=?", (participant_id,))
+            conn.execute("DELETE FROM current_balance_history WHERE participant_id=?", (participant_id,))
 
     def get_participant_policy(self, participant_id: str) -> dict | None:
         with self._connect() as conn:
@@ -1911,6 +1933,104 @@ class PilotStorage:
                 (participant_id, limit),
             ).fetchall()
         return [dict(row) for row in rows]
+
+    def financial_signals_between(
+        self,
+        participant_id: str,
+        *,
+        since_timestamp: str,
+        until_timestamp: str,
+    ) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT event_type, source, signal_type, signal_confidence, category, amount, note, timestamp
+                FROM literacy_events
+                WHERE participant_id=?
+                  AND event_type IN ('sms_ingest_event', 'sms_partial_context')
+                  AND timestamp >= ?
+                  AND timestamp <= ?
+                ORDER BY timestamp ASC, id ASC
+                """,
+                (participant_id, since_timestamp, until_timestamp),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def get_current_balance(self, participant_id: str) -> dict | None:
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT participant_id, amount, source, captured_at, updated_at
+                FROM current_balance
+                WHERE participant_id=?
+                """,
+                (participant_id,),
+            ).fetchone()
+        return dict(row) if row else None
+
+    def list_current_balance_history(self, participant_id: str, limit: int = 20) -> list[dict]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT participant_id, amount, source, captured_at, replaced_at
+                FROM current_balance_history
+                WHERE participant_id=?
+                ORDER BY replaced_at DESC, id DESC
+                LIMIT ?
+                """,
+                (participant_id, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
+
+    def upsert_current_balance(
+        self,
+        *,
+        participant_id: str,
+        amount: float,
+        source: str,
+        captured_at: str,
+        updated_at: str,
+    ) -> None:
+        with self._connect() as conn:
+            existing = conn.execute(
+                """
+                SELECT amount, source, captured_at
+                FROM current_balance
+                WHERE participant_id=?
+                """,
+                (participant_id,),
+            ).fetchone()
+            if existing is not None:
+                conn.execute(
+                    """
+                    INSERT INTO current_balance_history (
+                        participant_id, amount, source, captured_at, replaced_at
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        participant_id,
+                        float(existing["amount"]),
+                        str(existing["source"]),
+                        str(existing["captured_at"]),
+                        updated_at,
+                    ),
+                )
+            conn.execute(
+                """
+                INSERT INTO current_balance (
+                    participant_id, amount, source, captured_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(participant_id)
+                DO UPDATE SET
+                    amount=excluded.amount,
+                    source=excluded.source,
+                    captured_at=excluded.captured_at,
+                    updated_at=excluded.updated_at
+                """,
+                (participant_id, amount, source, captured_at, updated_at),
+            )
 
     def count_recent_dismissals(self, participant_id: str, since_timestamp: str) -> int:
         with self._connect() as conn:

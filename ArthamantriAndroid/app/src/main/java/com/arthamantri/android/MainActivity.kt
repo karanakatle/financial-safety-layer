@@ -59,6 +59,7 @@ import com.arthamantri.android.model.EssentialGoalEnvelopeDto
 import com.arthamantri.android.model.EssentialGoalProfileDto
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.repo.LiteracyRepository
+import com.arthamantri.android.savings.SavingsNudgeScheduler
 import com.arthamantri.android.usage.AppUsageForegroundService
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.CoroutineScope
@@ -158,6 +159,7 @@ class MainActivity : AppCompatActivity() {
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
         setContentView(R.layout.activity_main)
+        SavingsNudgeScheduler.scheduleDaily(this)
 
         drawerLayout = findViewById(R.id.drawerLayout)
         navigationView = findViewById(R.id.navigationView)
@@ -560,6 +562,7 @@ class MainActivity : AppCompatActivity() {
         val affordabilityLabel = contentView.findViewById<TextView>(R.id.moneySetupAffordabilityLabel)
         val affordabilitySpinner = contentView.findViewById<Spinner>(R.id.moneySetupAffordabilitySpinner)
         val affordabilityHelp = contentView.findViewById<TextView>(R.id.moneySetupAffordabilityHelp)
+        val currentBalanceInput = contentView.findViewById<EditText>(R.id.moneySetupCurrentBalanceInput)
         val selectedSummary = contentView.findViewById<TextView>(R.id.moneySetupSelectedSummary)
         val seedPreview = contentView.findViewById<TextView>(R.id.moneySetupSeedPreview)
         val goalsContainer = contentView.findViewById<LinearLayout>(R.id.moneySetupGoalsContainer)
@@ -599,6 +602,11 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     cohort.affordabilityPrompt.buckets.getOrNull(index - 1)?.id
                 }
+            }
+
+            fun currentBalanceAmount(): Double? {
+                val text = currentBalanceInput.text?.toString()?.trim().orEmpty()
+                return text.toDoubleOrNull()
             }
 
             fun refreshSelectionPreview() {
@@ -721,6 +729,7 @@ class MainActivity : AppCompatActivity() {
                     affordabilityQuestionKey = plan.affordabilityQuestionKey,
                     affordabilityBucketId = plan.affordabilityBucketId,
                     setupSkipped = false,
+                    currentBalanceAmount = currentBalanceAmount(),
                     dialog = dialog,
                 )
             }
@@ -737,6 +746,7 @@ class MainActivity : AppCompatActivity() {
                     affordabilityQuestionKey = setupConfig.cohort(currentCohort).affordabilityPrompt.questionKey.ifBlank { null },
                     affordabilityBucketId = currentBucketId(),
                     setupSkipped = true,
+                    currentBalanceAmount = currentBalanceAmount(),
                     dialog = dialog,
                 )
             }
@@ -1290,6 +1300,7 @@ class MainActivity : AppCompatActivity() {
         affordabilityQuestionKey: String?,
         affordabilityBucketId: String?,
         setupSkipped: Boolean,
+        currentBalanceAmount: Double?,
         dialog: AlertDialog,
     ) {
         cacheMoneySetupSelection(
@@ -1305,7 +1316,7 @@ class MainActivity : AppCompatActivity() {
         continueOnboardingFlow()
 
         CoroutineScope(Dispatchers.IO).launch {
-            val response = runCatching {
+            val goalResponse = runCatching {
                 LiteracyRepository.saveEssentialGoals(
                     context = this@MainActivity,
                     cohort = cohort,
@@ -1318,8 +1329,18 @@ class MainActivity : AppCompatActivity() {
                     setupSkipped = setupSkipped,
                 )
             }
+            val balanceResponse = if (goalResponse.isSuccess && currentBalanceAmount != null) {
+                runCatching {
+                    LiteracyRepository.saveCurrentBalance(
+                        context = this@MainActivity,
+                        amount = currentBalanceAmount,
+                    )
+                }
+            } else {
+                null
+            }
             runOnUiThread {
-                response.onSuccess { saved ->
+                goalResponse.onSuccess { saved ->
                     val savedGoals = profileGoals(saved.profile)
                     cacheMoneySetupSelection(
                         cohort = saved.profile?.cohort ?: cohort,
@@ -1338,6 +1359,14 @@ class MainActivity : AppCompatActivity() {
                         }
                         toast(getString(toastRes))
                     }
+                    if (currentBalanceAmount != null) {
+                        balanceResponse?.onSuccess {
+                            toast(getString(R.string.toast_current_balance_saved))
+                        }?.onFailure { error ->
+                            sendAppLog("error", "current_balance_save_failed:${error.message}")
+                        }
+                    }
+                    SavingsNudgeScheduler.scheduleDaily(this@MainActivity)
                     sendAppLog("info", "money_setup_saved:$cohort:${savedGoals.joinToString("|")}")
                 }.onFailure { error ->
                     applyLocalMoneySetupFallback()

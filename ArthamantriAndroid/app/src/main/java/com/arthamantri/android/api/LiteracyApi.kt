@@ -14,6 +14,10 @@ import com.arthamantri.android.model.EssentialGoalProfileRequest
 import com.arthamantri.android.model.EssentialGoalProfileResponse
 import com.arthamantri.android.model.ExperimentAssignmentRequest
 import com.arthamantri.android.model.ExperimentAssignmentResponse
+import com.arthamantri.android.model.CurrentBalanceRequest
+import com.arthamantri.android.model.CurrentBalanceResponse
+import com.arthamantri.android.model.EodSavingsPreviewRequest
+import com.arthamantri.android.model.EodSavingsPreviewResponse
 import com.arthamantri.android.model.SmsIngestRequest
 import com.arthamantri.android.model.SmsIngestResponse
 import com.arthamantri.android.model.UpiRequestInspectRequest
@@ -58,6 +62,15 @@ interface LiteracyApi {
 
     @POST("api/literacy/essential-goals")
     suspend fun upsertEssentialGoals(@Body body: EssentialGoalProfileRequest): EssentialGoalProfileResponse
+
+    @GET("api/literacy/current-balance")
+    suspend fun currentBalance(@Query("participant_id") participantId: String): CurrentBalanceResponse
+
+    @POST("api/literacy/current-balance")
+    suspend fun upsertCurrentBalance(@Body body: CurrentBalanceRequest): CurrentBalanceResponse
+
+    @POST("api/literacy/eod-savings-preview")
+    suspend fun eodSavingsPreview(@Body body: EodSavingsPreviewRequest): EodSavingsPreviewResponse
 
     @POST("api/research/assignment")
     suspend fun assignVariant(@Body body: ExperimentAssignmentRequest): ExperimentAssignmentResponse

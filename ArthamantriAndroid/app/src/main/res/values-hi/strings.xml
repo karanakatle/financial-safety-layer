@@ -141,6 +141,9 @@
     <string name="money_setup_affordability_daily_help">यह केवल दैनिक नकदी-प्रवाह वाले काम के लिए बेहतर शुरुआती सुझाव देने में मदद करता है।</string>
     <string name="money_setup_affordability_household_label">आपका परिवार महीने में जरूरी खर्चों पर लगभग कितना खर्च करता है?</string>
     <string name="money_setup_affordability_household_help">यह मासिक घरेलू जरूरी खर्चों के बारे में है, व्यक्तिगत आय प्रमाण के बारे में नहीं।</string>
+    <string name="money_setup_current_balance_label">वैकल्पिक: अभी आपके पास लगभग कितना पैसा है?</string>
+    <string name="money_setup_current_balance_hint">अपना वर्तमान बैलेंस दर्ज करें</string>
+    <string name="money_setup_current_balance_help">यह केवल आपकी दर्ज की हुई राशि है। अर्थमंत्री बैंक डेटा नहीं ला रहा है।</string>
     <string name="money_bucket_daily_below_250">₹250 से कम प्रतिदिन</string>
     <string name="money_bucket_daily_250_499">₹250 से ₹499 प्रतिदिन</string>
     <string name="money_bucket_daily_500_749">₹500 से ₹749 प्रतिदिन</string>
@@ -160,6 +163,7 @@
     <string name="money_setup_summary">धन सेटअप: %1$s • लक्ष्य: %2$s • आरक्षित: %3$d%% • सुरक्षित सीमा: ₹%4$d</string>
     <string name="money_setup_summary_suggested">धन सेटअप: %1$s • सुझाए गए प्राथमिक लक्ष्य: %2$s • आरक्षित: %3$d%% • सुरक्षित सीमा: ₹%4$d</string>
     <string name="toast_money_setup_saved">धन सेटअप सहेज दिया गया।</string>
+    <string name="toast_current_balance_saved">वर्तमान बैलेंस सहेज दिया गया।</string>
     <string name="toast_money_setup_failed">धन सेटअप सिंक नहीं हो सका। डिफ़ॉल्ट सेटिंग्स जारी रहेंगी।</string>
     <string name="toast_money_setup_seeded">अर्थमंत्री ने शुरुआती प्राथमिकताएं सुझाई हैं। आप इन्हें बाद में बदल सकते हैं।</string>
     <string name="facilitator_title">सहायक सेटअप पैक</string>
@@ -302,6 +306,8 @@
     <string name="alert_tag_medium">सावधानी चेतावनी</string>
     <string name="alert_tag_hard">उच्च-जोखिम चेतावनी</string>
     <string name="alert_title_default">वित्तीय सुरक्षा चेतावनी</string>
+    <string name="savings_notif_channel_name">बचत संकेत</string>
+    <string name="savings_notif_channel_desc">दिन के अंत की शांत बचत याद दिलाने वाली सूचनाएं</string>
     <string name="alert_body_default">यह भुगतान आपकी दैनिक या साप्ताहिक योजना को प्रभावित कर सकता है।</string>
     <string name="alert_ack_short">ठीक है</string>
     <string name="alert_ack_long">ठीक है, मैं समझ गया</string>

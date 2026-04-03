@@ -141,6 +141,9 @@
     <string name="money_setup_affordability_daily_help">This only helps Arthamantri suggest a better starting order for daily-cashflow work.</string>
     <string name="money_setup_affordability_household_label">About how much does your household spend on essentials in a month?</string>
     <string name="money_setup_affordability_household_help">This is about monthly household essentials budget, not personal income proof.</string>
+    <string name="money_setup_current_balance_label">Optional: about how much money do you have right now?</string>
+    <string name="money_setup_current_balance_hint">Enter your current balance</string>
+    <string name="money_setup_current_balance_help">This is only what you enter now. Arthamantri is not fetching bank data.</string>
     <string name="money_bucket_daily_below_250">Below Rs 250 per day</string>
     <string name="money_bucket_daily_250_499">Rs 250 to Rs 499 per day</string>
     <string name="money_bucket_daily_500_749">Rs 500 to Rs 749 per day</string>
@@ -160,6 +163,7 @@
     <string name="money_setup_summary">Money setup: %1$s • Goals: %2$s • Reserve: %3$d%% • Protected limit: ₹%4$d</string>
     <string name="money_setup_summary_suggested">Money setup: %1$s • Suggested priorities: %2$s • Reserve: %3$d%% • Protected limit: ₹%4$d</string>
     <string name="toast_money_setup_saved">Money setup saved.</string>
+    <string name="toast_current_balance_saved">Current balance saved.</string>
     <string name="toast_money_setup_failed">Money setup could not be synced. Continuing with defaults.</string>
     <string name="toast_money_setup_seeded">Arthamantri suggested starting priorities. You can edit them later.</string>
     <string name="facilitator_title">Facilitator Setup Pack</string>
@@ -302,6 +306,8 @@ Follow the system prompts to complete setup.</string>
     <string name="alert_tag_medium">Caution Alert</string>
     <string name="alert_tag_hard">High-Risk Alert</string>
     <string name="alert_title_default">Financial Safety Alert</string>
+    <string name="savings_notif_channel_name">Savings Nudges</string>
+    <string name="savings_notif_channel_desc">Calm end-of-day savings reminders</string>
     <string name="alert_body_default">This payment may disturb your daily or weekly planning.</string>
     <string name="alert_ack_short">Okay</string>
     <string name="alert_ack_long">Okay, I understand</string>

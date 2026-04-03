@@ -12,6 +12,8 @@ from uuid import uuid4
 from backend.utils.logger import logger
 
 from backend.api_models import (
+    CurrentBalanceUpsertIn,
+    EodSavingsPreviewIn,
     EssentialGoalProfileUpsertIn,
     EssentialTxnFeedbackIn,
     LiteracyAlertFeedbackIn,
@@ -54,6 +56,7 @@ from backend.literacy.essential_goal_setup import (
     supported_goal_ids,
 )
 from backend.literacy.expense_personalization import build_expense_personalization
+from backend.literacy.balance_savings import build_balance_savings_response, current_balance_contract
 from backend.literacy.domain_intelligence import enrich_domain_context
 from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
 from backend.literacy.entity_trust import (
@@ -1105,6 +1108,19 @@ def literacy_status(participant_id: str = "global_user") -> dict:
     return {"participant_id": participant_id, **monitor.status()}
 
 
+def _signals_since_current_balance(participant_id: str, current_balance: dict | None, as_of_timestamp: str) -> list[dict]:
+    if not current_balance:
+        return []
+    captured_at = str(current_balance.get("captured_at") or "").strip()
+    if not captured_at:
+        return []
+    return pilot_storage.financial_signals_between(
+        participant_id,
+        since_timestamp=captured_at,
+        until_timestamp=as_of_timestamp,
+    )
+
+
 @app.get("/api/literacy/policy")
 def literacy_policy_get(participant_id: str = "global_user") -> dict:
     daily_safe_limit, warning_ratio = policy_for_participant(
@@ -1164,6 +1180,50 @@ def literacy_essential_goals_get(participant_id: str = "global_user") -> dict:
     }
 
 
+@app.get("/api/literacy/current-balance")
+def literacy_current_balance_get(participant_id: str = "global_user") -> dict:
+    current_balance = pilot_storage.get_current_balance(participant_id)
+    return {
+        "participant_id": participant_id,
+        "current_balance": current_balance_contract(current_balance),
+        "history": pilot_storage.list_current_balance_history(participant_id, limit=10),
+        "supported_sources": ["self_reported", "estimated", "verified"],
+    }
+
+
+@app.post("/api/literacy/current-balance")
+def literacy_current_balance_upsert(payload: CurrentBalanceUpsertIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    captured_at = payload.timestamp or datetime.utcnow().isoformat()
+    updated_at = datetime.utcnow().isoformat()
+    pilot_storage.upsert_current_balance(
+        participant_id=participant_id,
+        amount=float(payload.amount),
+        source=payload.source,
+        captured_at=captured_at,
+        updated_at=updated_at,
+    )
+    pilot_storage.add_literacy_event(
+        participant_id=participant_id,
+        event_type="current_balance_reported",
+        source="user_input",
+        signal_type="balance",
+        signal_confidence="self_reported",
+        category="current_balance",
+        amount=float(payload.amount),
+        note="self_reported_current_balance",
+        timestamp=updated_at,
+    )
+    current_balance = pilot_storage.get_current_balance(participant_id)
+    return {
+        "ok": True,
+        "participant_id": participant_id,
+        "current_balance": current_balance_contract(current_balance),
+        "history": pilot_storage.list_current_balance_history(participant_id, limit=10),
+        "supported_sources": ["self_reported", "estimated", "verified"],
+    }
+
+
 @app.post("/api/literacy/essential-goals")
 def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"
@@ -1206,13 +1266,52 @@ def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> di
     }
 
 
+@app.post("/api/literacy/eod-savings-preview")
+def literacy_eod_savings_preview(payload: EodSavingsPreviewIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    language = _normalized_language(payload.language)
+    as_of_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    profile = pilot_storage.get_essential_goal_profile(participant_id)
+    current_balance = pilot_storage.get_current_balance(participant_id)
+    signals_since_baseline = _signals_since_current_balance(
+        participant_id=participant_id,
+        current_balance=current_balance,
+        as_of_timestamp=as_of_timestamp,
+    )
+    response = build_balance_savings_response(
+        participant_id=participant_id,
+        cohort=str((profile or {}).get("cohort") or "daily_cashflow_worker"),
+        language=language,
+        current_balance=current_balance,
+        signals_since_baseline=signals_since_baseline,
+        as_of_timestamp=as_of_timestamp,
+    )
+    response["requested_channel"] = payload.channel
+    pilot_storage.add_experiment_event(
+        participant_id=participant_id,
+        experiment_name="balance_savings_nudges_v1",
+        variant="deterministic_phase_1",
+        event_type="eod_savings_preview",
+        payload={
+            "requested_channel": payload.channel,
+            "decision_state": response["nudge"]["decision_state"],
+            "suggested_amount": response["nudge"]["suggested_amount"],
+            "confidence_label": response["estimate"]["confidence"]["label"],
+        },
+        timestamp=as_of_timestamp,
+    )
+    return response
+
+
 @app.get("/api/literacy/debug-trace")
 def literacy_debug_trace(request: Request, participant_id: str = "global_user", limit: int = 20) -> dict:
     require_pilot_admin(request)
     safe_limit = max(1, min(limit, 200))
     profile = pilot_storage.get_essential_goal_profile(participant_id)
+    current_balance = pilot_storage.get_current_balance(participant_id)
     policy = pilot_storage.get_participant_policy(participant_id)
     assignment = pilot_storage.get_experiment_assignment(participant_id, "adaptive_alerts_v1")
+    trace_timestamp = datetime.utcnow().isoformat()
     return {
         "participant_id": participant_id,
         "status": literacy_status(participant_id),
@@ -1224,10 +1323,24 @@ def literacy_debug_trace(request: Request, participant_id: str = "global_user", 
             "source": "default",
         },
         "essential_goal_profile": effective_goal_profile(profile),
+        "current_balance": current_balance_contract(current_balance),
+        "current_balance_history": pilot_storage.list_current_balance_history(participant_id, limit=safe_limit),
         "essential_goal_envelope": essential_goal_envelope(
             profile,
             float((policy or {}).get("daily_safe_limit") or LITERACY_POLICY.daily_safe_limit),
             _normalized_cohort,
+        ),
+        "eod_savings_preview": build_balance_savings_response(
+            participant_id=participant_id,
+            cohort=str((profile or {}).get("cohort") or "daily_cashflow_worker"),
+            language="en",
+            current_balance=current_balance,
+            signals_since_baseline=_signals_since_current_balance(
+                participant_id=participant_id,
+                current_balance=current_balance,
+                as_of_timestamp=trace_timestamp,
+            ),
+            as_of_timestamp=trace_timestamp,
         ),
         "experiment_assignment": assignment,
         "recent_literacy_events": pilot_storage.recent_literacy_events(participant_id, safe_limit),

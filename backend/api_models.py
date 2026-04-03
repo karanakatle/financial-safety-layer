@@ -111,6 +111,21 @@ class LiteracyPolicyUpsertIn(BaseModel):
     warning_ratio: float = Field(gt=0, lt=1.0)
 
 
+class CurrentBalanceUpsertIn(BaseModel):
+    participant_id: str = "global_user"
+    amount: float = Field(ge=0)
+    source: Literal["self_reported"] = "self_reported"
+    language: str = "en"
+    timestamp: Optional[str] = None
+
+
+class EodSavingsPreviewIn(BaseModel):
+    participant_id: str = "global_user"
+    language: str = "en"
+    channel: Literal["notification", "whatsapp"] = "notification"
+    timestamp: Optional[str] = None
+
+
 class LiteracyAlertFeedbackIn(BaseModel):
     event_id: Optional[str] = None
     alert_id: str
