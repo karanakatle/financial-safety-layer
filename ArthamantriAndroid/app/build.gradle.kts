@@ -18,6 +18,9 @@ val privacyPolicyUrl = (project.findProperty("PRIVACY_POLICY_URL") as String?)
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val hasKeystoreProperties = keystorePropertiesFile.exists()
+val releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName.contains("release", ignoreCase = true)
+}
 if (hasKeystoreProperties) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
@@ -33,8 +36,8 @@ android {
         applicationId = "com.arthamantri.android"
         minSdk = 26
         targetSdk = 35
-        versionCode = 2
-        versionName = "1.1"
+        versionCode = 3
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "DEFAULT_BASE_URL", "\"${apiBaseUrl.replace("\"", "\\\"")}\"")
@@ -72,6 +75,9 @@ android {
             versionNameSuffix = "-dev"
         }
         release {
+            if (releaseTaskRequested && !hasKeystoreProperties) {
+                error("Release builds require keystore.properties; refusing to fall back to debug signing.")
+            }
             signingConfig = if (hasKeystoreProperties) {
                 signingConfigs.getByName("release")
             } else {
