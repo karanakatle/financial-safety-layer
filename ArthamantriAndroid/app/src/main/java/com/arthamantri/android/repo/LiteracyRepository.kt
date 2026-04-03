@@ -307,6 +307,11 @@ object LiteracyRepository {
         context: Context,
         cohort: String,
         essentialGoals: List<String>,
+        allSelectedEssentials: List<String>,
+        selectionSource: String?,
+        goalSourceMap: Map<String, String>,
+        affordabilityQuestionKey: String?,
+        affordabilityBucketId: String?,
         setupSkipped: Boolean,
     ): EssentialGoalProfileResponse {
         val participantId = resolveParticipantId(context)
@@ -316,6 +321,12 @@ object LiteracyRepository {
                 participant_id = participantId,
                 cohort = cohort,
                 essential_goals = essentialGoals,
+                all_selected_essentials = allSelectedEssentials,
+                active_priority_essentials = essentialGoals,
+                selection_source = selectionSource,
+                goal_source_map = goalSourceMap,
+                affordability_question_key = affordabilityQuestionKey,
+                affordability_bucket_id = affordabilityBucketId,
                 language = language,
                 setup_skipped = setupSkipped,
             )

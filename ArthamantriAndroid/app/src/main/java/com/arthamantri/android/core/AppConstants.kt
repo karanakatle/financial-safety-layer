@@ -16,6 +16,8 @@ object AppConstants {
         const val KEY_MONEY_SETUP_SKIPPED = "money_setup_skipped"
         const val KEY_MONEY_SETUP_COHORT = "money_setup_cohort"
         const val KEY_MONEY_SETUP_GOALS = "money_setup_goals"
+        const val KEY_MONEY_SETUP_BUCKET = "money_setup_bucket"
+        const val KEY_MONEY_SETUP_SELECTION_SOURCE = "money_setup_selection_source"
         const val KEY_PERMISSION_ONBOARDING_DONE = "permission_onboarding_done"
         const val KEY_GUIDED_PERMISSION_FLOW_ACTIVE = "guided_permission_flow_active"
         const val KEY_MONITORING_ACTIVE = "monitoring_active"

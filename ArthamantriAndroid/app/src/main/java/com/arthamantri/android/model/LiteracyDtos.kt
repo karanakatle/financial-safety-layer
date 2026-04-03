@@ -86,6 +86,11 @@ data class LiteracyAlert(
 data class EssentialGoalProfileDto(
     val cohort: String? = null,
     val essential_goals: List<String> = emptyList(),
+    val all_selected_essentials: List<String> = emptyList(),
+    val active_priority_essentials: List<String> = emptyList(),
+    val selection_source: String? = null,
+    val affordability_question_key: String? = null,
+    val affordability_bucket_id: String? = null,
     val language: String? = null,
     val setup_skipped: Boolean? = null,
 )
@@ -93,6 +98,11 @@ data class EssentialGoalProfileDto(
 data class EssentialGoalEnvelopeDto(
     val cohort: String? = null,
     val essential_goals: List<String> = emptyList(),
+    val all_selected_essentials: List<String> = emptyList(),
+    val active_priority_essentials: List<String> = emptyList(),
+    val selection_source: String? = null,
+    val affordability_question_key: String? = null,
+    val affordability_bucket_id: String? = null,
     val reserve_ratio: Double? = null,
     val reserve_amount: Double? = null,
     val protected_limit: Double? = null,
@@ -215,6 +225,12 @@ data class EssentialGoalProfileRequest(
     val participant_id: String,
     val cohort: String,
     val essential_goals: List<String> = emptyList(),
+    val all_selected_essentials: List<String> = emptyList(),
+    val active_priority_essentials: List<String> = emptyList(),
+    val selection_source: String? = null,
+    val goal_source_map: Map<String, String> = emptyMap(),
+    val affordability_question_key: String? = null,
+    val affordability_bucket_id: String? = null,
     val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
     val setup_skipped: Boolean = false,
 )
@@ -224,6 +240,7 @@ data class EssentialGoalProfileResponse(
     val participant_id: String? = null,
     val profile: EssentialGoalProfileDto? = null,
     val envelope: EssentialGoalEnvelopeDto? = null,
+    val setup_config_version: String? = null,
 )
 
 data class ExperimentAssignmentRequest(

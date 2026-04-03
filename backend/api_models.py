@@ -216,6 +216,13 @@ class EssentialGoalProfileUpsertIn(BaseModel):
     participant_id: str
     cohort: str = "daily_cashflow_worker"
     essential_goals: list[str] = Field(default_factory=list)
+    all_selected_essentials: list[str] = Field(default_factory=list)
+    active_priority_essentials: list[str] = Field(default_factory=list)
+    selection_source: Optional[str] = None
+    goal_source_map: dict[str, str] = Field(default_factory=dict)
+    affordability_question_key: Optional[str] = None
+    affordability_bucket_id: Optional[str] = None
+    ranking_metadata: dict = Field(default_factory=dict)
     language: str = "en"
     setup_skipped: bool = False
 

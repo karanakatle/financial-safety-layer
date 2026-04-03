@@ -8,10 +8,30 @@ from backend.literacy.messages import (
 
 def effective_goal_profile(profile: dict | None) -> dict:
     if profile:
-        return profile
+        active = list(profile.get("active_priority_essentials") or profile.get("essential_goals") or [])
+        all_selected = list(profile.get("all_selected_essentials") or active)
+        selection_source = str(profile.get("selection_source") or ("skipped" if profile.get("setup_skipped") else "user_selected"))
+        goal_source_map = dict(profile.get("goal_source_map") or {})
+        ranking_metadata = dict(profile.get("ranking_metadata") or {})
+        return {
+            **profile,
+            "essential_goals": active,
+            "all_selected_essentials": all_selected,
+            "active_priority_essentials": active,
+            "selection_source": selection_source,
+            "goal_source_map": goal_source_map,
+            "ranking_metadata": ranking_metadata,
+        }
     return {
         "cohort": "daily_cashflow_worker",
         "essential_goals": [],
+        "all_selected_essentials": [],
+        "active_priority_essentials": [],
+        "selection_source": "skipped",
+        "goal_source_map": {},
+        "affordability_question_key": None,
+        "affordability_bucket_id": None,
+        "ranking_metadata": {},
         "language": "en",
         "setup_skipped": True,
     }
@@ -19,16 +39,23 @@ def effective_goal_profile(profile: dict | None) -> dict:
 
 def essential_goal_envelope(profile: dict | None, daily_safe_limit: float, cohort_normalizer) -> dict:
     active = effective_goal_profile(profile)
-    goals = list(active.get("essential_goals") or [])
+    goals = list(active.get("active_priority_essentials") or active.get("essential_goals") or [])
+    all_selected = list(active.get("all_selected_essentials") or goals)
     cohort = cohort_normalizer(active.get("cohort"))
 
     base_ratio = 0.18 if cohort == "women_led_household" else 0.22
-    ratio = max(0.15, min(0.35, base_ratio + (0.05 * min(len(goals), 2))))
+    ratio = max(0.15, min(0.4, base_ratio + (0.03 * min(len(goals), 4))))
     reserve_amount = round(daily_safe_limit * ratio, 2)
     protected_limit = round(max(daily_safe_limit - reserve_amount, daily_safe_limit * 0.55), 2)
     return {
         "cohort": cohort,
         "essential_goals": goals,
+        "all_selected_essentials": all_selected,
+        "active_priority_essentials": goals,
+        "selection_source": active.get("selection_source"),
+        "affordability_question_key": active.get("affordability_question_key"),
+        "affordability_bucket_id": active.get("affordability_bucket_id"),
+        "ranking_metadata": dict(active.get("ranking_metadata") or {}),
         "reserve_ratio": round(ratio, 3),
         "reserve_amount": reserve_amount,
         "protected_limit": protected_limit,

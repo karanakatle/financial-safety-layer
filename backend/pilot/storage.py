@@ -385,6 +385,14 @@ class PilotStorage:
             self._ensure_column(conn, "app_logs", "metadata_json TEXT NOT NULL DEFAULT '{}'")
             self._ensure_column(conn, "alert_feedback", "event_id TEXT")
             self._ensure_column(conn, "unified_telemetry", "event_id TEXT")
+            self._ensure_column(conn, "essential_goal_profile", "all_selected_essentials TEXT NOT NULL DEFAULT '[]'")
+            self._ensure_column(conn, "essential_goal_profile", "active_priority_essentials TEXT NOT NULL DEFAULT '[]'")
+            self._ensure_column(conn, "essential_goal_profile", "selection_source TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "essential_goal_profile", "goal_source_map_json TEXT NOT NULL DEFAULT '{}'")
+            self._ensure_column(conn, "essential_goal_profile", "affordability_question_key TEXT")
+            self._ensure_column(conn, "essential_goal_profile", "affordability_bucket_id TEXT")
+            self._ensure_column(conn, "essential_goal_profile", "ranking_metadata_json TEXT NOT NULL DEFAULT '{}'")
+            self._ensure_column(conn, "essential_goal_profile", "config_version TEXT NOT NULL DEFAULT ''")
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_app_logs_event_id ON app_logs(event_id) WHERE event_id IS NOT NULL"
             )
@@ -2242,7 +2250,10 @@ class PilotStorage:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT participant_id, cohort, essential_goals, language, setup_skipped, created_at, updated_at
+                SELECT participant_id, cohort, essential_goals, all_selected_essentials,
+                       active_priority_essentials, selection_source, goal_source_map_json,
+                       affordability_question_key, affordability_bucket_id, ranking_metadata_json,
+                       config_version, language, setup_skipped, created_at, updated_at
                 FROM essential_goal_profile
                 WHERE participant_id=?
                 """,
@@ -2251,8 +2262,14 @@ class PilotStorage:
             if not row:
                 return None
             data = dict(row)
-            goals = data.get("essential_goals") or "[]"
-            data["essential_goals"] = json.loads(goals)
+            goals = self._parse_json_list(data.get("essential_goals"))
+            all_selected = self._parse_json_list(data.get("all_selected_essentials"))
+            active = self._parse_json_list(data.get("active_priority_essentials"))
+            data["essential_goals"] = active or goals
+            data["all_selected_essentials"] = all_selected or active or goals
+            data["active_priority_essentials"] = active or goals
+            data["goal_source_map"] = self._parse_json_object(data.pop("goal_source_map_json", None))
+            data["ranking_metadata"] = self._parse_json_object(data.pop("ranking_metadata_json", None))
             data["setup_skipped"] = bool(data.get("setup_skipped", 0))
             return data
 
@@ -2261,22 +2278,45 @@ class PilotStorage:
         participant_id: str,
         cohort: str,
         essential_goals: list[str],
+        all_selected_essentials: list[str],
+        active_priority_essentials: list[str],
+        selection_source: str,
+        goal_source_map: dict,
+        affordability_question_key: str | None,
+        affordability_bucket_id: str | None,
+        ranking_metadata: dict,
+        config_version: str,
         language: str,
         setup_skipped: bool,
         timestamp: str,
     ) -> None:
         goals_json = json.dumps(essential_goals, ensure_ascii=True)
+        all_selected_json = json.dumps(all_selected_essentials, ensure_ascii=True)
+        active_json = json.dumps(active_priority_essentials, ensure_ascii=True)
+        goal_source_map_json = self._json_text(goal_source_map)
+        ranking_metadata_json = self._json_text(ranking_metadata)
         with self._connect() as conn:
             conn.execute(
                 """
                 INSERT INTO essential_goal_profile (
-                    participant_id, cohort, essential_goals, language, setup_skipped, created_at, updated_at
+                    participant_id, cohort, essential_goals, all_selected_essentials,
+                    active_priority_essentials, selection_source, goal_source_map_json,
+                    affordability_question_key, affordability_bucket_id, ranking_metadata_json,
+                    config_version, language, setup_skipped, created_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(participant_id)
                 DO UPDATE SET
                     cohort=excluded.cohort,
                     essential_goals=excluded.essential_goals,
+                    all_selected_essentials=excluded.all_selected_essentials,
+                    active_priority_essentials=excluded.active_priority_essentials,
+                    selection_source=excluded.selection_source,
+                    goal_source_map_json=excluded.goal_source_map_json,
+                    affordability_question_key=excluded.affordability_question_key,
+                    affordability_bucket_id=excluded.affordability_bucket_id,
+                    ranking_metadata_json=excluded.ranking_metadata_json,
+                    config_version=excluded.config_version,
                     language=excluded.language,
                     setup_skipped=excluded.setup_skipped,
                     updated_at=excluded.updated_at
@@ -2285,6 +2325,14 @@ class PilotStorage:
                     participant_id,
                     cohort,
                     goals_json,
+                    all_selected_json,
+                    active_json,
+                    selection_source,
+                    goal_source_map_json,
+                    affordability_question_key,
+                    affordability_bucket_id,
+                    ranking_metadata_json,
+                    config_version,
                     language,
                     1 if setup_skipped else 0,
                     timestamp,

@@ -110,7 +110,15 @@ def test_essential_goal_profile_upsert_and_get(tmp_path):
     storage.upsert_essential_goal_profile(
         participant_id="p1",
         cohort="daily_cashflow_worker",
-        essential_goals=["fuel", "ration"],
+        essential_goals=["cooking_fuel", "ration"],
+        all_selected_essentials=["cooking_fuel", "ration", "rent"],
+        active_priority_essentials=["cooking_fuel", "ration"],
+        selection_source="user_selected",
+        goal_source_map={"cooking_fuel": "user_selected", "ration": "user_selected", "rent": "user_selected"},
+        affordability_question_key="daily_earnings_range",
+        affordability_bucket_id="500_749",
+        ranking_metadata={"config_version": "essential_goal_setup_v1"},
+        config_version="essential_goal_setup_v1",
         language="en",
         setup_skipped=False,
         timestamp="2026-03-08T00:00:00",
@@ -119,7 +127,11 @@ def test_essential_goal_profile_upsert_and_get(tmp_path):
     profile = storage.get_essential_goal_profile("p1")
     assert profile is not None
     assert profile["cohort"] == "daily_cashflow_worker"
-    assert profile["essential_goals"] == ["fuel", "ration"]
+    assert profile["essential_goals"] == ["cooking_fuel", "ration"]
+    assert profile["all_selected_essentials"] == ["cooking_fuel", "ration", "rent"]
+    assert profile["active_priority_essentials"] == ["cooking_fuel", "ration"]
+    assert profile["selection_source"] == "user_selected"
+    assert profile["affordability_bucket_id"] == "500_749"
     assert profile["setup_skipped"] is False
 
 

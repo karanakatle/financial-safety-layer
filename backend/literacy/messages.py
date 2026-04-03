@@ -22,10 +22,16 @@ LITERACY_MESSAGE_CATALOG = {
             "ration": "ration",
             "school": "school fees",
             "fuel": "fuel",
+            "cooking_fuel": "cooking fuel",
             "medicine": "medicine",
             "rent": "rent",
+            "electricity": "electricity",
+            "water": "water",
+            "transport": "transport",
             "mobile_recharge": "mobile recharge",
             "loan_repayment": "loan repayment",
+            "work_inputs": "work inputs",
+            "family_care": "family care",
         },
         "stage1_message": (
             "Daily safe spend is about to be exceeded. "
@@ -153,10 +159,16 @@ LITERACY_MESSAGE_CATALOG = {
             "ration": "राशन",
             "school": "स्कूल फीस",
             "fuel": "ईंधन",
+            "cooking_fuel": "रसोई ईंधन",
             "medicine": "दवा",
             "rent": "किराया",
+            "electricity": "बिजली",
+            "water": "पानी",
+            "transport": "यातायात",
             "mobile_recharge": "मोबाइल रिचार्ज",
             "loan_repayment": "कर्ज की किस्त",
+            "work_inputs": "काम का सामान",
+            "family_care": "परिवार देखभाल",
         },
         "stage1_message": (
             "आपका दैनिक सुरक्षित खर्च सीमा के करीब है। "

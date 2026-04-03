@@ -25,6 +25,11 @@ def test_essential_goals_upsert_and_get(tmp_path, monkeypatch):
         "participant_id": "p1",
         "cohort": "daily_cashflow_worker",
         "essential_goals": ["fuel", "medicine"],
+        "all_selected_essentials": ["fuel", "medicine", "rent"],
+        "active_priority_essentials": ["fuel", "medicine"],
+        "selection_source": "user_selected",
+        "goal_source_map": {"fuel": "user_selected", "medicine": "user_selected", "rent": "user_selected"},
+        "affordability_bucket_id": "1000_1499",
         "language": "en",
         "setup_skipped": False,
     }
@@ -32,13 +37,46 @@ def test_essential_goals_upsert_and_get(tmp_path, monkeypatch):
     assert write_res.status_code == 200
     write_json = write_res.json()
     assert write_json["ok"] is True
-    assert write_json["profile"]["essential_goals"] == ["fuel", "medicine"]
+    assert write_json["profile"]["essential_goals"] == ["cooking_fuel", "medicine"]
+    assert write_json["profile"]["all_selected_essentials"] == ["cooking_fuel", "medicine", "rent"]
+    assert write_json["profile"]["active_priority_essentials"] == ["cooking_fuel", "medicine"]
+    assert write_json["profile"]["selection_source"] == "user_selected"
+    assert write_json["profile"]["affordability_bucket_id"] == "1000_1499"
+    assert write_json["setup_config_version"] == "essential_goal_setup_v1"
 
     read_res = client.get("/api/literacy/essential-goals", params={"participant_id": "p1"})
     assert read_res.status_code == 200
     read_json = read_res.json()
     assert read_json["profile"]["cohort"] == "daily_cashflow_worker"
+    assert read_json["profile"]["affordability_question_key"] == "daily_earnings_range"
     assert read_json["envelope"]["reserve_ratio"] > 0
+    assert read_json["setup_config"]["active_priority_limit"] == 6
+
+
+def test_essential_goals_auto_seed_when_selection_is_blank(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/literacy/essential-goals",
+        json={
+            "participant_id": "seeded_p1",
+            "cohort": "women_led_household",
+            "essential_goals": [],
+            "language": "en",
+            "setup_skipped": False,
+        },
+    )
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["profile"]["selection_source"] == "system_auto_seeded"
+    assert payload["profile"]["active_priority_essentials"] == [
+        "ration",
+        "school",
+        "rent",
+        "medicine",
+        "cooking_fuel",
+        "electricity",
+    ]
 
 
 def test_pilot_meta_localizes_disclaimer(tmp_path, monkeypatch):

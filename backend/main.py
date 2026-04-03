@@ -43,6 +43,18 @@ from backend.literacy import (
     risk_level_from_score,
     why_text,
 )
+from backend.literacy.essential_goal_setup import (
+    active_priority_limit,
+    affordability_question_key,
+    config_version as essential_goal_config_version,
+    deterministic_seed_order,
+    goal_setup_payload,
+    normalize_affordability_bucket_id,
+    normalize_cohort_id,
+    normalize_goal_id,
+    supported_cohort_ids,
+    supported_goal_ids,
+)
 from backend.literacy.domain_intelligence import enrich_domain_context
 from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
 from backend.literacy.entity_trust import (
@@ -75,27 +87,25 @@ LITERACY_POLICY = load_literacy_policy()
 voice = get_voice_provider()
 pilot_storage = PilotStorage(os.getenv("PILOT_DB_PATH", "data/pilot_research.db"))
 
-SUPPORTED_COHORTS = {"women_led_household", "daily_cashflow_worker"}
-SUPPORTED_ESSENTIAL_GOALS = {
-    "ration",
-    "school",
-    "fuel",
-    "medicine",
-    "rent",
-    "mobile_recharge",
-    "loan_repayment",
-}
+SUPPORTED_COHORTS = supported_cohort_ids()
+SUPPORTED_ESSENTIAL_GOALS = supported_goal_ids()
 GOAL_NON_ESSENTIAL = "non_essential"
 SUPPORTED_GOAL_FEEDBACK_VALUES = SUPPORTED_ESSENTIAL_GOALS | {GOAL_NON_ESSENTIAL}
+SUPPORTED_SELECTION_SOURCES = set(goal_setup_payload().get("selection_sources") or []) | {"skipped"}
 GOAL_CONFIDENCE_GATE = 0.72
 MERCHANT_KEYWORD_MAP = {
-    "fuel": {"petrol", "diesel", "hpcl", "indianoil", "bharat", "bpcl", "ioc"},
+    "cooking_fuel": {"petrol", "diesel", "gas", "cylinder", "hpcl", "indianoil", "bharat", "bpcl", "ioc"},
     "ration": {"kirana", "grocery", "supermarket", "ration", "mart", "provision"},
     "school": {"school", "tuition", "fees", "education", "uniform", "books"},
     "medicine": {"medical", "pharmacy", "chemist", "hospital", "clinic", "med"},
     "rent": {"rent", "landlord", "house rent", "room rent"},
+    "electricity": {"electricity", "power", "bill", "eb", "bijli"},
+    "water": {"water", "jal", "pani", "water bill"},
+    "transport": {"auto", "bus", "metro", "train", "cab", "fare", "travel"},
     "mobile_recharge": {"recharge", "topup", "prepaid", "postpaid", "airtel", "jio", "vi"},
     "loan_repayment": {"loan", "emi", "repayment", "nbfc", "finance"},
+    "work_inputs": {"stock", "material", "tools", "supply", "fertilizer", "seed", "wholesale"},
+    "family_care": {"childcare", "elder", "care", "family", "milk", "baby"},
 }
 NON_ESSENTIAL_KEYWORDS = {
     "liquor",
@@ -359,29 +369,103 @@ def _normalized_language(language: str | None) -> str:
 
 def _normalized_cohort(cohort: str | None) -> str:
     value = (cohort or "").strip().lower().replace("-", "_").replace(" ", "_")
-    if value in SUPPORTED_COHORTS:
-        return value
-    return "daily_cashflow_worker"
+    return normalize_cohort_id(value)
 
 
-def _normalized_goals(goals: list[str] | None) -> list[str]:
+def _normalized_goals(goals: list[str] | None, *, limit: int | None = None) -> list[str]:
     if not goals:
         return []
     normalized: list[str] = []
     seen: set[str] = set()
     for goal in goals:
-        value = (goal or "").strip().lower().replace("-", "_").replace(" ", "_")
+        value = normalize_goal_id(goal)
         if value in SUPPORTED_ESSENTIAL_GOALS and value not in seen:
             seen.add(value)
             normalized.append(value)
-    return normalized[:2]
+    return normalized[:limit] if limit is not None else normalized
 
 
 def _normalized_goal_feedback_value(value: str | None) -> str:
-    raw = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    raw = normalize_goal_id(value) or (value or "").strip().lower().replace("-", "_").replace(" ", "_")
     if raw in SUPPORTED_GOAL_FEEDBACK_VALUES:
         return raw
     return "unknown"
+
+
+def _normalized_selection_source(value: str | None, *, default: str = "user_selected") -> str:
+    normalized = (value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    return normalized if normalized in SUPPORTED_SELECTION_SOURCES else default
+
+
+def _normalized_goal_source_map(goal_source_map: dict | None, goals: list[str], default_source: str) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for goal_id in goals:
+        source = _normalized_selection_source((goal_source_map or {}).get(goal_id), default=default_source)
+        normalized[goal_id] = source
+    return normalized
+
+
+def _resolved_goal_profile_payload(payload: EssentialGoalProfileUpsertIn) -> dict:
+    cohort = _normalized_cohort(payload.cohort)
+    configured_limit = active_priority_limit()
+    setup_skipped = bool(payload.setup_skipped)
+    prompt_key = affordability_question_key(cohort)
+    normalized_bucket_id = normalize_affordability_bucket_id(cohort, payload.affordability_bucket_id)
+    normalized_question_key = prompt_key or (payload.affordability_question_key or "").strip() or None
+    all_selected = _normalized_goals(payload.all_selected_essentials or payload.essential_goals)
+    active_selected = _normalized_goals(payload.active_priority_essentials, limit=configured_limit)
+
+    used_seed = False
+    if setup_skipped:
+        all_selected = []
+        active_selected = []
+        selection_source = "skipped"
+        goal_source_map: dict[str, str] = {}
+    else:
+        if not all_selected and not active_selected:
+            seeded = deterministic_seed_order(cohort, normalized_bucket_id)[:configured_limit]
+            all_selected = list(seeded)
+            active_selected = list(seeded)
+            selection_source = "system_auto_seeded"
+            used_seed = True
+        else:
+            if not all_selected:
+                all_selected = list(active_selected)
+            if not active_selected:
+                active_selected = list(all_selected[:configured_limit])
+            selection_source = _normalized_selection_source(payload.selection_source, default="user_selected")
+        goal_source_map = _normalized_goal_source_map(
+            payload.goal_source_map,
+            all_selected,
+            "system_auto_seeded" if used_seed else selection_source,
+        )
+
+    ranking_metadata = {
+        **dict(payload.ranking_metadata or {}),
+        "config_version": essential_goal_config_version(),
+        "deterministic_mode": True,
+        "active_priority_limit": configured_limit,
+        "selection_source": selection_source,
+        "user_choice_precedence": True,
+        "future_ranking_inputs": list(goal_setup_payload().get("future_ranking_inputs") or []),
+    }
+    if normalized_question_key:
+        ranking_metadata["affordability_question_key"] = normalized_question_key
+    if normalized_bucket_id:
+        ranking_metadata["affordability_bucket_id"] = normalized_bucket_id
+
+    return {
+        "cohort": cohort,
+        "essential_goals": list(active_selected),
+        "all_selected_essentials": list(all_selected),
+        "active_priority_essentials": list(active_selected),
+        "selection_source": selection_source,
+        "goal_source_map": goal_source_map,
+        "affordability_question_key": normalized_question_key,
+        "affordability_bucket_id": normalized_bucket_id,
+        "ranking_metadata": ranking_metadata,
+        "setup_skipped": setup_skipped,
+    }
 
 
 def _infer_goal_context(
@@ -1059,6 +1143,8 @@ def literacy_essential_goals_get(participant_id: str = "global_user") -> dict:
         "envelope": essential_goal_envelope(profile, daily_safe_limit, _normalized_cohort),
         "supported_cohorts": sorted(SUPPORTED_COHORTS),
         "supported_essential_goals": sorted(SUPPORTED_ESSENTIAL_GOALS),
+        "setup_config_version": essential_goal_config_version(),
+        "setup_config": goal_setup_payload(),
     }
 
 
@@ -1066,18 +1152,25 @@ def literacy_essential_goals_get(participant_id: str = "global_user") -> dict:
 def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"
     language = _normalized_language(payload.language)
-    cohort = _normalized_cohort(payload.cohort)
-    goals = _normalized_goals(payload.essential_goals)
-    setup_skipped = bool(payload.setup_skipped)
+    resolved_profile = _resolved_goal_profile_payload(payload)
     now_iso = datetime.utcnow().isoformat()
     pilot_storage.upsert_essential_goal_profile(
         participant_id=participant_id,
-        cohort=cohort,
-        essential_goals=goals,
+        cohort=resolved_profile["cohort"],
+        essential_goals=resolved_profile["essential_goals"],
+        all_selected_essentials=resolved_profile["all_selected_essentials"],
+        active_priority_essentials=resolved_profile["active_priority_essentials"],
+        selection_source=resolved_profile["selection_source"],
+        goal_source_map=resolved_profile["goal_source_map"],
+        affordability_question_key=resolved_profile["affordability_question_key"],
+        affordability_bucket_id=resolved_profile["affordability_bucket_id"],
+        ranking_metadata=resolved_profile["ranking_metadata"],
+        config_version=essential_goal_config_version(),
         language=language,
-        setup_skipped=setup_skipped,
+        setup_skipped=resolved_profile["setup_skipped"],
         timestamp=now_iso,
     )
+    stored_profile = pilot_storage.get_essential_goal_profile(participant_id)
     daily_safe_limit, _ = policy_for_participant(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
@@ -1086,12 +1179,14 @@ def literacy_essential_goals_upsert(payload: EssentialGoalProfileUpsertIn) -> di
     return {
         "ok": True,
         "participant_id": participant_id,
-        "profile": effective_goal_profile(pilot_storage.get_essential_goal_profile(participant_id)),
+        "profile": effective_goal_profile(stored_profile),
         "envelope": essential_goal_envelope(
-            pilot_storage.get_essential_goal_profile(participant_id),
+            stored_profile,
             daily_safe_limit,
             _normalized_cohort,
         ),
+        "setup_config_version": essential_goal_config_version(),
+        "setup_config": goal_setup_payload(),
     }
 
 

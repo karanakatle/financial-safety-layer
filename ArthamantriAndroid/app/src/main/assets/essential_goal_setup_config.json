@@ -1,0 +1,301 @@
+{
+  "config_version": "essential_goal_setup_v1",
+  "active_priority_limit": 6,
+  "selection_sources": [
+    "user_selected",
+    "cohort_suggested",
+    "system_auto_seeded",
+    "adaptive_ranked"
+  ],
+  "future_ranking_inputs": [
+    "location",
+    "country",
+    "time_context",
+    "season_context",
+    "observed_behavior_signals"
+  ],
+  "rules": {
+    "defaults_editable": true,
+    "user_choice_precedence": true,
+    "deterministic_only": true,
+    "guidance_only_buckets": true
+  },
+  "categories": [
+    {
+      "id": "ration",
+      "label_key": "goal_ration",
+      "legacy_aliases": []
+    },
+    {
+      "id": "rent",
+      "label_key": "goal_rent",
+      "legacy_aliases": []
+    },
+    {
+      "id": "electricity",
+      "label_key": "goal_electricity",
+      "legacy_aliases": []
+    },
+    {
+      "id": "water",
+      "label_key": "goal_water",
+      "legacy_aliases": []
+    },
+    {
+      "id": "cooking_fuel",
+      "label_key": "goal_cooking_fuel",
+      "legacy_aliases": [
+        "fuel"
+      ]
+    },
+    {
+      "id": "mobile_recharge",
+      "label_key": "goal_mobile_recharge",
+      "legacy_aliases": []
+    },
+    {
+      "id": "medicine",
+      "label_key": "goal_medicine",
+      "legacy_aliases": []
+    },
+    {
+      "id": "school",
+      "label_key": "goal_school",
+      "legacy_aliases": []
+    },
+    {
+      "id": "transport",
+      "label_key": "goal_transport",
+      "legacy_aliases": []
+    },
+    {
+      "id": "loan_repayment",
+      "label_key": "goal_loan_repayment",
+      "legacy_aliases": []
+    },
+    {
+      "id": "work_inputs",
+      "label_key": "goal_work_inputs",
+      "legacy_aliases": []
+    },
+    {
+      "id": "family_care",
+      "label_key": "goal_family_care",
+      "legacy_aliases": []
+    }
+  ],
+  "cohorts": [
+    {
+      "id": "daily_cashflow_worker",
+      "label_key": "cohort_daily_cashflow_worker",
+      "supported_categories": [
+        "ration",
+        "rent",
+        "electricity",
+        "water",
+        "cooking_fuel",
+        "mobile_recharge",
+        "medicine",
+        "school",
+        "transport",
+        "loan_repayment",
+        "work_inputs",
+        "family_care"
+      ],
+      "default_priorities": [
+        "ration",
+        "rent",
+        "cooking_fuel",
+        "transport",
+        "mobile_recharge",
+        "medicine"
+      ],
+      "affordability_prompt": {
+        "question_key": "daily_earnings_range",
+        "label_key": "money_setup_affordability_daily_label",
+        "help_key": "money_setup_affordability_daily_help",
+        "optional": true,
+        "guidance_only": true,
+        "buckets": [
+          {
+            "id": "below_250",
+            "label_key": "money_bucket_daily_below_250",
+            "seed_boosts": {
+              "ration": 8,
+              "cooking_fuel": 7,
+              "mobile_recharge": 3,
+              "transport": 2
+            }
+          },
+          {
+            "id": "250_499",
+            "label_key": "money_bucket_daily_250_499",
+            "seed_boosts": {
+              "ration": 7,
+              "cooking_fuel": 6,
+              "transport": 4,
+              "mobile_recharge": 3,
+              "rent": 2
+            }
+          },
+          {
+            "id": "500_749",
+            "label_key": "money_bucket_daily_500_749",
+            "seed_boosts": {
+              "ration": 6,
+              "rent": 5,
+              "transport": 4,
+              "cooking_fuel": 4,
+              "medicine": 2
+            }
+          },
+          {
+            "id": "750_999",
+            "label_key": "money_bucket_daily_750_999",
+            "seed_boosts": {
+              "rent": 6,
+              "ration": 5,
+              "transport": 4,
+              "mobile_recharge": 3,
+              "work_inputs": 2
+            }
+          },
+          {
+            "id": "1000_1499",
+            "label_key": "money_bucket_daily_1000_1499",
+            "seed_boosts": {
+              "rent": 7,
+              "loan_repayment": 5,
+              "work_inputs": 4,
+              "ration": 4,
+              "transport": 3
+            }
+          },
+          {
+            "id": "1500_1999",
+            "label_key": "money_bucket_daily_1500_1999",
+            "seed_boosts": {
+              "rent": 7,
+              "loan_repayment": 6,
+              "work_inputs": 5,
+              "school": 3,
+              "medicine": 2
+            }
+          },
+          {
+            "id": "2000_plus",
+            "label_key": "money_bucket_daily_2000_plus",
+            "seed_boosts": {
+              "rent": 6,
+              "loan_repayment": 5,
+              "school": 5,
+              "family_care": 4,
+              "work_inputs": 4
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "women_led_household",
+      "label_key": "cohort_women_led_household",
+      "supported_categories": [
+        "ration",
+        "rent",
+        "electricity",
+        "water",
+        "cooking_fuel",
+        "mobile_recharge",
+        "medicine",
+        "school",
+        "transport",
+        "loan_repayment",
+        "work_inputs",
+        "family_care"
+      ],
+      "default_priorities": [
+        "ration",
+        "school",
+        "rent",
+        "medicine",
+        "cooking_fuel",
+        "electricity"
+      ],
+      "affordability_prompt": {
+        "question_key": "monthly_household_essentials_budget_range",
+        "label_key": "money_setup_affordability_household_label",
+        "help_key": "money_setup_affordability_household_help",
+        "optional": true,
+        "guidance_only": true,
+        "buckets": [
+          {
+            "id": "below_6000",
+            "label_key": "money_bucket_household_below_6000",
+            "seed_boosts": {
+              "ration": 8,
+              "cooking_fuel": 7,
+              "medicine": 5,
+              "mobile_recharge": 3,
+              "water": 2
+            }
+          },
+          {
+            "id": "6000_9999",
+            "label_key": "money_bucket_household_6000_9999",
+            "seed_boosts": {
+              "ration": 7,
+              "school": 6,
+              "medicine": 5,
+              "cooking_fuel": 4,
+              "rent": 3
+            }
+          },
+          {
+            "id": "10000_13999",
+            "label_key": "money_bucket_household_10000_13999",
+            "seed_boosts": {
+              "school": 7,
+              "ration": 6,
+              "rent": 5,
+              "electricity": 4,
+              "medicine": 3
+            }
+          },
+          {
+            "id": "14000_17999",
+            "label_key": "money_bucket_household_14000_17999",
+            "seed_boosts": {
+              "school": 7,
+              "rent": 6,
+              "electricity": 5,
+              "ration": 4,
+              "water": 3
+            }
+          },
+          {
+            "id": "18000_24999",
+            "label_key": "money_bucket_household_18000_24999",
+            "seed_boosts": {
+              "school": 7,
+              "rent": 6,
+              "electricity": 5,
+              "loan_repayment": 4,
+              "family_care": 4
+            }
+          },
+          {
+            "id": "25000_plus",
+            "label_key": "money_bucket_household_25000_plus",
+            "seed_boosts": {
+              "school": 6,
+              "rent": 5,
+              "loan_repayment": 5,
+              "family_care": 5,
+              "electricity": 4
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
