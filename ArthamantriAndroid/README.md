@@ -262,11 +262,11 @@ adb shell am start -n com.finsaathi.android.dev/com.arthamantri.android.MainActi
 cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
 ./gradlew :app:assembleRelease \
   -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
-  -PPRIVACY_POLICY_URL=https://arthamantri-api.onrender.com/privacy-policy.html
+  -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 
 ./gradlew :app:bundleRelease \
   -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
-  -PPRIVACY_POLICY_URL=https://arthamantri-api.onrender.com/privacy-policy.html
+  -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 ```
 
 Outputs:

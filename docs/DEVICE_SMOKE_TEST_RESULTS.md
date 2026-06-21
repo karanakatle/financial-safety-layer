@@ -18,17 +18,18 @@
 
 | Gate | Command | Result |
 |---|---|---|
-| Backend tests | `.venv/bin/python -m pytest` | `146 passed` |
+| Backend tests | `.venv/bin/python -m pytest` | `149 passed` |
 | Android unit tests | `./gradlew --no-daemon :app:testDebugUnitTest` | `BUILD SUCCESSFUL` |
 | Android debug build | `./gradlew --no-daemon :app:assembleDebug` | `BUILD SUCCESSFUL` |
-| Android release build | `./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ -PPRIVACY_POLICY_URL=https://arthamantri-api.onrender.com/privacy-policy.html` | `BUILD SUCCESSFUL` |
+| Android release build | `./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html` | `BUILD SUCCESSFUL` |
 
 ## Release Candidate Artifact
 
 - Release APK: `ArthamantriAndroid/app/build/outputs/apk/release/app-release.apk`
 - Release signing: local ignored `keystore.properties` and `finsaathi-release.keystore`
-- Release privacy URL configured in BuildConfig: `https://arthamantri-api.onrender.com/privacy-policy.html`
-- Known release blocker: configured privacy URL currently returns `HTTP 503` from Render, so this artifact is a signed release candidate, not production-launch-ready.
+- Release privacy URL configured in BuildConfig: `https://karanakatle.github.io/finsaathi-legal/privacy-policy.html`
+- Privacy URL verification: GitHub Pages returned `HTTP 200`.
+- Known release blocker: backend API still points to `https://arthamantri-api.onrender.com/`. If that Render service remains unavailable, backend-dependent app features will fail until the backend is restored or replaced.
 
 ## Physical Smoke Checklist Not Yet Executed
 
