@@ -22,6 +22,12 @@ commands:
   git_status:
     description: Check repo cleanliness and untracked release secrets.
     command: "git status --short"
+  regression_map_validate:
+    description: Validate the regression impact map structure.
+    command: "scripts/run_regression_pack.py --validate"
+  regression_agent_tests:
+    description: Run Regression Impact Agent tests.
+    command: "if [ -x .venv/bin/pytest ]; then .venv/bin/pytest tests/test_regression_impact_agent.py; else python -m pytest tests/test_regression_impact_agent.py; fi"
 
 areas:
   backend_safety_policy:
@@ -280,7 +286,6 @@ areas:
       - QA-007
       - QA-008
       - QA-010
-      - QA-011
     automated_reruns:
       - DEV-003
       - DEV-004
@@ -323,7 +328,6 @@ areas:
       - QA-003
       - QA-009
       - QA-010
-      - QA-011
     automated_reruns:
       - DEV-006
       - DEV-007
@@ -348,6 +352,24 @@ areas:
     run_commands:
       - privacy_policy_check
       - git_status
+
+  qa_regression_traceability:
+    description: Regression impact agent, CI summary behavior, test impact map quality, and defect traceability workflow.
+    trigger_tests:
+      - QA-011
+    automated_reruns:
+      - QA-011
+    manual_reruns:
+      - QA-011
+    conditional_reruns:
+      - Product SIT/UAT reruns only if this PR also changes app, backend, release, privacy, or user-facing behavior
+    jira_links:
+      - causes regression risk for QA traceability automation
+      - verified by regression impact map validation
+      - verified by Regression Impact Agent tests
+    run_commands:
+      - regression_map_validate
+      - regression_agent_tests
 
   user_trust_copy:
     description: User-facing onboarding, privacy warning, alert copy, language comfort, trust, notification fatigue, and comprehension.

@@ -4,6 +4,24 @@ The Regression Impact Agent is a deterministic QA helper. It reads changed files
 
 It does not approve releases, mark manual tests as passed, or replace human evidence. Its job is to reduce tracking mistakes.
 
+## Is This Using An LLM?
+
+No. The current agent does not call an LLM or external AI API.
+
+It is an agent in the practical software sense: it observes an input, applies rules, decides the next testing action, and hands that action to CI.
+
+Current loop:
+
+```text
+PR diff / local changed files
+        -> path rules
+        -> suggested regression IDs
+        -> automated command pack
+        -> manual verification list
+```
+
+This is intentionally safer for QA because regression selection should be predictable. An LLM can be added later as a summarizer or reviewer, but it should not be the source of truth for release approval.
+
 ## What It Does
 
 1. Reads changed files from a PR or local git diff.

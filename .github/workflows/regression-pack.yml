@@ -68,14 +68,15 @@ jobs:
           with summary_path.open("a", encoding="utf-8") as summary:
               summary.write("# Regression Pack Detection\n\n")
               if ids:
-                  summary.write("Detected regression IDs:\n")
+                  summary.write("Detected human-provided regression IDs:\n")
                   for item in ids:
                       summary.write(f"- `{item}`\n")
               else:
                   summary.write(
-                      "No regression test/story ID was found. "
-                      "Add an ID such as `SIT-D-011` to the PR title/body, "
-                      "or run this workflow manually with a test ID.\n"
+                      "No human-provided regression test/story ID was found. "
+                      "The Regression Impact Agent will inspect changed files next. "
+                      "You can still add an explicit ID such as `SIT-D-011` "
+                      "to the PR title/body when you want to force a specific pack.\n"
                   )
           PY
 
