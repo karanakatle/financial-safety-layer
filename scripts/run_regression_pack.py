@@ -221,10 +221,14 @@ def markdown_pack(data: dict[str, Any], pack: dict[str, Any]) -> str:
         lines.append(f"- [ ] `{item}`")
 
     lines.extend(["", "### Manual Verification Required"])
+    lines.append(
+        "> Complete these in the PR body/comment or a manual evidence log after phone/user testing."
+    )
     for item in pack["manual_reruns"] or ["None"]:
         lines.append(f"- [ ] `{item}`")
 
     lines.extend(["", "### Conditional Verification"])
+    lines.append("> Mark each item as completed, not impacted, or not applicable with a short reason.")
     for item in pack["conditional_reruns"] or ["None"]:
         lines.append(f"- [ ] {item}")
 
@@ -276,23 +280,84 @@ def validate_map(data: dict[str, Any]) -> list[str]:
     return errors
 
 
-def run_commands(data: dict[str, Any], command_ids: list[str]) -> int:
-    exit_code = 0
+def run_commands_with_results(data: dict[str, Any], command_ids: list[str]) -> list[dict[str, Any]]:
+    results: list[dict[str, Any]] = []
     for command_id in command_ids:
         command = data["commands"].get(command_id)
         if not command:
             print(f"Missing command definition: {command_id}", file=sys.stderr)
-            exit_code = 1
+            results.append(
+                {
+                    "command_id": command_id,
+                    "description": "",
+                    "command": "",
+                    "returncode": 1,
+                }
+            )
             continue
 
         print(f"\nRunning {command_id}: {command.get('description', '')}")
         print(command["command"])
         completed = subprocess.run(command["command"], cwd=REPO_ROOT, shell=True)
+        results.append(
+            {
+                "command_id": command_id,
+                "description": command.get("description", ""),
+                "command": command["command"],
+                "returncode": completed.returncode,
+            }
+        )
         if completed.returncode != 0:
-            exit_code = completed.returncode
             print(f"Command failed: {command_id} ({completed.returncode})", file=sys.stderr)
-            break
-    return exit_code
+    return results
+
+
+def run_commands(data: dict[str, Any], command_ids: list[str]) -> int:
+    results = run_commands_with_results(data, command_ids)
+    exit_codes = [int(result["returncode"]) for result in results if int(result["returncode"]) != 0]
+    return exit_codes[0] if exit_codes else 0
+
+
+def automation_status_markdown(pack: dict[str, Any], results: list[dict[str, Any]]) -> str:
+    passed = bool(results) and all(int(result["returncode"]) == 0 for result in results)
+    status_icon = "✅" if passed else "❌"
+    status_label = "PASS" if passed else "FAIL"
+
+    lines = [
+        f"## Automated Verification Status: `{pack['test_id']}`",
+        "",
+        f"Overall automated status: **{status_icon} {status_label}**",
+        "",
+        "### Automated Test Status",
+    ]
+    for item in pack["automated_reruns"] or ["None"]:
+        lines.append(f"- {status_icon} `{item}`")
+
+    lines.extend(["", "### Command Results"])
+    for result in results:
+        icon = "✅" if int(result["returncode"]) == 0 else "❌"
+        lines.append(
+            f"- {icon} `{result['command_id']}` "
+            f"(exit {result['returncode']}): {result['description']}"
+        )
+
+    if not results:
+        lines.append("- ❌ No automated commands were executed.")
+
+    lines.extend(
+        [
+            "",
+            "### Manual Items Still Require Human Evidence",
+            "Automated status does not complete device, UAT, Play, legal, or release checks.",
+        ]
+    )
+    for item in pack["manual_reruns"] or []:
+        lines.append(f"- [ ] `{item}`")
+    for item in pack["conditional_reruns"] or []:
+        lines.append(f"- [ ] {item}")
+
+    lines.append("")
+    return "\n".join(lines)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -306,6 +371,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="Print regression pack as JSON.")
     parser.add_argument("--markdown", action="store_true", help="Print regression pack as GitHub-flavored Markdown.")
     parser.add_argument("--run-auto", action="store_true", help="Run the runnable automated command pack.")
+    parser.add_argument(
+        "--status-markdown",
+        help="Append automated execution status Markdown to this file when --run-auto is used.",
+    )
     args = parser.parse_args(argv)
 
     data = load_map(Path(args.map))
@@ -339,7 +408,14 @@ def main(argv: list[str] | None = None) -> int:
         print_pack(data, pack, as_json=args.json)
 
     if args.run_auto:
-        return run_commands(data, pack["run_commands"])
+        results = run_commands_with_results(data, pack["run_commands"])
+        if args.status_markdown:
+            status_path = Path(args.status_markdown)
+            with status_path.open("a", encoding="utf-8") as handle:
+                handle.write("\n")
+                handle.write(automation_status_markdown(pack, results))
+        exit_codes = [int(result["returncode"]) for result in results if int(result["returncode"]) != 0]
+        return exit_codes[0] if exit_codes else 0
     return 0
 
 

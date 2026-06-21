@@ -172,9 +172,8 @@ jobs:
           echo "" >> "$GITHUB_STEP_SUMMARY"
           for TEST_ID in "${IDS[@]}"; do
             echo "::group::Automated regression pack for ${TEST_ID}"
-            scripts/run_regression_pack.py "$TEST_ID" --run-auto
+            scripts/run_regression_pack.py "$TEST_ID" --run-auto --status-markdown "$GITHUB_STEP_SUMMARY"
             echo "::endgroup::"
-            echo "- `${TEST_ID}` automated command pack completed." >> "$GITHUB_STEP_SUMMARY"
           done
 
       - name: No regression pack requested
