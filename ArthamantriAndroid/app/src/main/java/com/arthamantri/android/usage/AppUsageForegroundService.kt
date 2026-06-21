@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
+import com.arthamantri.android.MonitoringAccessGate
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.core.RecentLinkContextTracker
@@ -52,6 +53,10 @@ class AppUsageForegroundService : Service() {
         serviceScope.launch {
             while (isActive) {
                 try {
+                    if (!MonitoringAccessGate.isMonitoringActive(this@AppUsageForegroundService)) {
+                        stopSelf()
+                        return@launch
+                    }
                     val pkg = foregroundPackageName()
                     if (pkg != null && pkg != lastForegroundPackage) {
                         lastForegroundPackage = pkg

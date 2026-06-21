@@ -19,13 +19,20 @@ val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val hasKeystoreProperties = keystorePropertiesFile.exists()
 val releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
-    taskName.contains("release", ignoreCase = true)
+    val requestedTask = taskName.substringAfterLast(":")
+    requestedTask == "assembleRelease" ||
+        requestedTask == "bundleRelease" ||
+        requestedTask == "installRelease" ||
+        (requestedTask.startsWith("assemble") && requestedTask.endsWith("Release")) ||
+        (requestedTask.startsWith("bundle") && requestedTask.endsWith("Release"))
 }
 if (hasKeystoreProperties) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
 android {
+    // Public Play/package identity is FinSaathi. Source namespace remains the inherited
+    // internal package until the broad Kotlin package rename is handled separately.
     namespace = "com.arthamantri.android"
     compileSdk = 35
 
@@ -33,7 +40,7 @@ android {
         buildConfig = true
     }
     defaultConfig {
-        applicationId = "com.arthamantri.android"
+        applicationId = "com.finsaathi.android"
         minSdk = 26
         targetSdk = 35
         versionCode = 3

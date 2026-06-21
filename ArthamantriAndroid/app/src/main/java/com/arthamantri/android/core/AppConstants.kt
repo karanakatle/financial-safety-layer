@@ -7,7 +7,7 @@ object AppConstants {
     }
 
     object Prefs {
-        const val PILOT_PREFS = "pilot_prefs"
+        const val PILOT_PREFS = "finsaathi_prefs"
         const val KEY_APP_LANGUAGE = "app_lang"
         const val KEY_LANGUAGE_SELECTED = "language_selected"
         const val KEY_CONSENT_ACCEPTED = "consent_accepted"
@@ -38,7 +38,7 @@ object AppConstants {
         const val KEY_RECENT_LINK_SOURCE_APP = "recent_link_source_app"
         const val KEY_RECENT_LINK_CAPTURED_AT_MS = "recent_link_captured_at_ms"
 
-        const val APP_CONFIG_PREFS = "arthamantri_android_prefs"
+        const val APP_CONFIG_PREFS = "finsaathi_android_prefs"
         const val KEY_BASE_URL = "base_url"
     }
 
@@ -48,8 +48,8 @@ object AppConstants {
     }
 
     object Notifications {
-        const val SAFETY_CHANNEL_ID = "arthamantri_safety_alerts"
-        const val SAVINGS_CHANNEL_ID = "arthamantri_savings_nudges"
+        const val SAFETY_CHANNEL_ID = "finsaathi_safety_alerts"
+        const val SAVINGS_CHANNEL_ID = "finsaathi_savings_nudges"
         const val FOREGROUND_SERVICE_ID = 3201
         const val FULL_SCREEN_INTENT_ID = 4201
         const val SAVINGS_NUDGE_REQUEST_CODE = 5201
@@ -81,6 +81,17 @@ object AppConstants {
         const val ALERT_FAMILY = "extra_alert_family"
         const val ALERT_SHOW_USEFULNESS_FEEDBACK = "extra_alert_show_usefulness_feedback"
         const val ALERT_OPEN_SUPPORT_PATH = "extra_alert_open_support_path"
+        const val ALERT_FEEDBACK_CATEGORY = "extra_alert_feedback_category"
+        const val ALERT_FEEDBACK_RISK_LEVEL = "extra_alert_feedback_risk_level"
+        const val ALERT_FEEDBACK_SOURCE_TYPE = "extra_alert_feedback_source_type"
+        const val ALERT_FEEDBACK_REASON_CODE = "extra_alert_feedback_reason_code"
+        const val HUMAN_REVIEW_REDACTED_SNIPPET = "extra_human_review_redacted_snippet"
+        const val HUMAN_REVIEW_CATEGORY = "extra_human_review_category"
+        const val HUMAN_REVIEW_RISK_LEVEL = "extra_human_review_risk_level"
+        const val HUMAN_REVIEW_CONFIDENCE_SCORE = "extra_human_review_confidence_score"
+        const val HUMAN_REVIEW_REVIEWABLE = "extra_human_review_reviewable"
+        const val HUMAN_REVIEW_SOURCE_TYPE = "extra_human_review_source_type"
+        const val HUMAN_REVIEW_REASON_CODE = "extra_human_review_reason_code"
         const val INBOUND_LINK_CAPTURED = "extra_inbound_link_captured"
     }
 
@@ -133,12 +144,14 @@ object AppConstants {
         const val ALERT_FAMILY_ACCOUNT_ACCESS = "account_access"
         const val ALERT_FAMILY_CASHFLOW = "cashflow"
         const val ALERT_FAMILY_SAVINGS = "savings"
+        const val ALERT_FAMILY_FINANCIAL_RISK = "financial_risk"
         const val LOCAL_FALLBACK_ALERT_PREFIX = "local-cashflow-fallback"
         const val LOCAL_PAYMENT_FALLBACK_ALERT_PREFIX = "local-payment-fallback"
+        const val LOCAL_FINANCIAL_RISK_ALERT_PREFIX = "local-financial-risk"
     }
 
     object BroadcastActions {
-        const val RUN_SAVINGS_NUDGE = "com.arthamantri.android.action.RUN_SAVINGS_NUDGE"
+        const val RUN_SAVINGS_NUDGE = "com.finsaathi.android.action.RUN_SAVINGS_NUDGE"
     }
 
     object ContextEvents {

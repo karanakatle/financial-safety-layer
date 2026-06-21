@@ -22,7 +22,7 @@ class USSDAlert:
 
 def overspending_alert(amount):
     return USSDAlert(
-        title="⚠️ Arthamantri Alert",
+        title="⚠️ FinSaathi Alert",
         message=f"Aapka kharch budget se zyada ho raha hai.\nAaj ₹{amount} kam kharch karein.",
         options=["Theek hai", "Ignore"],
         priority="medium"

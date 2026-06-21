@@ -33,6 +33,8 @@ class AlertDisplayActivity : AppCompatActivity() {
     private var focusedActionLabels: List<String> = emptyList()
     private lateinit var proceedConfirmationLabel: String
     private lateinit var reportMessage: String
+    private var feedbackMetadata: AlertFeedbackMetadata? = null
+    private var humanReviewMetadata: HumanReviewSupportMetadata? = null
 
     private lateinit var dismissBtn: Button
     private lateinit var usefulBtn: Button
@@ -144,6 +146,13 @@ class AlertDisplayActivity : AppCompatActivity() {
         proceedConfirmationLabel = intent.getStringExtra(EXTRA_PROCEED_CONFIRMATION_LABEL).orEmpty()
         showUsefulnessFeedback = intent.getBooleanExtra(EXTRA_SHOW_USEFULNESS_FEEDBACK, false)
         useFocusedPaymentActions = intent.getBooleanExtra(EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, false)
+        feedbackMetadata = AlertFeedbackMetadata.fromNullableFields(
+            category = intent.getStringExtra(EXTRA_FEEDBACK_CATEGORY),
+            riskLevel = intent.getStringExtra(EXTRA_FEEDBACK_RISK_LEVEL),
+            sourceType = intent.getStringExtra(EXTRA_FEEDBACK_SOURCE_TYPE),
+            reasonCode = intent.getStringExtra(EXTRA_FEEDBACK_REASON_CODE),
+        )
+        humanReviewMetadata = readHumanReviewMetadata(intent)
         reportMessage = buildReportMessage(alertBody, whyThisAlert, nextSafeAction, essentialGoalImpact)
     }
 
@@ -355,6 +364,7 @@ class AlertDisplayActivity : AppCompatActivity() {
             focusedActionLabels = focusedActionLabels,
             proceedConfirmationLabel = proceedConfirmationLabel,
             useFocusedPaymentActions = useFocusedPaymentActions,
+            humanReviewMetadata = humanReviewMetadata,
         )
 
         if (!launched) {
@@ -385,6 +395,7 @@ class AlertDisplayActivity : AppCompatActivity() {
             channel = "fullscreen_activity",
             title = alertTitle,
             message = reportMessage,
+            metadata = feedbackMetadata,
         )
     }
 
@@ -405,6 +416,36 @@ class AlertDisplayActivity : AppCompatActivity() {
             alertFamily = alertFamily,
             showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
+            feedbackMetadata = feedbackMetadata,
+            humanReviewMetadata = humanReviewMetadata,
+        )
+    }
+
+    private fun readHumanReviewMetadata(intent: Intent): HumanReviewSupportMetadata? {
+        if (!intent.getBooleanExtra(EXTRA_HUMAN_REVIEW_REVIEWABLE, false)) {
+            return null
+        }
+        val redactedSnippet = intent.getStringExtra(EXTRA_HUMAN_REVIEW_REDACTED_SNIPPET)?.trim().orEmpty()
+        val category = intent.getStringExtra(EXTRA_HUMAN_REVIEW_CATEGORY)?.trim().orEmpty()
+        val riskLevel = intent.getStringExtra(EXTRA_HUMAN_REVIEW_RISK_LEVEL)?.trim().orEmpty()
+        val sourceType = intent.getStringExtra(EXTRA_HUMAN_REVIEW_SOURCE_TYPE)?.trim().orEmpty()
+        val reasonCode = intent.getStringExtra(EXTRA_HUMAN_REVIEW_REASON_CODE)?.trim().orEmpty()
+        if (redactedSnippet.isBlank() || category.isBlank() || riskLevel.isBlank() || sourceType.isBlank() || reasonCode.isBlank()) {
+            return null
+        }
+        val confidenceScore = if (intent.hasExtra(EXTRA_HUMAN_REVIEW_CONFIDENCE_SCORE)) {
+            intent.getDoubleExtra(EXTRA_HUMAN_REVIEW_CONFIDENCE_SCORE, 0.0)
+        } else {
+            null
+        }
+        return HumanReviewSupportMetadata(
+            redactedSnippet = redactedSnippet,
+            category = category,
+            riskLevel = riskLevel,
+            confidenceScore = confidenceScore,
+            reviewable = true,
+            sourceType = sourceType,
+            reasonCode = reasonCode,
         )
     }
 
@@ -487,5 +528,16 @@ class AlertDisplayActivity : AppCompatActivity() {
         const val EXTRA_PROCEED_CONFIRMATION_LABEL = AppConstants.IntentExtras.ALERT_PROCEED_CONFIRMATION_LABEL
         const val EXTRA_SHOW_USEFULNESS_FEEDBACK = AppConstants.IntentExtras.ALERT_SHOW_USEFULNESS_FEEDBACK
         const val EXTRA_USE_FOCUSED_PAYMENT_ACTIONS = AppConstants.IntentExtras.ALERT_USE_FOCUSED_PAYMENT_ACTIONS
+        const val EXTRA_FEEDBACK_CATEGORY = AppConstants.IntentExtras.ALERT_FEEDBACK_CATEGORY
+        const val EXTRA_FEEDBACK_RISK_LEVEL = AppConstants.IntentExtras.ALERT_FEEDBACK_RISK_LEVEL
+        const val EXTRA_FEEDBACK_SOURCE_TYPE = AppConstants.IntentExtras.ALERT_FEEDBACK_SOURCE_TYPE
+        const val EXTRA_FEEDBACK_REASON_CODE = AppConstants.IntentExtras.ALERT_FEEDBACK_REASON_CODE
+        const val EXTRA_HUMAN_REVIEW_REDACTED_SNIPPET = AppConstants.IntentExtras.HUMAN_REVIEW_REDACTED_SNIPPET
+        const val EXTRA_HUMAN_REVIEW_CATEGORY = AppConstants.IntentExtras.HUMAN_REVIEW_CATEGORY
+        const val EXTRA_HUMAN_REVIEW_RISK_LEVEL = AppConstants.IntentExtras.HUMAN_REVIEW_RISK_LEVEL
+        const val EXTRA_HUMAN_REVIEW_CONFIDENCE_SCORE = AppConstants.IntentExtras.HUMAN_REVIEW_CONFIDENCE_SCORE
+        const val EXTRA_HUMAN_REVIEW_REVIEWABLE = AppConstants.IntentExtras.HUMAN_REVIEW_REVIEWABLE
+        const val EXTRA_HUMAN_REVIEW_SOURCE_TYPE = AppConstants.IntentExtras.HUMAN_REVIEW_SOURCE_TYPE
+        const val EXTRA_HUMAN_REVIEW_REASON_CODE = AppConstants.IntentExtras.HUMAN_REVIEW_REASON_CODE
     }
 }

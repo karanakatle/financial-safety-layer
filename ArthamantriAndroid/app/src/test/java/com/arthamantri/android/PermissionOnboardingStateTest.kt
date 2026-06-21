@@ -75,4 +75,22 @@ class PermissionOnboardingStateTest {
         assertFalse(complete.shouldAutoResume(guidedFlowActive = true))
         assertTrue(complete.shouldStopGuidedFlow(guidedFlowActive = true))
     }
+
+    @Test
+    fun `permission return log event names show granted or denied outcome`() {
+        val usageDenied = PermissionOnboardingState(
+            smsGranted = true,
+            usageGranted = false,
+            overlayGranted = true,
+            notificationsGranted = true,
+        )
+        val usageGranted = usageDenied.copy(usageGranted = true)
+        val overlayDenied = usageGranted.copy(overlayGranted = false)
+
+        assertEquals("permission_step_usage_denied", PermissionStep.USAGE.returnLogMessage(usageDenied))
+        assertEquals("permission_step_usage_granted", PermissionStep.USAGE.returnLogMessage(usageGranted))
+        assertEquals("permission_step_overlay_denied", PermissionStep.OVERLAY.returnLogMessage(overlayDenied))
+        assertEquals("permission_step_notifications_granted", PermissionStep.NOTIFICATIONS.returnLogMessage(usageGranted))
+        assertEquals(null, PermissionStep.COMPLETE.returnLogMessage(usageGranted))
+    }
 }

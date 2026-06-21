@@ -18,6 +18,8 @@ import com.arthamantri.android.model.LiteracyState
 import com.arthamantri.android.model.PilotAppLogRequest
 import com.arthamantri.android.model.PilotConsentRequest
 import com.arthamantri.android.model.PilotFeedbackRequest
+import com.arthamantri.android.model.PilotHumanReviewRequest
+import com.arthamantri.android.model.PilotHumanReviewResponse
 import com.arthamantri.android.model.PilotMetaResponse
 import com.arthamantri.android.model.PilotContextEvent
 import com.arthamantri.android.model.SmsIngestRequest
@@ -269,6 +271,36 @@ object LiteracyRepository {
         )
     }
 
+    suspend fun submitHumanReview(
+        context: Context,
+        alertId: String,
+        category: String,
+        riskLevel: String,
+        confidenceScore: Double?,
+        reviewable: Boolean,
+        sourceType: String,
+        reasonCode: String,
+        redactedSnippet: String?,
+        consentToShareRedactedContent: Boolean,
+    ): PilotHumanReviewResponse {
+        return ApiClient.literacyApi(context).pilotHumanReview(
+            PilotHumanReviewRequest(
+                participant_id = resolveParticipantId(context),
+                alert_id = alertId,
+                consent_to_share_redacted_content = consentToShareRedactedContent,
+                category = category,
+                risk_level = riskLevel,
+                confidence_score = confidenceScore,
+                reviewable = reviewable,
+                source_type = sourceType,
+                reason_code = reasonCode,
+                redacted_snippet = redactedSnippet.takeIf { consentToShareRedactedContent && reviewable },
+                language = resolveLanguage(context),
+                timestamp = currentTimestamp(),
+            )
+        )
+    }
+
     suspend fun submitAlertFeedback(
         context: Context,
         alertId: String,
@@ -276,6 +308,10 @@ object LiteracyRepository {
         channel: String,
         title: String,
         message: String,
+        category: String? = null,
+        riskLevel: String? = null,
+        sourceType: String? = null,
+        reasonCode: String? = null,
     ): DeliveryResult {
         val participantId = resolveParticipantId(context)
         val request = LiteracyAlertFeedbackRequest(
@@ -287,6 +323,10 @@ object LiteracyRepository {
                 title = title,
                 message = message,
                 timestamp = currentTimestamp(),
+                category = category,
+                risk_level = riskLevel,
+                source_type = sourceType,
+                reason_code = reasonCode,
             )
         return runCatching {
             val ok = ApiClient.literacyApi(context).alertFeedback(request).ok
@@ -352,11 +392,24 @@ object LiteracyRepository {
         return ApiClient.literacyApi(context).upsertCurrentBalance(
             CurrentBalanceRequest(
                 participant_id = participantId,
-                amount = amount,
+                balance_band_id = balanceBandIdFor(amount),
                 language = language,
                 timestamp = timestamp,
             )
         )
+    }
+
+    private fun balanceBandIdFor(amount: Double): String {
+        val safeAmount = amount.takeIf { !it.isNaN() && !it.isInfinite() && it >= 0.0 } ?: 0.0
+        return when {
+            safeAmount < 500.0 -> "0_499"
+            safeAmount < 1000.0 -> "500_999"
+            safeAmount < 3000.0 -> "1000_2999"
+            safeAmount < 7000.0 -> "3000_6999"
+            safeAmount < 15000.0 -> "7000_14999"
+            safeAmount < 30000.0 -> "15000_29999"
+            else -> "30000_plus"
+        }
     }
 
     suspend fun fetchEndOfDaySavingsPreview(

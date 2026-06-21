@@ -49,3 +49,21 @@ internal data class PermissionOnboardingState(
         return guidedFlowActive && isComplete()
     }
 }
+
+internal fun PermissionStep.isGrantedIn(state: PermissionOnboardingState): Boolean {
+    return when (this) {
+        PermissionStep.SMS -> state.smsGranted
+        PermissionStep.NOTIFICATIONS -> state.notificationsGranted
+        PermissionStep.USAGE -> state.usageGranted
+        PermissionStep.OVERLAY -> state.overlayGranted
+        PermissionStep.COMPLETE -> state.isComplete()
+    }
+}
+
+internal fun PermissionStep.returnLogMessage(state: PermissionOnboardingState): String? {
+    if (this == PermissionStep.COMPLETE) {
+        return null
+    }
+    val outcome = if (isGrantedIn(state)) "granted" else "denied"
+    return "permission_step_${name.lowercase()}_$outcome"
+}

@@ -737,6 +737,13 @@ def test_upi_request_inspect_persists_unified_payment_telemetry(tmp_path, monkey
     assert summary["telemetry_comparison"]["payment_warning"]["generated_count"] >= 1
     assert summary["telemetry_comparison"]["payment_warning"]["action_count"] >= 1
     assert summary["recent_unified_telemetry"][0]["telemetry_family"] == "payment_warning"
+    generated = next(
+        record
+        for record in summary["recent_unified_telemetry"]
+        if record["record_type"] == "generated"
+    )
+    assert "raw_text" not in generated["extensions"]
+    assert generated["extensions"]["redacted_text"] == "Approve collect request of Rs [redacted_code]"
 
 
 def test_upi_request_inspect_persists_account_access_warning_telemetry(tmp_path, monkeypatch):
@@ -786,6 +793,15 @@ def test_upi_request_inspect_persists_account_access_warning_telemetry(tmp_path,
     assert summary["telemetry_comparison"]["account_access_warning"]["generated_count"] >= 1
     assert summary["telemetry_comparison"]["account_access_warning"]["action_count"] >= 1
     assert summary["recent_unified_telemetry"][0]["telemetry_family"] == "account_access_warning"
+    generated = next(
+        record
+        for record in summary["recent_unified_telemetry"]
+        if record["record_type"] == "generated"
+    )
+    assert "raw_text" not in generated["extensions"]
+    serialized = str(generated["extensions"])
+    assert "489647" not in serialized
+    assert "[redacted_code]" in serialized
 
 
 def test_small_bank_like_domain_downgrades_after_benign_context_and_safe_feedback(tmp_path, monkeypatch):

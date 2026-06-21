@@ -3,6 +3,7 @@ package com.arthamantri.android
 import android.Manifest
 import android.app.AlertDialog
 import android.app.AppOpsManager
+import android.content.ComponentName
 import android.content.res.Configuration
 import android.content.Context
 import android.content.Intent
@@ -58,6 +59,8 @@ import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.model.EssentialGoalEnvelopeDto
 import com.arthamantri.android.model.EssentialGoalProfileDto
 import com.arthamantri.android.notify.AlertNotifier
+import com.arthamantri.android.notify.HumanReviewSupportMetadata
+import com.arthamantri.android.notify.TransactionNotificationListenerService
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.savings.SavingsNudgeScheduler
 import com.arthamantri.android.usage.AppUsageForegroundService
@@ -88,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         val whyThisAlert: String,
         val nextSafeAction: String,
         val essentialGoalImpact: String,
+        val humanReviewMetadata: HumanReviewSupportMetadata? = null,
     )
 
     private data class CachedMoneySetupSelection(
@@ -144,6 +148,7 @@ class MainActivity : AppCompatActivity() {
     private var facilitatorStatusRefresh: (() -> Unit)? = null
     private var activeSupportAlertContext: SupportAlertContext? = null
     private var activeHelpDialogSupportContext: SupportAlertContext? = null
+    private val promptedHumanReviewAlertIds = mutableSetOf<String>()
 
     override fun onDestroy() {
         activeFlowDialog?.dismiss()
@@ -197,6 +202,15 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.nav_manage_access -> {
                     toggleManageAccessItems()
+                    true
+                }
+
+                R.id.nav_access_sms -> {
+                    drawerLayout.closeDrawer(GravityCompat.START)
+                    showPermissionSetupDialog(
+                        permissionStepOverride = PermissionStep.SMS,
+                        fromReview = true,
+                    )
                     true
                 }
 
@@ -276,11 +290,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         stopServiceButton.setOnClickListener {
-            stopService(Intent(this, AppUsageForegroundService::class.java))
-            setMonitoringActive(false)
-            refreshPrimaryActionState()
-            toast(getString(R.string.toast_monitor_stopped))
-            sendAppLog("info", "monitor_stopped")
+            stopMonitoring(reason = "user")
         }
 
         loadPilotMeta()
@@ -380,7 +390,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         syncPermissionOnboardingDone()
+        reconcileMonitoringAccess()
         updateLanguageChip()
+        applyDrawerMenuState()
         refreshPrimaryActionState()
         loadEssentialGoalSummary()
         drawerLayout.post {
@@ -562,7 +574,6 @@ class MainActivity : AppCompatActivity() {
         val affordabilityLabel = contentView.findViewById<TextView>(R.id.moneySetupAffordabilityLabel)
         val affordabilitySpinner = contentView.findViewById<Spinner>(R.id.moneySetupAffordabilitySpinner)
         val affordabilityHelp = contentView.findViewById<TextView>(R.id.moneySetupAffordabilityHelp)
-        val currentBalanceInput = contentView.findViewById<EditText>(R.id.moneySetupCurrentBalanceInput)
         val selectedSummary = contentView.findViewById<TextView>(R.id.moneySetupSelectedSummary)
         val seedPreview = contentView.findViewById<TextView>(R.id.moneySetupSeedPreview)
         val goalsContainer = contentView.findViewById<LinearLayout>(R.id.moneySetupGoalsContainer)
@@ -602,11 +613,6 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     cohort.affordabilityPrompt.buckets.getOrNull(index - 1)?.id
                 }
-            }
-
-            fun currentBalanceAmount(): Double? {
-                val text = currentBalanceInput.text?.toString()?.trim().orEmpty()
-                return text.toDoubleOrNull()
             }
 
             fun refreshSelectionPreview() {
@@ -729,7 +735,6 @@ class MainActivity : AppCompatActivity() {
                     affordabilityQuestionKey = plan.affordabilityQuestionKey,
                     affordabilityBucketId = plan.affordabilityBucketId,
                     setupSkipped = false,
-                    currentBalanceAmount = currentBalanceAmount(),
                     dialog = dialog,
                 )
             }
@@ -746,7 +751,6 @@ class MainActivity : AppCompatActivity() {
                     affordabilityQuestionKey = setupConfig.cohort(currentCohort).affordabilityPrompt.questionKey.ifBlank { null },
                     affordabilityBucketId = currentBucketId(),
                     setupSkipped = true,
-                    currentBalanceAmount = currentBalanceAmount(),
                     dialog = dialog,
                 )
             }
@@ -809,6 +813,7 @@ class MainActivity : AppCompatActivity() {
                     setStatus(getString(R.string.status_onboarding_resume))
                     refreshPrimaryActionState()
                     toast(getString(R.string.toast_setup_paused))
+                    sendAppLog("info", "permission_onboarding_deferred")
                 },
             )
             showManagedFlowDialog(dialog, transparentBackground = false)
@@ -1255,9 +1260,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasSmsRuntimePermissions(): Boolean {
-        val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-        val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-        return smsReceive && smsRead
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun hasAppNotificationsEnabled(): Boolean {
@@ -1300,7 +1303,6 @@ class MainActivity : AppCompatActivity() {
         affordabilityQuestionKey: String?,
         affordabilityBucketId: String?,
         setupSkipped: Boolean,
-        currentBalanceAmount: Double?,
         dialog: AlertDialog,
     ) {
         cacheMoneySetupSelection(
@@ -1329,16 +1331,6 @@ class MainActivity : AppCompatActivity() {
                     setupSkipped = setupSkipped,
                 )
             }
-            val balanceResponse = if (goalResponse.isSuccess && currentBalanceAmount != null) {
-                runCatching {
-                    LiteracyRepository.saveCurrentBalance(
-                        context = this@MainActivity,
-                        amount = currentBalanceAmount,
-                    )
-                }
-            } else {
-                null
-            }
             runOnUiThread {
                 goalResponse.onSuccess { saved ->
                     val savedGoals = profileGoals(saved.profile)
@@ -1358,13 +1350,6 @@ class MainActivity : AppCompatActivity() {
                             R.string.toast_money_setup_saved
                         }
                         toast(getString(toastRes))
-                    }
-                    if (currentBalanceAmount != null) {
-                        balanceResponse?.onSuccess {
-                            toast(getString(R.string.toast_current_balance_saved))
-                        }?.onFailure { error ->
-                            sendAppLog("error", "current_balance_save_failed:${error.message}")
-                        }
                     }
                     SavingsNudgeScheduler.scheduleDaily(this@MainActivity)
                     sendAppLog("info", "money_setup_saved:$cohort:${savedGoals.joinToString("|")}")
@@ -1816,9 +1801,6 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             needed.add(Manifest.permission.RECEIVE_SMS)
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            needed.add(Manifest.permission.READ_SMS)
-        }
 
         if (needed.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), AppConstants.RequestCodes.RUNTIME_PERMISSIONS)
@@ -1830,9 +1812,6 @@ class MainActivity : AppCompatActivity() {
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             needed.add(Manifest.permission.RECEIVE_SMS)
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            needed.add(Manifest.permission.READ_SMS)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -2018,6 +1997,32 @@ class MainActivity : AppCompatActivity() {
             toast(e.message ?: getString(R.string.toast_monitor_failed))
             sendAppLog("error", "monitor_start_error:${e.message}")
         }
+    }
+
+    private fun stopMonitoring(reason: String, notifyUser: Boolean = true) {
+        stopService(Intent(this, AppUsageForegroundService::class.java))
+        setMonitoringActive(false)
+        refreshPrimaryActionState()
+        if (notifyUser) {
+            toast(getString(R.string.toast_monitor_stopped))
+        }
+        sendAppLog("info", "monitor_stopped:$reason")
+    }
+
+    private fun reconcileMonitoringAccess() {
+        val permissionState = permissionOnboardingState()
+        val accessState = MonitoringAccessState(
+            monitoringActive = isMonitoringActive(),
+            permissionState = permissionState,
+        )
+        if (!accessState.shouldStopBackgroundMonitoring()) {
+            return
+        }
+
+        stopMonitoring(
+            reason = "permission_lost:${permissionState.nextStep().name.lowercase()}",
+            notifyUser = false,
+        )
     }
 
     private fun handlePrimaryAction() {
@@ -2401,17 +2406,111 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        activeSupportAlertContext = SupportAlertContext(
+        val supportContext = SupportAlertContext(
             alertId = intent.getStringExtra(AppConstants.IntentExtras.ALERT_ID).orEmpty(),
             title = intent.getStringExtra(AppConstants.IntentExtras.ALERT_TITLE) ?: getString(R.string.alert_title_default),
             body = intent.getStringExtra(AppConstants.IntentExtras.ALERT_MESSAGE) ?: getString(R.string.alert_body_default),
             whyThisAlert = intent.getStringExtra(AppConstants.IntentExtras.ALERT_WHY_THIS_ALERT).orEmpty(),
             nextSafeAction = intent.getStringExtra(AppConstants.IntentExtras.ALERT_NEXT_SAFE_ACTION).orEmpty(),
             essentialGoalImpact = intent.getStringExtra(AppConstants.IntentExtras.ALERT_ESSENTIAL_GOAL_IMPACT).orEmpty(),
+            humanReviewMetadata = readHumanReviewMetadata(intent),
         )
+        activeSupportAlertContext = supportContext
         intent.removeExtra(AppConstants.IntentExtras.ALERT_OPEN_SUPPORT_PATH)
         currentHelpDialog?.dismiss()
-        window.decorView.post { showHelpDialog(activeSupportAlertContext) }
+        window.decorView.post {
+            showHelpDialog(supportContext)
+            maybePromptHumanReviewConsent(supportContext)
+        }
+    }
+
+    private fun readHumanReviewMetadata(intent: Intent): HumanReviewSupportMetadata? {
+        if (!intent.getBooleanExtra(AppConstants.IntentExtras.HUMAN_REVIEW_REVIEWABLE, false)) {
+            return null
+        }
+        val redactedSnippet = intent.getStringExtra(AppConstants.IntentExtras.HUMAN_REVIEW_REDACTED_SNIPPET)?.trim().orEmpty()
+        val category = intent.getStringExtra(AppConstants.IntentExtras.HUMAN_REVIEW_CATEGORY)?.trim().orEmpty()
+        val riskLevel = intent.getStringExtra(AppConstants.IntentExtras.HUMAN_REVIEW_RISK_LEVEL)?.trim().orEmpty()
+        val sourceType = intent.getStringExtra(AppConstants.IntentExtras.HUMAN_REVIEW_SOURCE_TYPE)?.trim().orEmpty()
+        val reasonCode = intent.getStringExtra(AppConstants.IntentExtras.HUMAN_REVIEW_REASON_CODE)?.trim().orEmpty()
+        if (redactedSnippet.isBlank() || category.isBlank() || riskLevel.isBlank() || sourceType.isBlank() || reasonCode.isBlank()) {
+            return null
+        }
+        val confidenceScore = if (intent.hasExtra(AppConstants.IntentExtras.HUMAN_REVIEW_CONFIDENCE_SCORE)) {
+            intent.getDoubleExtra(AppConstants.IntentExtras.HUMAN_REVIEW_CONFIDENCE_SCORE, 0.0)
+        } else {
+            null
+        }
+        return HumanReviewSupportMetadata(
+            redactedSnippet = redactedSnippet,
+            category = category,
+            riskLevel = riskLevel,
+            confidenceScore = confidenceScore,
+            reviewable = true,
+            sourceType = sourceType,
+            reasonCode = reasonCode,
+        )
+    }
+
+    private fun maybePromptHumanReviewConsent(supportContext: SupportAlertContext?) {
+        val context = supportContext ?: return
+        if (context.humanReviewMetadata == null) {
+            return
+        }
+        val alertId = context.alertId.trim()
+        if (alertId.isBlank()) {
+            return
+        }
+        if (!promptedHumanReviewAlertIds.add(alertId)) {
+            return
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.human_review_consent_title))
+            .setMessage(getString(R.string.human_review_consent_message))
+            .setPositiveButton(getString(R.string.human_review_consent_share)) { _, _ ->
+                submitConsentedHumanReview(context)
+            }
+            .setNegativeButton(getString(R.string.human_review_consent_not_now)) { _, _ ->
+                sendAppLog("info", "human_review_share_declined:$alertId")
+            }
+            .show()
+    }
+
+    private fun submitConsentedHumanReview(supportContext: SupportAlertContext) {
+        val metadata = supportContext.humanReviewMetadata ?: return
+        val alertId = supportContext.alertId.ifBlank { UUID.randomUUID().toString() }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val response = LiteracyRepository.submitHumanReview(
+                    context = this@MainActivity,
+                    alertId = alertId,
+                    category = metadata.category,
+                    riskLevel = metadata.riskLevel,
+                    confidenceScore = metadata.confidenceScore,
+                    reviewable = metadata.reviewable,
+                    sourceType = metadata.sourceType,
+                    reasonCode = metadata.reasonCode,
+                    redactedSnippet = metadata.redactedSnippet,
+                    consentToShareRedactedContent = true,
+                )
+                runOnUiThread {
+                    toast(
+                        getString(
+                            if (response.queued) {
+                                R.string.toast_human_review_queued
+                            } else {
+                                R.string.toast_human_review_not_queued
+                            }
+                        )
+                    )
+                }
+                sendAppLog("info", "human_review_submit:${response.queued}:${response.sample_id ?: "none"}")
+            } catch (e: Exception) {
+                runOnUiThread { toast(getString(R.string.toast_human_review_failed)) }
+                sendAppLog("error", "human_review_submit_error:${e.message}")
+            }
+        }
     }
 
     private fun bindSupportContextCard(
@@ -2494,14 +2593,35 @@ class MainActivity : AppCompatActivity() {
         navigationView.inflateMenu(menuRes)
         bindManageAccessToggleAction()
         if (accessItemsExpanded) {
-            navigationView.menu.findItem(R.id.nav_access_notifications)?.title =
-                indentedMenuTitle(getString(R.string.menu_access_notifications))
-            navigationView.menu.findItem(R.id.nav_access_usage)?.title =
-                indentedMenuTitle(getString(R.string.menu_access_usage))
-            navigationView.menu.findItem(R.id.nav_access_overlay)?.title =
-                indentedMenuTitle(getString(R.string.menu_access_overlay))
+            val state = permissionOnboardingState()
+            setAccessMenuTitle(R.id.nav_access_sms, getString(R.string.menu_access_sms), state.smsGranted)
+            setAccessMenuTitle(
+                R.id.nav_access_notifications,
+                getString(R.string.menu_access_notifications),
+                state.notificationsGranted,
+            )
+            setAccessMenuTitle(R.id.nav_access_usage, getString(R.string.menu_access_usage), state.usageGranted)
+            setAccessMenuTitle(R.id.nav_access_overlay, getString(R.string.menu_access_overlay), state.overlayGranted)
         }
         navigationView.invalidate()
+    }
+
+    private fun setAccessMenuTitle(itemId: Int, label: String, granted: Boolean) {
+        navigationView.menu.findItem(itemId)?.title = indentedMenuTitle(
+            getString(
+                R.string.menu_access_status,
+                label,
+                permissionStatusLabel(granted),
+            ),
+        )
+    }
+
+    private fun permissionStatusLabel(granted: Boolean): String {
+        return if (granted) {
+            getString(R.string.permission_status_on)
+        } else {
+            getString(R.string.permission_status_off)
+        }
     }
 
     private fun bindManageAccessToggleAction() {
@@ -2609,13 +2729,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun hasNotificationListenerPermission(): Boolean {
         val enabled = Secure.getString(contentResolver, AppConstants.SecureSettings.ENABLED_NOTIFICATION_LISTENERS) ?: return false
-        return enabled.contains(packageName)
+        val expectedComponent = ComponentName(this, TransactionNotificationListenerService::class.java)
+        return enabled.split(':').any { flattened ->
+            ComponentName.unflattenFromString(flattened)?.let { component ->
+                component.packageName == expectedComponent.packageName &&
+                    component.className == expectedComponent.className
+            } == true
+        }
     }
 
     private fun hasSmsAccessEnabled(): Boolean {
-        val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-        val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-        return smsReceive && smsRead
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun setStatus(text: String) {
@@ -2737,12 +2861,23 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val statusText = if (state.nextStep() == OnboardingStep.PERMISSIONS) {
-            permissionOnboardingStatusText(permissionOnboardingState())
-        } else if (state.nextStep() == OnboardingStep.COMPLETE && isMonitoringActive()) {
-            getString(R.string.status_monitoring_active)
-        } else {
-            when (state.homeStatusState()) {
+        val permissionState = permissionOnboardingState()
+        val monitoringAccessState = MonitoringAccessState(
+            monitoringActive = isMonitoringActive(),
+            permissionState = permissionState,
+        )
+        val statusText = when {
+            monitoringAccessState.protectionStatus() == MonitoringProtectionStatus.PARTIAL ->
+                getString(R.string.status_monitoring_partial, permissionStepLabel(permissionState.nextStep()))
+
+            state.nextStep() == OnboardingStep.PERMISSIONS ->
+                permissionOnboardingStatusText(permissionState)
+
+            state.nextStep() == OnboardingStep.COMPLETE &&
+                monitoringAccessState.protectionStatus() == MonitoringProtectionStatus.FULL ->
+                getString(R.string.status_monitoring_active)
+
+            else -> when (state.homeStatusState()) {
                 HomeStatusState.CHOOSE_LANGUAGE -> getString(R.string.status_onboarding_language)
                 HomeStatusState.REVIEW_CONSENT -> getString(R.string.status_onboarding_consent)
                 HomeStatusState.SETUP_PAUSED -> getString(R.string.status_onboarding_resume)
@@ -2763,6 +2898,7 @@ class MainActivity : AppCompatActivity() {
 
         clearPendingPermissionSettingsStep()
         val nextOnboardingStep = onboardingEntryState(prefs).nextStep()
+        val stateAfterReturn = permissionOnboardingState()
         when (pendingStep) {
             PermissionStep.NOTIFICATIONS -> if (nextOnboardingStep != OnboardingStep.PERMISSIONS) return
             PermissionStep.USAGE -> if (nextOnboardingStep != OnboardingStep.PERMISSIONS) return
@@ -2772,6 +2908,7 @@ class MainActivity : AppCompatActivity() {
             ) return
             else -> return
         }
+        logPermissionReturn(pendingStep, stateAfterReturn)
 
         when (pendingStep) {
             PermissionStep.NOTIFICATIONS -> {
@@ -2868,6 +3005,10 @@ class MainActivity : AppCompatActivity() {
                 val allGranted = grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED }
                 val guidedFlowActive = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
                     .getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)
+                val stateAfterReturn = permissionOnboardingState()
+                if (permissions.any { it == Manifest.permission.RECEIVE_SMS }) {
+                    logPermissionReturn(PermissionStep.SMS, stateAfterReturn)
+                }
                 if (allGranted &&
                     guidedFlowActive &&
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -2923,6 +3064,12 @@ class MainActivity : AppCompatActivity() {
             .edit()
             .remove(AppConstants.Prefs.KEY_PENDING_PERMISSION_SETTINGS_STEP)
             .apply()
+    }
+
+    private fun logPermissionReturn(step: PermissionStep, state: PermissionOnboardingState) {
+        val message = step.returnLogMessage(state) ?: return
+        val level = if (message.endsWith("_granted")) "info" else "warn"
+        sendAppLog(level, message)
     }
 
     private fun isMonitoringActive(): Boolean {

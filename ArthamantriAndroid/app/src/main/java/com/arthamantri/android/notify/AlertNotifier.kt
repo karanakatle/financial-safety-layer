@@ -74,6 +74,9 @@ object AlertNotifier {
         alertFamily: String? = null,
         showUsefulnessFeedback: Boolean = false,
         useFocusedPaymentActions: Boolean = false,
+        allowOverlay: Boolean = true,
+        feedbackMetadata: AlertFeedbackMetadata? = null,
+        humanReviewMetadata: HumanReviewSupportMetadata? = null,
     ) {
         ensureChannel(context)
         val resolvedSeverity = normalizeSeverity(severity)
@@ -88,7 +91,12 @@ object AlertNotifier {
         mainHandler.post {
             val resolvedAlertId = alertId ?: java.util.UUID.randomUUID().toString()
             val keyguardManager = context.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            val keyguardLocked = keyguardManager.isKeyguardLocked
             val canDrawOverlays = Build.VERSION.SDK_INT < Build.VERSION_CODES.M || Settings.canDrawOverlays(context)
+            val canAttemptInterruptiveUi = AlertInterruptiveUiPolicy.shouldAttempt(
+                allowOverlay = allowOverlay,
+                keyguardLocked = keyguardLocked,
+            )
             DebugObservability.traceAsync(
                 context = context,
                 tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
@@ -98,21 +106,21 @@ object AlertNotifier {
                     "severity" to resolvedSeverity,
                     "alert_family" to alertFamily,
                     "can_draw_overlays" to canDrawOverlays.toString(),
-                    "keyguard_locked" to keyguardManager.isKeyguardLocked.toString(),
+                    "keyguard_locked" to keyguardLocked.toString(),
                     "use_focused_payment_actions" to useFocusedPaymentActions.toString(),
+                    "allow_overlay" to allowOverlay.toString(),
                 ),
             )
-            if (keyguardManager.isKeyguardLocked) {
+            if (allowOverlay && keyguardLocked) {
                 DebugObservability.traceAsync(
                     context = context,
                     tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
-                    event = "alert_show_aborted",
+                    event = "alert_interruptive_ui_suppressed",
                     fields = mapOf(
                         "alert_id" to resolvedAlertId,
                         "reason" to "keyguard_locked",
                     ),
                 )
-                return@post
             }
             val alertIntent = buildAlertIntent(
                 context = context,
@@ -130,19 +138,23 @@ object AlertNotifier {
                 alertFamily = alertFamily,
                 showUsefulnessFeedback = showUsefulnessFeedback,
                 useFocusedPaymentActions = useFocusedPaymentActions,
+                feedbackMetadata = feedbackMetadata,
+                humanReviewMetadata = humanReviewMetadata,
             )
 
-            DebugObservability.traceAsync(
-                context = context,
-                tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
-                event = "alert_overlay_attempted",
-                fields = mapOf(
-                    "alert_id" to resolvedAlertId,
-                    "can_draw_overlays" to canDrawOverlays.toString(),
-                ),
-            )
+            if (canAttemptInterruptiveUi) {
+                DebugObservability.traceAsync(
+                    context = context,
+                    tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                    event = "alert_overlay_attempted",
+                    fields = mapOf(
+                        "alert_id" to resolvedAlertId,
+                        "can_draw_overlays" to canDrawOverlays.toString(),
+                    ),
+                )
+            }
 
-            val overlayShown = if (canDrawOverlays) {
+            val overlayShown = if (canAttemptInterruptiveUi && canDrawOverlays) {
                 OverlayAlertWindow.show(
                     context = context,
                     alertId = resolvedAlertId,
@@ -159,23 +171,27 @@ object AlertNotifier {
                     alertFamily = alertFamily,
                     showUsefulnessFeedback = showUsefulnessFeedback,
                     useFocusedPaymentActions = useFocusedPaymentActions,
+                    feedbackMetadata = feedbackMetadata,
+                    humanReviewMetadata = humanReviewMetadata,
                 )
             } else {
                 false
             }
 
-            DebugObservability.traceAsync(
-                context = context,
-                tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
-                event = "alert_overlay_result",
-                fields = mapOf(
-                    "alert_id" to resolvedAlertId,
-                    "overlay_shown" to overlayShown.toString(),
-                    "can_draw_overlays" to canDrawOverlays.toString(),
-                ),
-            )
+            if (canAttemptInterruptiveUi) {
+                DebugObservability.traceAsync(
+                    context = context,
+                    tag = AppConstants.LogTags.DEBUG_OBSERVABILITY,
+                    event = "alert_overlay_result",
+                    fields = mapOf(
+                        "alert_id" to resolvedAlertId,
+                        "overlay_shown" to overlayShown.toString(),
+                        "can_draw_overlays" to canDrawOverlays.toString(),
+                    ),
+                )
+            }
 
-            if (!overlayShown) {
+            if (canAttemptInterruptiveUi && !overlayShown) {
                 // Fallback when overlay permission is absent or blocked.
                 val fallbackStarted = runCatching {
                     context.startActivity(alertIntent)
@@ -218,6 +234,8 @@ object AlertNotifier {
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
+        feedbackMetadata: AlertFeedbackMetadata? = null,
+        humanReviewMetadata: HumanReviewSupportMetadata? = null,
     ) {
         ensureChannel(context)
         val resolvedSeverity = normalizeSeverity(severity)
@@ -244,6 +262,8 @@ object AlertNotifier {
             alertFamily = alertFamily,
             showUsefulnessFeedback = showUsefulnessFeedback,
             useFocusedPaymentActions = useFocusedPaymentActions,
+            feedbackMetadata = feedbackMetadata,
+            humanReviewMetadata = humanReviewMetadata,
         )
         postAlertNotification(
             context = context,
@@ -271,6 +291,8 @@ object AlertNotifier {
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
+        feedbackMetadata: AlertFeedbackMetadata?,
+        humanReviewMetadata: HumanReviewSupportMetadata?,
     ): Intent {
         return Intent(context, AlertDisplayActivity::class.java).apply {
             putExtra(AlertDisplayActivity.EXTRA_TITLE, title)
@@ -290,6 +312,19 @@ object AlertNotifier {
             putExtra(AlertDisplayActivity.EXTRA_ALERT_FAMILY, alertFamily)
             putExtra(AlertDisplayActivity.EXTRA_SHOW_USEFULNESS_FEEDBACK, showUsefulnessFeedback)
             putExtra(AlertDisplayActivity.EXTRA_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)
+            putExtra(AlertDisplayActivity.EXTRA_FEEDBACK_CATEGORY, feedbackMetadata?.category)
+            putExtra(AlertDisplayActivity.EXTRA_FEEDBACK_RISK_LEVEL, feedbackMetadata?.riskLevel)
+            putExtra(AlertDisplayActivity.EXTRA_FEEDBACK_SOURCE_TYPE, feedbackMetadata?.sourceType)
+            putExtra(AlertDisplayActivity.EXTRA_FEEDBACK_REASON_CODE, feedbackMetadata?.reasonCode)
+            putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_REDACTED_SNIPPET, humanReviewMetadata?.redactedSnippet)
+            putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_CATEGORY, humanReviewMetadata?.category)
+            putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_RISK_LEVEL, humanReviewMetadata?.riskLevel)
+            humanReviewMetadata?.confidenceScore?.let {
+                putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_CONFIDENCE_SCORE, it)
+            }
+            putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_REVIEWABLE, humanReviewMetadata?.reviewable ?: false)
+            putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_SOURCE_TYPE, humanReviewMetadata?.sourceType)
+            putExtra(AlertDisplayActivity.EXTRA_HUMAN_REVIEW_REASON_CODE, humanReviewMetadata?.reasonCode)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
     }
@@ -406,4 +441,5 @@ object AlertNotifier {
             )
         }
     }
+
 }

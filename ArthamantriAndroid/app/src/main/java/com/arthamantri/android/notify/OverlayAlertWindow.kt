@@ -36,6 +36,8 @@ object OverlayAlertWindow {
     private var currentShowUsefulnessFeedback: Boolean = false
     private var currentUseFocusedPaymentActions: Boolean = false
     private var currentPauseSeconds: Int = 0
+    private var currentFeedbackMetadata: AlertFeedbackMetadata? = null
+    private var currentHumanReviewMetadata: HumanReviewSupportMetadata? = null
 
     fun show(
         context: Context,
@@ -53,6 +55,8 @@ object OverlayAlertWindow {
         alertFamily: String? = null,
         showUsefulnessFeedback: Boolean = false,
         useFocusedPaymentActions: Boolean = false,
+        feedbackMetadata: AlertFeedbackMetadata? = null,
+        humanReviewMetadata: HumanReviewSupportMetadata? = null,
     ): Boolean {
         if (!canShowOverlay(context)) {
             return false
@@ -80,6 +84,8 @@ object OverlayAlertWindow {
                 alertFamily = alertFamily,
                 showUsefulnessFeedback = showUsefulnessFeedback,
                 useFocusedPaymentActions = useFocusedPaymentActions,
+                feedbackMetadata = feedbackMetadata,
+                humanReviewMetadata = humanReviewMetadata,
             )
             return true
         }
@@ -110,6 +116,8 @@ object OverlayAlertWindow {
         currentShowUsefulnessFeedback = showUsefulnessFeedback
         currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
+        currentFeedbackMetadata = feedbackMetadata
+        currentHumanReviewMetadata = humanReviewMetadata
 
         bindActionMode(
             view = view,
@@ -171,6 +179,8 @@ object OverlayAlertWindow {
         alertFamily: String?,
         showUsefulnessFeedback: Boolean,
         useFocusedPaymentActions: Boolean,
+        feedbackMetadata: AlertFeedbackMetadata?,
+        humanReviewMetadata: HumanReviewSupportMetadata?,
     ) {
         val view = overlayView ?: return
         val isNewAlert = currentAlertId != alertId
@@ -191,6 +201,8 @@ object OverlayAlertWindow {
         currentShowUsefulnessFeedback = showUsefulnessFeedback
         currentUseFocusedPaymentActions = useFocusedPaymentActions
         currentPauseSeconds = pauseSeconds
+        currentFeedbackMetadata = feedbackMetadata
+        currentHumanReviewMetadata = humanReviewMetadata
         view.findViewById<TextView>(R.id.overlayAlertTitle).text = title
         view.findViewById<TextView>(R.id.overlayAlertMessage).text = message
         applySeverityStyle(view, severity)
@@ -501,6 +513,7 @@ object OverlayAlertWindow {
             focusedActionLabels = currentFocusedActionLabels,
             proceedConfirmationLabel = currentProceedConfirmationLabel,
             useFocusedPaymentActions = currentUseFocusedPaymentActions,
+            humanReviewMetadata = currentHumanReviewMetadata,
         )
 
         if (!launched) {
@@ -526,6 +539,7 @@ object OverlayAlertWindow {
             channel = "overlay_window",
             title = currentTitle,
             message = buildCurrentReportMessage(),
+            metadata = currentFeedbackMetadata,
         )
     }
 
@@ -562,6 +576,8 @@ object OverlayAlertWindow {
         currentShowUsefulnessFeedback = false
         currentUseFocusedPaymentActions = false
         currentPauseSeconds = 0
+        currentFeedbackMetadata = null
+        currentHumanReviewMetadata = null
     }
 
     private fun postReturnPathNotification(context: Context) {
@@ -582,6 +598,8 @@ object OverlayAlertWindow {
             alertFamily = currentAlertFamily.ifBlank { null },
             showUsefulnessFeedback = currentShowUsefulnessFeedback,
             useFocusedPaymentActions = currentUseFocusedPaymentActions,
+            feedbackMetadata = currentFeedbackMetadata,
+            humanReviewMetadata = currentHumanReviewMetadata,
         )
     }
 

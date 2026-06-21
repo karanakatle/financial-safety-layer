@@ -4,10 +4,18 @@ from __future__ import annotations
 LITERACY_MESSAGE_CATALOG = {
     "en": {
         "pilot_disclaimer": (
-            "Arthamantri is a research prototype for financial literacy and safety nudges. "
+            "FinSaathi provides financial literacy and safety nudges. "
             "It is not investment advice, not a regulated advisory service, and may make mistakes. "
             "Use your judgement before making payments."
         ),
+        "ai_guardrail_refusal": (
+            "I cannot recommend loans, investments, lenders, apps, cards, or financial products. "
+            "Use this as a safety check only, verify through an official source, and speak to a qualified person for regulated advice."
+        ),
+        "ai_uncertain_verify_suffix": (
+            "Because this is uncertain, verify through an official source or trusted person before acting."
+        ),
+        "ai_non_advisory_suffix": "This is not financial advice.",
         "labels": {
             "risk": "Risk level",
             "why": "Why this alert",
@@ -119,7 +127,7 @@ LITERACY_MESSAGE_CATALOG = {
             "unknown_payee_or_unusual_amount": {
                 "message_template": "This request involves an unfamiliar payee or an amount that looks unusual. {direction_line} Pause before you approve it.",
                 "why": (
-                    "Arthamantri could not match a clearly known payee, or the amount is large enough"
+                    "FinSaathi could not match a clearly known payee, or the amount is large enough"
                     " to deserve manual verification."
                 ),
                 "next": "Verify the payee name and amount on a separate channel. Decline if anything feels unexpected.",
@@ -127,7 +135,7 @@ LITERACY_MESSAGE_CATALOG = {
             "unknown": {
                 "message_with_context_template": "This request is not fully clear yet. Pause and verify before you approve it. {direction_line}",
                 "message_without_context_template": "This payment request could not be read clearly. Pause and verify before you approve it. {direction_line}",
-                "why": "Arthamantri could not confidently interpret what this payment will do, so it is showing a cautious warning.",
+                "why": "FinSaathi could not confidently interpret what this payment will do, so it is showing a cautious warning.",
                 "next": "Pause and verify the request source before continuing.",
             },
             "account_access_risk": {
@@ -145,7 +153,7 @@ LITERACY_MESSAGE_CATALOG = {
                 "why_suffix_cross_user_reputation": "Similar risk signals have also appeared for this entity across participants.",
             },
             "direction_line_outgoing": "If you approve, money can go out from your account.",
-            "direction_line_fallback": "Arthamantri still cannot confirm whether this will send money or receive money.",
+            "direction_line_fallback": "FinSaathi still cannot confirm whether this will send money or receive money.",
             "risky_link_suffix": "This request followed a risky link click, which increases the chance of a scam flow.",
             "sequence_suffix_strong": "Recent app activity also matches a scam-like chain in the last few minutes.",
             "sequence_suffix_medium": "Recent app activity around this request adds more risk context.",
@@ -153,10 +161,18 @@ LITERACY_MESSAGE_CATALOG = {
     },
     "hi": {
         "pilot_disclaimer": (
-            "अर्थमंत्री वित्तीय साक्षरता और सुरक्षा संकेतों के लिए एक शोध प्रोटोटाइप है। "
+            "FinSaathi वित्तीय साक्षरता और सुरक्षा संकेत देता है। "
             "यह निवेश सलाह नहीं है, कोई विनियमित सलाह सेवा नहीं है, और इसमें त्रुटि हो सकती है। "
             "भुगतान करने से पहले अपना विवेक जरूर लगाएं।"
         ),
+        "ai_guardrail_refusal": (
+            "मैं loan, investment, lender, app, card या financial product recommend नहीं कर सकता। "
+            "इसे केवल safety check समझें, official source से verify करें, और regulated advice के लिए qualified व्यक्ति से बात करें।"
+        ),
+        "ai_uncertain_verify_suffix": (
+            "क्योंकि यह पूरी तरह निश्चित नहीं है, आगे बढ़ने से पहले official source या trusted व्यक्ति से verify करें।"
+        ),
+        "ai_non_advisory_suffix": "यह financial advice नहीं है।",
         "labels": {
             "risk": "जोखिम स्तर",
             "why": "क्यों दिखा",
@@ -265,7 +281,7 @@ LITERACY_MESSAGE_CATALOG = {
             "unknown_payee_or_unusual_amount": {
                 "message_template": "यह अनुरोध किसी अनजान प्राप्तकर्ता या असामान्य राशि जैसा दिख रहा है। {direction_line} मंजूरी देने से पहले रुककर जांच लें.",
                 "why": (
-                    "अर्थमंत्री को प्राप्तकर्ता की साफ पहचान नहीं मिली या राशि इतनी अलग दिखी कि"
+                    "FinSaathi को प्राप्तकर्ता की साफ पहचान नहीं मिली या राशि इतनी अलग दिखी कि"
                     " हाथ से सत्यापन जरूरी हो गया।"
                 ),
                 "next": "प्राप्तकर्ता का नाम और राशि अलग से पुष्टि करें। कुछ भी अजीब लगे तो अस्वीकार करें।",

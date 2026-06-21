@@ -4,6 +4,9 @@ import json
 import sqlite3
 from pathlib import Path
 
+from backend.literacy.balance_savings import coarsen_balance_amount, coarsen_balance_band
+from backend.pilot.redaction import redact_sensitive_text, safe_review_surface_record
+
 
 class PilotStorage:
     def __init__(self, db_path: str = "data/pilot_research.db") -> None:
@@ -260,6 +263,11 @@ class PilotStorage:
                 CREATE TABLE IF NOT EXISTS current_balance (
                     participant_id TEXT PRIMARY KEY,
                     amount REAL NOT NULL,
+                    balance_band_id TEXT,
+                    amount_lower_bound REAL,
+                    amount_upper_bound REAL,
+                    amount_precision TEXT NOT NULL DEFAULT 'coarse_band',
+                    exact_amount_stored INTEGER NOT NULL DEFAULT 0,
                     source TEXT NOT NULL,
                     captured_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
@@ -269,6 +277,11 @@ class PilotStorage:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     participant_id TEXT NOT NULL,
                     amount REAL NOT NULL,
+                    balance_band_id TEXT,
+                    amount_lower_bound REAL,
+                    amount_upper_bound REAL,
+                    amount_precision TEXT NOT NULL DEFAULT 'coarse_band',
+                    exact_amount_stored INTEGER NOT NULL DEFAULT 0,
                     source TEXT NOT NULL,
                     captured_at TEXT NOT NULL,
                     replaced_at TEXT NOT NULL
@@ -410,6 +423,16 @@ class PilotStorage:
             self._ensure_column(conn, "essential_goal_profile", "affordability_bucket_id TEXT")
             self._ensure_column(conn, "essential_goal_profile", "ranking_metadata_json TEXT NOT NULL DEFAULT '{}'")
             self._ensure_column(conn, "essential_goal_profile", "config_version TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "current_balance", "balance_band_id TEXT")
+            self._ensure_column(conn, "current_balance", "amount_lower_bound REAL")
+            self._ensure_column(conn, "current_balance", "amount_upper_bound REAL")
+            self._ensure_column(conn, "current_balance", "amount_precision TEXT NOT NULL DEFAULT 'coarse_band'")
+            self._ensure_column(conn, "current_balance", "exact_amount_stored INTEGER NOT NULL DEFAULT 0")
+            self._ensure_column(conn, "current_balance_history", "balance_band_id TEXT")
+            self._ensure_column(conn, "current_balance_history", "amount_lower_bound REAL")
+            self._ensure_column(conn, "current_balance_history", "amount_upper_bound REAL")
+            self._ensure_column(conn, "current_balance_history", "amount_precision TEXT NOT NULL DEFAULT 'coarse_band'")
+            self._ensure_column(conn, "current_balance_history", "exact_amount_stored INTEGER NOT NULL DEFAULT 0")
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_app_logs_event_id ON app_logs(event_id) WHERE event_id IS NOT NULL"
             )
@@ -436,6 +459,18 @@ class PilotStorage:
         except json.JSONDecodeError:
             return {}
         return parsed if isinstance(parsed, dict) else {}
+
+    def _safe_enum_value(self, value: object, *, allowed: set[str], default: str = "unknown") -> str:
+        normalized = str(value or "").strip().lower()
+        normalized = "_".join(part for part in normalized.replace("-", "_").split("_") if part)
+        return normalized if normalized in allowed else default
+
+    def _safe_identifier(self, value: object, *, default: str = "unknown") -> str:
+        redacted = redact_sensitive_text(str(value or ""), max_length=80).strip()
+        if not redacted or "[redacted" in redacted.lower():
+            return default
+        safe = "".join(ch for ch in redacted.lower() if ch.isalnum() or ch in {"-", "_", ".", ":"})
+        return safe[:80] if safe else default
 
     def _parse_json_list(self, value: str | None) -> list:
         if not value:
@@ -586,6 +621,204 @@ class PilotStorage:
             "by_classification": by_classification,
             "by_message_family": by_message_family,
             "by_domain_class": by_domain_class,
+        }
+
+    def permission_trust_summary(self, participant_id: str | None = None) -> dict:
+        steps = ("sms", "notifications", "usage", "overlay")
+        outcomes = ("prompted", "granted", "denied")
+        by_step = {
+            step: {
+                "prompted_count": 0,
+                "granted_count": 0,
+                "denied_count": 0,
+                "participant_count": 0,
+                "latest_timestamp": None,
+                "_participants": set(),
+                "_denied_participants": set(),
+                "_granted_participants": set(),
+            }
+            for step in steps
+        }
+        overlay_reactions: dict[str, dict] = {}
+        participant_ids: set[str] = set()
+        intro_deferred_participants: set[str] = set()
+        intro_deferred_count = 0
+        intro_deferred_latest_timestamp = None
+
+        clauses = [
+            "(message LIKE 'permission_step_%' OR message LIKE 'overlay_reaction_%' OR message='permission_onboarding_deferred')"
+        ]
+        params: list[object] = []
+        if participant_id:
+            clauses.append("participant_id=?")
+            params.append(participant_id)
+        where_sql = " AND ".join(clauses)
+
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT participant_id, message, timestamp
+                FROM app_logs
+                WHERE {where_sql}
+                ORDER BY id DESC
+                """,
+                tuple(params),
+            ).fetchall()
+
+        for row in rows:
+            current_participant = str(row["participant_id"] or "").strip() or "unknown"
+            message = str(row["message"] or "").strip().lower()
+            timestamp = row["timestamp"]
+
+            if message == "permission_onboarding_deferred":
+                participant_ids.add(current_participant)
+                intro_deferred_participants.add(current_participant)
+                intro_deferred_count += 1
+                if timestamp and (
+                    intro_deferred_latest_timestamp is None or str(timestamp) > str(intro_deferred_latest_timestamp)
+                ):
+                    intro_deferred_latest_timestamp = timestamp
+                continue
+
+            if message.startswith("permission_step_"):
+                parts = message.split("_")
+                if len(parts) != 4:
+                    continue
+                step = parts[2]
+                outcome = parts[3]
+                if step not in by_step or outcome not in outcomes:
+                    continue
+                participant_ids.add(current_participant)
+                bucket = by_step[step]
+                bucket[f"{outcome}_count"] += 1
+                bucket["_participants"].add(current_participant)
+                if outcome == "granted":
+                    bucket["_granted_participants"].add(current_participant)
+                if outcome == "denied":
+                    bucket["_denied_participants"].add(current_participant)
+                if timestamp and (
+                    bucket["latest_timestamp"] is None or str(timestamp) > str(bucket["latest_timestamp"])
+                ):
+                    bucket["latest_timestamp"] = timestamp
+                continue
+
+            if message.startswith("overlay_reaction_"):
+                reaction = message.removeprefix("overlay_reaction_").strip()
+                if reaction not in {"useful", "irritating", "scary", "confusing"}:
+                    continue
+                participant_ids.add(current_participant)
+                bucket = overlay_reactions.setdefault(
+                    reaction,
+                    {
+                        "reaction": reaction,
+                        "count": 0,
+                        "participant_count": 0,
+                        "latest_timestamp": None,
+                        "_participants": set(),
+                    },
+                )
+                bucket["count"] += 1
+                bucket["_participants"].add(current_participant)
+                if timestamp and (
+                    bucket["latest_timestamp"] is None or str(timestamp) > str(bucket["latest_timestamp"])
+                ):
+                    bucket["latest_timestamp"] = timestamp
+
+        denied_participants: set[str] = set()
+        public_by_step = {}
+        denied_participants.update(intro_deferred_participants)
+        for step, bucket in by_step.items():
+            denied_participants.update(bucket["_denied_participants"])
+            public_by_step[step] = {
+                "prompted_count": bucket["prompted_count"],
+                "granted_count": bucket["granted_count"],
+                "denied_count": bucket["denied_count"],
+                "participant_count": len(bucket["_participants"]),
+                "denied_participant_count": len(bucket["_denied_participants"]),
+                "latest_timestamp": bucket["latest_timestamp"],
+            }
+
+        drop_off_points = [
+            {
+                "step": step,
+                "denied_count": bucket["denied_count"],
+                "denied_participant_count": len(bucket["_denied_participants"]),
+                "latest_timestamp": bucket["latest_timestamp"],
+            }
+            for step, bucket in by_step.items()
+            if bucket["denied_count"] > 0
+        ]
+        if intro_deferred_count > 0:
+            drop_off_points.append(
+                {
+                    "step": "permission_intro",
+                    "denied_count": intro_deferred_count,
+                    "denied_participant_count": len(intro_deferred_participants),
+                    "latest_timestamp": intro_deferred_latest_timestamp,
+                }
+            )
+        drop_off_points.sort(
+            key=lambda item: (
+                -int(item["denied_count"]),
+                -int(item["denied_participant_count"]),
+                str(item.get("latest_timestamp") or ""),
+            )
+        )
+
+        public_overlay_reactions = []
+        for bucket in overlay_reactions.values():
+            public_overlay_reactions.append(
+                {
+                    "reaction": bucket["reaction"],
+                    "count": bucket["count"],
+                    "participant_count": len(bucket["_participants"]),
+                    "latest_timestamp": bucket["latest_timestamp"],
+                }
+            )
+        public_overlay_reactions.sort(
+            key=lambda item: (-int(item["count"]), str(item.get("reaction") or ""))
+        )
+
+        sample_size = len(participant_ids)
+        fully_granted_participants = {
+            participant
+            for participant in participant_ids
+            if participant not in intro_deferred_participants
+            and all(participant in by_step[step]["_granted_participants"] for step in steps)
+            and all(participant not in by_step[step]["_denied_participants"] for step in steps)
+        }
+        incomplete_after_prompt_participants = participant_ids - fully_granted_participants
+        dropoff_ratio = round(len(incomplete_after_prompt_participants) / sample_size, 4) if sample_size else 0.0
+        if sample_size < 5:
+            recommended_install_motion = "collect_more_data"
+        elif dropoff_ratio >= 0.5:
+            recommended_install_motion = "partner_led_install_recommended"
+        elif dropoff_ratio > 0:
+            recommended_install_motion = "assisted_install_recommended"
+        else:
+            recommended_install_motion = "direct_install_candidate"
+
+        return {
+            "sample_size": sample_size,
+            "target_sample_range": "5-10",
+            "by_step": public_by_step,
+            "drop_off_points": drop_off_points,
+            "overlay_reactions": public_overlay_reactions,
+            "decision_support": {
+                "minimum_sample_met": sample_size >= 5,
+                "intro_deferred_count": intro_deferred_count,
+                "intro_deferred_participant_count": len(intro_deferred_participants),
+                "denied_participant_count": len(denied_participants),
+                "fully_granted_participant_count": len(fully_granted_participants),
+                "incomplete_after_prompt_count": len(incomplete_after_prompt_participants),
+                "dropoff_ratio": dropoff_ratio,
+                "recommended_install_motion": recommended_install_motion,
+                "decision_options": [
+                    "direct_install_candidate",
+                    "assisted_install_recommended",
+                    "partner_led_install_recommended",
+                ],
+            },
         }
 
     def upsert_review_sample(
@@ -796,6 +1029,222 @@ class PilotStorage:
                 tuple(params),
             ).fetchall()
         return [self._parse_review_sample_row(row) for row in rows]
+
+    def export_detector_alert_feedback(self, *, limit: int = 1000) -> list[dict]:
+        allowed_categories = {
+            "benign_or_routine",
+            "generic_promotion",
+            "upfront_fee_risk",
+            "sensitive_data_request",
+            "kyc_account_block_pressure",
+            "guaranteed_return_scheme",
+            "unknown_link_money_pressure",
+            "unknown",
+        }
+        allowed_source_types = {
+            "app",
+            "fullscreen_activity",
+            "notification",
+            "overlay",
+            "overlay_window",
+            "sms",
+            "unknown",
+        }
+        allowed_risk_levels = {"green", "yellow", "red", "low", "medium", "high", "critical", "unknown"}
+        allowed_feedback = {
+            "useful",
+            "not_useful",
+            "dismissed",
+            "pause",
+            "decline",
+            "proceed",
+            "backed_out",
+            "backgrounded",
+            "replaced",
+            "trusted_person_requested",
+            "trusted_person_launched",
+            "trusted_person_failed",
+            "support_requested",
+            "support_opened",
+            "support_failed",
+            "unknown",
+        }
+        allowed_reason_codes = {
+            "blank",
+            "generic_financial_promotion",
+            "kyc_or_account_pressure",
+            "link_with_money_pressure",
+            "no_risk_pattern",
+            "pay_before_benefit",
+            "routine_financial_message",
+            "sensitive_data_requested",
+            "unrealistic_return_promise",
+            "upfront_fee_with_income_promise",
+            "unknown",
+        }
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT alert_id, category, source, timestamp, risk_level, reason,
+                       action, extensions_json
+                FROM unified_telemetry
+                WHERE event_name='alert_feedback'
+                  AND telemetry_family='financial_risk'
+                ORDER BY id DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+
+        records: list[dict] = []
+        for row in rows:
+            extensions = self._parse_json_object(row["extensions_json"])
+            source_type = extensions.get("source_type") or row["source"]
+            records.append(
+                {
+                    "alert_id": self._safe_identifier(row["alert_id"]),
+                    "category": self._safe_enum_value(row["category"], allowed=allowed_categories),
+                    "source_type": self._safe_enum_value(source_type, allowed=allowed_source_types),
+                    "risk_level": self._safe_enum_value(row["risk_level"], allowed=allowed_risk_levels),
+                    "feedback": self._safe_enum_value(row["action"], allowed=allowed_feedback),
+                    "reason_code": self._safe_enum_value(row["reason"], allowed=allowed_reason_codes),
+                    "timestamp": row["timestamp"],
+                }
+            )
+        return records
+
+    def detector_calibration_summary(self, *, limit: int = 500, top_n: int = 5) -> dict:
+        safe_top_n = max(1, min(int(top_n or 5), 20))
+        feedback_records = self.export_detector_alert_feedback(limit=limit)
+        false_positive_actions = {"not_useful", "dismissed"}
+        false_positive_buckets: dict[tuple[str, str, str, str], dict] = {}
+
+        for record in feedback_records:
+            feedback = str(record.get("feedback") or "").strip().lower()
+            if feedback not in false_positive_actions:
+                continue
+            key = (
+                str(record.get("category") or "unknown").strip() or "unknown",
+                str(record.get("source_type") or "unknown").strip() or "unknown",
+                str(record.get("risk_level") or "unknown").strip() or "unknown",
+                str(record.get("reason_code") or "unknown").strip() or "unknown",
+            )
+            bucket = false_positive_buckets.setdefault(
+                key,
+                {
+                    "category": key[0],
+                    "source_type": key[1],
+                    "risk_level": key[2],
+                    "reason_code": key[3],
+                    "count": 0,
+                    "latest_timestamp": None,
+                    "feedback_actions": set(),
+                },
+            )
+            bucket["count"] += 1
+            bucket["feedback_actions"].add(feedback)
+            timestamp = record.get("timestamp")
+            if timestamp and (
+                bucket["latest_timestamp"] is None or str(timestamp) > str(bucket["latest_timestamp"])
+            ):
+                bucket["latest_timestamp"] = timestamp
+
+        top_false_positives = [
+            {
+                **{key: value for key, value in bucket.items() if key != "feedback_actions"},
+                "feedback_actions": sorted(bucket["feedback_actions"]),
+            }
+            for bucket in sorted(
+                false_positive_buckets.values(),
+                key=lambda item: (-int(item["count"]), str(item.get("latest_timestamp") or "")),
+            )[:safe_top_n]
+        ]
+
+        false_negative_rows = self._detector_false_negative_candidate_rows(limit=limit)
+        false_negative_buckets: dict[tuple[str, str, str], dict] = {}
+        for row in false_negative_rows:
+            key = (
+                str(row.get("label") or "unknown").strip() or "unknown",
+                str(row.get("heuristic_classification") or "unknown").strip() or "unknown",
+                str(row.get("alert_family") or "unknown").strip() or "unknown",
+            )
+            bucket = false_negative_buckets.setdefault(
+                key,
+                {
+                    "label": key[0],
+                    "heuristic_classification": key[1],
+                    "alert_family": key[2],
+                    "count": 0,
+                    "latest_timestamp": None,
+                    "sample_ids": [],
+                },
+            )
+            bucket["count"] += 1
+            sample_id = str(row.get("sample_id") or "").strip()
+            if sample_id and len(bucket["sample_ids"]) < 5:
+                bucket["sample_ids"].append(sample_id)
+            timestamp = row.get("reviewed_at") or row.get("updated_at")
+            if timestamp and (
+                bucket["latest_timestamp"] is None or str(timestamp) > str(bucket["latest_timestamp"])
+            ):
+                bucket["latest_timestamp"] = timestamp
+
+        top_false_negatives = sorted(
+            false_negative_buckets.values(),
+            key=lambda item: (-int(item["count"]), str(item.get("latest_timestamp") or "")),
+        )[:safe_top_n]
+
+        return {
+            "feedback_sample_size": len(feedback_records),
+            "review_sample_size": len(false_negative_rows),
+            "review_categories": [
+                {
+                    "id": "false_positive_candidate",
+                    "definition": "Detector alert was shown, but the participant marked it not useful or dismissed it.",
+                    "review_action": "Confirm whether this was genuinely benign; if yes, add a benign suppression regression test.",
+                },
+                {
+                    "id": "false_negative_candidate",
+                    "definition": "Reviewed ground-truth sample is risky, but the detector heuristic looked benign, generic, unknown, or blank.",
+                    "review_action": "Add the missed scam pattern to detector fixtures as a regression sample.",
+                },
+            ],
+            "top_false_positives": top_false_positives,
+            "top_false_negatives": top_false_negatives,
+            "weekly_review_steps": [
+                "Review top false-positive candidates by category, source type, risk level, and reason code.",
+                "For confirmed benign Red alerts, add a benign suppression case to FinancialRiskMessageDetectorTest or fixtures.",
+                "For confirmed missed scam/risk samples, add a missed-scam regression fixture before changing detector rules.",
+                "Rerun detector and backend calibration tests before changing pilot thresholds.",
+            ],
+        }
+
+    def _detector_false_negative_candidate_rows(self, *, limit: int = 500) -> list[dict]:
+        risky_labels = ("payment_outflow_risk", "account_access_risk")
+        weak_classifications = (
+            "",
+            "unknown",
+            "benign_or_routine",
+            "generic_promotion",
+            "no_risk_pattern",
+            "routine_financial_message",
+            "uncertain",
+        )
+        with self._connect() as conn:
+            rows = conn.execute(
+                f"""
+                SELECT sample_id, label, heuristic_classification, alert_family,
+                       reviewed_at, updated_at
+                FROM review_samples
+                WHERE review_status='approved_ground_truth'
+                  AND LOWER(COALESCE(label, '')) IN ({','.join('?' for _ in risky_labels)})
+                  AND LOWER(COALESCE(heuristic_classification, '')) IN ({','.join('?' for _ in weak_classifications)})
+                ORDER BY COALESCE(reviewed_at, updated_at) DESC, updated_at DESC
+                LIMIT ?
+                """,
+                (*risky_labels, *weak_classifications, limit),
+            ).fetchall()
+        return [dict(row) for row in rows]
 
     def recent_entities(
         self,
@@ -1320,6 +1769,28 @@ class PilotStorage:
                 (participant_id, 1 if accepted else 0, language, timestamp),
             )
 
+    def get_consent(self, participant_id: str) -> dict | None:
+        normalized_participant = str(participant_id or "").strip()
+        if not normalized_participant:
+            return None
+        with self._connect() as conn:
+            row = conn.execute(
+                """
+                SELECT participant_id, accepted, language, timestamp
+                FROM consents
+                WHERE participant_id=?
+                """,
+                (normalized_participant,),
+            ).fetchone()
+        if row is None:
+            return None
+        return {
+            "participant_id": row["participant_id"],
+            "accepted": bool(row["accepted"]),
+            "language": row["language"],
+            "timestamp": row["timestamp"],
+        }
+
     def add_feedback(
         self,
         participant_id: str,
@@ -1491,6 +1962,8 @@ class PilotStorage:
         domain_class: str | None = None,
         metadata: dict | None = None,
     ) -> bool:
+        safe_message = redact_sensitive_text(message, max_length=240)
+        safe_metadata = safe_review_surface_record(metadata or {})
         with self._connect() as conn:
             cursor = conn.execute(
                 """
@@ -1507,7 +1980,7 @@ class PilotStorage:
                     event_id,
                     participant_id,
                     level,
-                    message,
+                    safe_message,
                     event_type,
                     source_app,
                     target_app,
@@ -1526,7 +1999,7 @@ class PilotStorage:
                     url_host,
                     resolved_domain,
                     domain_class,
-                    self._json_text(metadata),
+                    self._json_text(safe_metadata),
                     language,
                     timestamp,
                 ),
@@ -1960,7 +2433,8 @@ class PilotStorage:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT participant_id, amount, source, captured_at, updated_at
+                SELECT participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                       amount_precision, exact_amount_stored, source, captured_at, updated_at
                 FROM current_balance
                 WHERE participant_id=?
                 """,
@@ -1972,7 +2446,8 @@ class PilotStorage:
         with self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT participant_id, amount, source, captured_at, replaced_at
+                SELECT participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                       amount_precision, exact_amount_stored, source, captured_at, replaced_at
                 FROM current_balance_history
                 WHERE participant_id=?
                 ORDER BY replaced_at DESC, id DESC
@@ -1990,27 +2465,37 @@ class PilotStorage:
         source: str,
         captured_at: str,
         updated_at: str,
+        balance_band_id: str | None = None,
     ) -> None:
+        coarse_balance = coarsen_balance_band(balance_band_id) or coarsen_balance_amount(amount)
         with self._connect() as conn:
             existing = conn.execute(
                 """
-                SELECT amount, source, captured_at
+                SELECT amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                       amount_precision, exact_amount_stored, source, captured_at
                 FROM current_balance
                 WHERE participant_id=?
                 """,
                 (participant_id,),
             ).fetchone()
             if existing is not None:
+                existing_coarse = coarsen_balance_band(existing["balance_band_id"]) or coarsen_balance_amount(existing["amount"])
                 conn.execute(
                     """
                     INSERT INTO current_balance_history (
-                        participant_id, amount, source, captured_at, replaced_at
+                        participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                        amount_precision, exact_amount_stored, source, captured_at, replaced_at
                     )
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         participant_id,
-                        float(existing["amount"]),
+                        existing_coarse["amount"],
+                        existing_coarse["balance_band_id"],
+                        existing_coarse["amount_lower_bound"],
+                        existing_coarse["amount_upper_bound"],
+                        "coarse_band",
+                        0,
                         str(existing["source"]),
                         str(existing["captured_at"]),
                         updated_at,
@@ -2019,17 +2504,34 @@ class PilotStorage:
             conn.execute(
                 """
                 INSERT INTO current_balance (
-                    participant_id, amount, source, captured_at, updated_at
+                    participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                    amount_precision, exact_amount_stored, source, captured_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(participant_id)
                 DO UPDATE SET
                     amount=excluded.amount,
+                    balance_band_id=excluded.balance_band_id,
+                    amount_lower_bound=excluded.amount_lower_bound,
+                    amount_upper_bound=excluded.amount_upper_bound,
+                    amount_precision=excluded.amount_precision,
+                    exact_amount_stored=excluded.exact_amount_stored,
                     source=excluded.source,
                     captured_at=excluded.captured_at,
                     updated_at=excluded.updated_at
                 """,
-                (participant_id, amount, source, captured_at, updated_at),
+                (
+                    participant_id,
+                    coarse_balance["amount"],
+                    coarse_balance["balance_band_id"],
+                    coarse_balance["amount_lower_bound"],
+                    coarse_balance["amount_upper_bound"],
+                    "coarse_band",
+                    0,
+                    source,
+                    captured_at,
+                    updated_at,
+                ),
             )
 
     def count_recent_dismissals(self, participant_id: str, since_timestamp: str) -> int:

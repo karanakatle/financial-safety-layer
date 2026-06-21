@@ -1,12 +1,12 @@
-# Arthamantri AI Adoption Plan v1
+# FinSaathi AI Adoption Plan v1
 
 ## Purpose
-- Define where AI/ML can strengthen Arthamantri without weakening safety or trust.
+- Define where AI/ML can strengthen FinSaathi without weakening safety or trust.
 - Prioritize research tasks that improve the existing financial-safety workflow for underserved users.
 - Keep deterministic guardrails in control while AI is introduced in a staged, measurable way.
 
 ## Current Product Position
-Arthamantri already has:
+FinSaathi already has:
 - phone-native signal capture from SMS, app usage, and notifications
 - structured alert telemetry for payment-warning and cashflow guidance
 - participant feedback (`useful`, `not_useful`, `dismissed`, payment actions)
@@ -20,6 +20,7 @@ This is enough to begin AI research. It is not yet the right stage to make the c
 3. User-facing wording should stay template-constrained for high-risk moments.
 4. Research models must be evaluated offline before any production influence.
 5. Internal/operator copilots can adopt AI earlier than user-facing financial decisions.
+6. Any user-facing AI explanation must pass the hallucination/advice review in `docs/compliance-review-gate.md`.
 
 ## Priority Opportunities
 
@@ -85,6 +86,7 @@ Why this matters:
 - do not launch an unconstrained AI financial coach
 - do not let an autonomous agent decide user-facing safety actions end-to-end
 - do not introduce large-model dependencies into the critical runtime path before offline validation
+- do not allow AI to generate investment advice, loan recommendation, lender ranking, product sales, or specific financial product recommendations
 
 ## Six-Week Research Plan
 

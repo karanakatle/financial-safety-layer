@@ -6,13 +6,17 @@ import android.content.Intent
 import android.provider.Telephony
 import android.util.Log
 import com.arthamantri.android.R
+import com.arthamantri.android.MonitoringAccessGate
 import com.arthamantri.android.config.AppConfig
 import com.arthamantri.android.core.AppConstants
+import com.arthamantri.android.core.FinancialRiskLevel
+import com.arthamantri.android.core.FinancialRiskMessageDetector
 import com.arthamantri.android.core.LinkContextSignalExtractor
 import com.arthamantri.android.core.LinkContextSignals
 import com.arthamantri.android.core.RecentLinkContextTracker
 import com.arthamantri.android.core.StructuredMessageSignalExtractor
 import com.arthamantri.android.notify.AlertNotifier
+import com.arthamantri.android.notify.FinancialRiskAlertPresenter
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.usage.PaymentAppSetupStateTracker
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +31,11 @@ class BankSmsReceiver : BroadcastReceiver() {
             return
         }
 
+        if (!MonitoringAccessGate.isMonitoringActive(context)) {
+            Log.i(AppConstants.LogTags.BANK_SMS_RECEIVER, "SMS ignored: monitoring is inactive")
+            return
+        }
+
         Log.i(AppConstants.LogTags.BANK_SMS_RECEIVER, "SMS_RECEIVED broadcast received")
         val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
         if (messages.isEmpty()) {
@@ -38,7 +47,7 @@ class BankSmsReceiver : BroadcastReceiver() {
         val body = messages.joinToString(separator = "") { it.messageBody ?: "" }
         Log.i(
             AppConstants.LogTags.BANK_SMS_RECEIVER,
-            "Incoming SMS sender=$sender body='${body.take(180)}'"
+            "Incoming SMS observed sender_present=${!sender.isNullOrBlank()} body_length=${body.length}"
         )
 
         val signals = StructuredMessageSignalExtractor.extract(body)
@@ -48,6 +57,10 @@ class BankSmsReceiver : BroadcastReceiver() {
         val parsed = SmsParser.parseSignal(sender, body, setupState = setupState)
         val messageLinkContext = LinkContextSignalExtractor.fromText(body, linkClicked = false)
         val recentLinkContext = RecentLinkContextTracker.currentSnapshot(context)
+        val financialRiskDetection = FinancialRiskMessageDetector.detect(
+            message = body,
+            recentLinkContext = recentLinkContext?.signals,
+        )
         val effectiveLinkContext = recentLinkContext?.signals ?: messageLinkContext
         val shouldTrackContext =
             parsed != null || suppressionReason != null || signals.isSensitiveAccessSignal || signals.hasStrongPaymentSignal || signals.hasUrl
@@ -122,6 +135,18 @@ class BankSmsReceiver : BroadcastReceiver() {
                     correlationId = correlationId,
                     nowMs = messages[0].timestampMillis,
                 )
+
+                if (financialRiskDetection.shouldAlert) {
+                    val warningShown = FinancialRiskAlertPresenter.maybeShow(
+                        context = context,
+                        detection = financialRiskDetection,
+                        source = "sms",
+                        rawMessage = body,
+                    )
+                    if (warningShown && (financialRiskDetection.riskLevel == FinancialRiskLevel.RED || parsed == null)) {
+                        return@launch
+                    }
+                }
 
                 if (parsed == null) {
                     Log.w(

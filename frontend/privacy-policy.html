@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Arthamantri Privacy Policy</title>
+  <title>FinSaathi Privacy Policy</title>
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; background: #f7f9fc; color: #1c2430; }
     .wrap { max-width: 900px; margin: 0 auto; padding: 28px 20px 40px; }
@@ -15,72 +15,123 @@
 </head>
 <body>
   <div class="wrap">
-    <h1>Arthamantri Privacy Policy</h1>
-    <p class="muted">Last updated: March 2026</p>
+    <h1>FinSaathi Privacy Policy</h1>
+    <p class="muted">Last updated: June 2026</p>
 
     <div class="card">
       <h2>1. Overview</h2>
       <p>
-        Arthamantri is a research-oriented financial literacy and safety application. This policy explains
-        what data we process, why we process it, and your choices.
+        FinSaathi is a financial literacy and safety application. It watches for risky
+        money messages, payment prompts, and payment-app moments only after you give
+        the required Android permissions. This policy explains what data we process,
+        why we process it, and your choices.
+      </p>
+      <p>
+        FinSaathi gives safety warnings only. It does not give loans, sell investments,
+        replace your bank, or ask for OTP, UPI PIN, Aadhaar, PAN, bank password, or card
+        details. FinSaathi does not require or store an exact bank balance, and it does
+        not fetch balances from your bank. If balance context is needed, FinSaathi uses
+        a rough balance range only for safer guidance.
       </p>
     </div>
 
     <div class="card">
       <h2>2. Data We Process</h2>
       <ul>
-        <li>SMS transaction signals (for debit/spend detection).</li>
-        <li>UPI app open signals and usage metadata (to trigger stage-2 safety warnings).</li>
-        <li>Notification metadata from payment apps (if notification access is granted).</li>
-        <li>Pilot feedback entries and consent records.</li>
-        <li>Basic app logs for reliability and research analytics.</li>
+        <li><strong>SMS data:</strong> incoming SMS may be locally scanned when SMS access is granted so FinSaathi can identify financial or risky messages. Relevant SMS sender IDs, parsed amounts, categories, risk flags, and link/domain signals may be processed.</li>
+        <li><strong>Notification data:</strong> notification title/text from non-messaging apps may be locally inspected when notification access is granted so FinSaathi can identify payment, financial, or risky prompts before suppressing or classifying them.</li>
+        <li><strong>Usage access data:</strong> foreground app events are used to detect supported UPI/payment apps and selected link-context apps such as WhatsApp when needed to time risk warnings.</li>
+        <li><strong>Overlay alert data:</strong> alert title, message, risk level, and user action are processed when a safety warning is shown on screen, including high-risk, cashflow, setup, or fallback alerts.</li>
+        <li><strong>Link and payment context:</strong> URL/domain signals, UPI deep-link signals, payee labels/handles, request type, and approximate amounts may be processed when available.</li>
+        <li><strong>Profile and setup data:</strong> language, consent status, selected essential goals, optional rough money range/current-balance band, and permission state.</li>
+        <li><strong>Feedback and diagnostics:</strong> usefulness feedback, app logs, event IDs, participant/device identifier, and delivery diagnostics.</li>
       </ul>
     </div>
 
     <div class="card">
-      <h2>3. Why We Use This Data</h2>
+      <h2>3. Local-First Processing and Upload Boundaries</h2>
+      <p>
+        FinSaathi tries to classify messages and app events on the device first where possible.
+        For normal cashflow alerts, the app sends parsed signals such as category, confidence,
+        amount, timestamp, SMS sender ID, link/domain flags, and participant ID instead of
+        sending the complete SMS text.
+      </p>
+      <p>
+        For payment-request, scam, account-access, or notification inspection, selected raw
+        notification or payment-request text may be sent to the FinSaathi backend because
+        the backend needs context to classify risk and generate a safer warning. Link context
+        such as a raw URL, clicked URL, UPI deep link, or resolved domain can also be sent.
+        If delivery fails, telemetry and feedback can be queued locally on the device and sent
+        later when connectivity returns.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>4. Why We Use This Data</h2>
       <ul>
-        <li>To estimate safe spending thresholds and trigger timely warning nudges.</li>
-        <li>To detect risky payment patterns and provide user-facing alerts.</li>
-        <li>To improve model/rule quality during pilot and research phases.</li>
+        <li>To detect risky money messages, payment requests, suspicious links, and unsafe account-access prompts.</li>
+        <li>To show timely safety warnings before or during risky payment, cashflow, setup, or account-access moments.</li>
+        <li>To estimate safe spending thresholds and protect essential goals such as ration, rent, school, medicine, and transport.</li>
+        <li>To remember setup choices, consent status, language, and permission state.</li>
+        <li>To improve reliability, reduce false alerts, and measure whether warnings were useful.</li>
       </ul>
     </div>
 
     <div class="card">
-      <h2>4. Permissions</h2>
+      <h2>5. Permissions</h2>
       <ul>
-        <li><strong>SMS:</strong> identify bank debit events for overspending alerts.</li>
-        <li><strong>Usage Access:</strong> detect UPI app open events.</li>
-        <li><strong>Notification Access:</strong> parse payment-related notification signals.</li>
-        <li><strong>Overlay:</strong> show USSD-style intervention warnings.</li>
+        <li><strong>SMS:</strong> locally scan incoming SMS so FinSaathi can identify debit, UPI, scam, OTP, or unsafe access signals.</li>
+        <li><strong>Notification Access:</strong> locally inspect non-messaging notification title/text to find payment, financial, or risky prompts.</li>
+        <li><strong>Usage Access:</strong> detect when a UPI/payment app or selected link-context app is opened so warnings can appear at the right moment.</li>
+        <li><strong>Overlay:</strong> show stop-and-verify safety warnings over the screen for important payment, cashflow, setup, fallback, or account-access moments.</li>
+        <li><strong>Post Notifications:</strong> show safety alerts and fallback warnings.</li>
+        <li><strong>Foreground Service and Boot:</strong> keep monitoring active after setup and after device restart when the user has enabled monitoring.</li>
       </ul>
     </div>
 
     <div class="card">
-      <h2>5. Data Sharing</h2>
+      <h2>6. What We Do Not Collect or Ask For</h2>
+      <ul>
+        <li>We do not ask for OTP, UPI PIN, Aadhaar, PAN, bank password, or card details.</li>
+        <li>We do not fetch bank balances directly from your bank. Exact bank balance is not required or stored; only rough balance ranges are used.</li>
+        <li>We do not sell loans, investments, insurance, or financial products.</li>
+        <li>We do not sell personal data.</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>7. Data Sharing</h2>
       <p>
-        We do not sell personal data. Data may be processed by infrastructure providers required to run the service.
+        We do not sell personal data. Data may be processed by infrastructure providers required
+        to run the service, such as hosting, logging, analytics, or database providers. These
+        providers are used only to operate FinSaathi and improve safety, reliability, and support.
       </p>
     </div>
 
     <div class="card">
-      <h2>6. Retention and Deletion</h2>
+      <h2>8. Retention and Deletion</h2>
       <p>
-        Pilot data is retained only as needed for research and system reliability. You can request deletion by contacting support.
+        App data is retained only as needed for safety guidance, diagnostics, research validation,
+        support, and system reliability. You can request deletion by contacting support. You can
+        also turn off SMS, notification, usage, overlay, or notification permissions from Android
+        settings at any time.
       </p>
     </div>
 
     <div class="card">
-      <h2>7. Security</h2>
+      <h2>9. Security</h2>
       <p>
-        We use transport security (HTTPS) and operational controls to protect data in transit and during processing.
+        We use HTTPS for data sent between the app and backend, restrict release builds to secure
+        transport, and use operational controls to protect data during processing. No app can
+        remove every risk, so FinSaathi is designed to warn and slow down risky actions rather
+        than guarantee fraud prevention.
       </p>
     </div>
 
     <div class="card">
-      <h2>8. Contact</h2>
+      <h2>10. Contact</h2>
       <p>
-        For privacy requests or questions, contact: <strong>support@arthamantri.app</strong>
+        For privacy requests or questions, contact: <strong>support@finsaathi.app</strong>
       </p>
     </div>
   </div>

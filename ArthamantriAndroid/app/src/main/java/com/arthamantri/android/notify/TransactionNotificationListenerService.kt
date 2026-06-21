@@ -4,9 +4,12 @@ import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import java.time.Instant
+import com.arthamantri.android.MonitoringAccessGate
 import com.arthamantri.android.R
 import com.arthamantri.android.core.AppConstants
 import com.arthamantri.android.core.DebugObservability
+import com.arthamantri.android.core.FinancialRiskLevel
+import com.arthamantri.android.core.FinancialRiskMessageDetector
 import com.arthamantri.android.core.LinkContextSignalExtractor
 import com.arthamantri.android.core.LinkContextSignals
 import com.arthamantri.android.core.RecentLinkContextTracker
@@ -29,6 +32,11 @@ class TransactionNotificationListenerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         if (sbn == null) {
+            return
+        }
+
+        if (!MonitoringAccessGate.isMonitoringActive(this)) {
+            Log.i(AppConstants.LogTags.TXN_NOTIFICATION_LISTENER, "Notification ignored: monitoring is inactive")
             return
         }
 
@@ -75,9 +83,13 @@ class TransactionNotificationListenerService : NotificationListenerService() {
             setupState = setupState,
         )
         val parsed = SmsParser.parseSignal(pkg, payload, setupState = setupState)
-        val category = if (isUpiPackage) AppConstants.Domain.CATEGORY_UPI else parsed?.category
         val messageLinkContext = LinkContextSignalExtractor.fromText(payload, linkClicked = false)
         val recentLinkContext = RecentLinkContextTracker.currentSnapshot(this, nowMs = sbn.postTime)
+        val financialRiskDetection = FinancialRiskMessageDetector.detect(
+            message = payload,
+            recentLinkContext = recentLinkContext?.signals,
+        )
+        val category = if (isUpiPackage) AppConstants.Domain.CATEGORY_UPI else parsed?.category
         val effectiveLinkContext = recentLinkContext?.signals ?: messageLinkContext
         val shouldCreateAccessCandidate = signals.isSensitiveAccessSignal ||
             (signals.isOtpVerification && recentLinkContext != null)
@@ -198,6 +210,18 @@ class TransactionNotificationListenerService : NotificationListenerService() {
                             "correlation_id" to correlationId,
                         ),
                     )
+                }
+
+                if (paymentSignal == null && financialRiskDetection.shouldAlert) {
+                    val warningShown = FinancialRiskAlertPresenter.maybeShow(
+                        context = this@TransactionNotificationListenerService,
+                        detection = financialRiskDetection,
+                        source = AppConstants.PaymentInspection.SOURCE_NOTIFICATION,
+                        rawMessage = payload,
+                    )
+                    if (warningShown && (financialRiskDetection.riskLevel == FinancialRiskLevel.RED || !shouldInspect)) {
+                        return@launch
+                    }
                 }
 
                 if (!shouldInspect) {

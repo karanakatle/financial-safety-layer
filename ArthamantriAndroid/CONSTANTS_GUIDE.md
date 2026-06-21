@@ -50,6 +50,6 @@ This project uses centralized constants to avoid scattered hardcoded values.
   - `NotificationCompat.Builder(context, AppConstants.Notifications.SAFETY_CHANNEL_ID)`
 
 - Avoid:
-  - `getSharedPreferences("pilot_prefs", MODE_PRIVATE)`
+  - `getSharedPreferences("finsaathi_prefs", MODE_PRIVATE)`
   - `delay(3000)`
-  - `NotificationCompat.Builder(context, "arthamantri_safety_alerts")`
+  - `NotificationCompat.Builder(context, "finsaathi_safety_alerts")`
