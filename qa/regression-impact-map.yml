@@ -6,13 +6,13 @@ commands:
     command: "if [ -x .venv/bin/pytest ]; then .venv/bin/pytest; else python -m pytest; fi"
   android_unit:
     description: Run Android unit tests and Kotlin compile checks.
-    command: "cd ArthamantriAndroid && ./gradlew --no-daemon :app:testDebugUnitTest"
+    command: "cd ArthamantriAndroid && SDK_DIR=\"${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}\" && if [ -n \"$SDK_DIR\" ]; then echo \"sdk.dir=$SDK_DIR\" > local.properties; fi && ./gradlew --no-daemon :app:testDebugUnitTest"
   android_debug_build:
     description: Build the Android debug APK.
-    command: "cd ArthamantriAndroid && ./gradlew --no-daemon :app:assembleDebug"
+    command: "cd ArthamantriAndroid && SDK_DIR=\"${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}\" && if [ -n \"$SDK_DIR\" ]; then echo \"sdk.dir=$SDK_DIR\" > local.properties; fi && ./gradlew --no-daemon :app:assembleDebug"
   android_release_build:
     description: Build signed release APK. Requires API_BASE_URL to be set.
-    command: "test -n \"$API_BASE_URL\" && cd ArthamantriAndroid && ./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=\"$API_BASE_URL\""
+    command: "test -n \"$API_BASE_URL\" && cd ArthamantriAndroid && SDK_DIR=\"${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}\" && if [ -n \"$SDK_DIR\" ]; then echo \"sdk.dir=$SDK_DIR\" > local.properties; fi && ./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=\"$API_BASE_URL\""
   local_backend_health:
     description: Check local backend health on the emulator/debug backend port.
     command: "curl -fsS http://localhost:8765/api/health"

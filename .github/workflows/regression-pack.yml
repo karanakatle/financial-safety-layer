@@ -101,6 +101,18 @@ jobs:
         if: steps.detect.outputs.has_ids == 'true'
         uses: android-actions/setup-android@v3
 
+      - name: Configure Android SDK path
+        if: steps.detect.outputs.has_ids == 'true'
+        run: |
+          set -euo pipefail
+          SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
+          if [[ -z "$SDK_DIR" ]]; then
+            echo "ANDROID_HOME/ANDROID_SDK_ROOT is not set after Android setup."
+            exit 1
+          fi
+          echo "sdk.dir=$SDK_DIR" > ArthamantriAndroid/local.properties
+          echo "Configured ArthamantriAndroid/local.properties with sdk.dir=$SDK_DIR"
+
       - name: Set up Gradle
         if: steps.detect.outputs.has_ids == 'true'
         uses: gradle/actions/setup-gradle@v4
