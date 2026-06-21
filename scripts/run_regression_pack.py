@@ -324,12 +324,22 @@ def automation_status_markdown(pack: dict[str, Any], results: list[dict[str, Any
     status_label = "PASS" if passed else "FAIL"
 
     lines = [
-        f"## Automated Verification Status: `{pack['test_id']}`",
+        f"## Regression Pack: `{pack['test_id']}`",
         "",
         f"Overall automated status: **{status_icon} {status_label}**",
         "",
-        "### Automated Test Status",
+        "### Impacted Areas",
     ]
+    for area in pack["areas"]:
+        lines.append(f"- **{area['name']}**: {area['description']}")
+
+    lines.extend(
+        [
+            "",
+            "### Automated Verification",
+            "These items are marked by CI based on the command results below.",
+        ]
+    )
     for item in pack["automated_reruns"] or ["None"]:
         lines.append(f"- {status_icon} `{item}`")
 
@@ -347,18 +357,29 @@ def automation_status_markdown(pack: dict[str, Any], results: list[dict[str, Any
     lines.extend(
         [
             "",
-            "### Manual Items Still Require Human Evidence",
-            "Automated status does not complete device, UAT, Play, legal, or release checks.",
+            "### Manual Verification Required",
+            "> Complete these in the PR body/comment or a manual evidence log after phone/user testing.",
         ]
     )
     for item in pack["manual_reruns"] or []:
         lines.append(f"- [ ] `{item}`")
+
+    lines.extend(
+        [
+            "",
+            "### Conditional Verification",
+            "> Mark each item as completed, not impacted, or not applicable with a short reason.",
+        ]
+    )
     for item in pack["conditional_reruns"] or []:
         lines.append(f"- [ ] {item}")
 
+    lines.extend(["", "### Links / Evidence To Record"])
+    for item in pack["jira_links"] or ["None"]:
+        lines.append(f"- {item}")
+
     lines.append("")
     return "\n".join(lines)
-
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
