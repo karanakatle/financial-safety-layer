@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "description": "Path-based rules used by the Regression Impact Agent to suggest regression packs before a human manually links stories.",
+  "path_rules": [
+    {
+      "name": "Backend safety and advice-boundary logic",
+      "patterns": [
+        "backend/literacy/**",
+        "backend/risk/**",
+        "backend/nlp/**",
+        "backend/config/**",
+        "tests/test_guarded_ai_explanation_layer.py",
+        "tests/test_literacy_monitor.py",
+        "tests/test_payment_inspection_api.py",
+        "tests/test_balance_savings_guidance.py",
+        "tests/test_domain_intelligence.py",
+        "tests/test_money_setup_sensitivity.py"
+      ],
+      "suggested_test_ids": ["INT-005"],
+      "reason": "Risk classification, warning copy, AI guardrails, or decisioning behavior may have changed."
+    },
+    {
+      "name": "Backend privacy, redaction, and pilot storage",
+      "patterns": [
+        "backend/pilot/**",
+        "backend/routes/pilot.py",
+        "backend/api_models.py",
+        "tests/test_pilot_storage*.py",
+        "tests/test_compliance_review_gate.py",
+        "tests/test_privacy_play_console_readiness.py"
+      ],
+      "suggested_test_ids": ["INT-009"],
+      "reason": "Sensitive data handling, exact-balance banding, participant isolation, or review/admin surfaces may have changed."
+    },
+    {
+      "name": "Backend hosting and API contract",
+      "patterns": [
+        "backend/main.py",
+        "backend/routes/**",
+        "render.yaml",
+        "requirements.txt",
+        "tests/conftest.py"
+      ],
+      "suggested_test_ids": ["INT-001"],
+      "reason": "API routing, deployment configuration, dependencies, or local/hosted contract behavior may have changed."
+    },
+    {
+      "name": "Android parser and financial-risk detector",
+      "patterns": [
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/sms/**",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/core/FinancialRiskMessageDetector.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/core/StructuredMessageSignals.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/core/LinkContextIntelligence.kt",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/sms/**",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/core/FinancialRiskMessageDetectorTest.kt",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/core/LinkContextIntelligenceTest.kt"
+      ],
+      "suggested_test_ids": ["SIT-D-011"],
+      "reason": "SMS/notification parsing or Red/Yellow/Green classification may have changed."
+    },
+    {
+      "name": "Android permissions, monitoring, and background behavior",
+      "patterns": [
+        "ArthamantriAndroid/app/src/main/AndroidManifest.xml",
+        "ArthamantriAndroid/app/src/debug/AndroidManifest.xml",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/PermissionOnboardingState.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/MonitoringActivationState.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/usage/**",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/TransactionNotificationListenerService.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/OverlayAlertWindow.kt",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/PermissionOnboardingStateTest.kt",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/MonitoringActivationStateTest.kt",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/usage/**"
+      ],
+      "suggested_test_ids": ["SIT-D-003"],
+      "reason": "Permission onboarding, monitoring start/stop, usage access, notification access, or overlay behavior may have changed."
+    },
+    {
+      "name": "Android alert actions and human-support handoff",
+      "patterns": [
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/Alert*.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/FinancialRiskAlert*.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/HumanReviewPayloadBuilder.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/SupportEscalationLauncher.kt",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/TrustedPersonHandoffLauncher.kt",
+        "ArthamantriAndroid/app/src/test/java/com/finsaathi/android/notify/**"
+      ],
+      "suggested_test_ids": ["SIT-D-015"],
+      "reason": "Alert copy, action routing, support escalation, feedback, or human-review payload behavior may have changed."
+    },
+    {
+      "name": "Android release identity, build, and privacy URL",
+      "patterns": [
+        "ArthamantriAndroid/app/build.gradle.kts",
+        "ArthamantriAndroid/build.gradle.kts",
+        "ArthamantriAndroid/settings.gradle.kts",
+        "ArthamantriAndroid/gradle.properties",
+        "ArthamantriAndroid/keystore.properties.example",
+        "ArthamantriAndroid/app/src/main/java/com/finsaathi/android/config/**",
+        "ArthamantriAndroid/app/src/main/res/values/strings.xml",
+        "ArthamantriAndroid/app/src/main/res/xml/**",
+        "frontend/privacy-policy.html",
+        ".gitignore"
+      ],
+      "suggested_test_ids": ["DEV-006"],
+      "reason": "Application identity, BuildConfig values, signing behavior, backup rules, or privacy URL may have changed."
+    },
+    {
+      "name": "Play privacy and compliance material",
+      "patterns": [
+        "docs/LEGAL_PRIVACY_REVIEW_PACKET.md",
+        "docs/LEGAL_PRIVACY_REVIEW_DECISION_LOG.md",
+        "docs/compliance-review-gate.md",
+        "ArthamantriAndroid/PLAY_CONSOLE_CHECKLIST.md",
+        "ArthamantriAndroid/PRODUCTION_SETUP.md",
+        "docs/RELEASE_CONFIGURATION_CHECKPOINT.md"
+      ],
+      "suggested_test_ids": ["PLAY-003"],
+      "reason": "Play Console declarations, privacy review gates, or release compliance evidence may have changed."
+    },
+    {
+      "name": "User-facing trust, onboarding, and local-language copy",
+      "patterns": [
+        "ArthamantriAndroid/app/src/main/res/layout/**",
+        "ArthamantriAndroid/app/src/main/res/values*/strings.xml",
+        "ArthamantriAndroid/app/src/main/res/menu/**",
+        "docs/FACILITATOR_ONBOARDING_CARD.md",
+        "docs/PERMISSION_TRUST_PILOT_SCRIPT.md"
+      ],
+      "suggested_test_ids": ["UAT-003"],
+      "reason": "User comprehension, trust, permission explanation, or local-language wording may have changed."
+    },
+    {
+      "name": "Regression automation and QA traceability",
+      "patterns": [
+        ".github/workflows/**",
+        "scripts/run_regression_pack.py",
+        "scripts/suggest_regression_pack.py",
+        "qa/regression-impact-map.yml",
+        "qa/regression-impact-agent-rules.json",
+        "docs/REGRESSION_IMPACT_AGENT.md"
+      ],
+      "suggested_test_ids": ["QA-011"],
+      "reason": "Regression automation, CI summary behavior, or QA traceability rules may have changed."
+    },
+    {
+      "name": "Research simulator and evidence claims",
+      "patterns": [
+        "research/**",
+        "tests/test_research_simulator.py",
+        "rule_engine/**"
+      ],
+      "suggested_test_ids": ["DEV-016"],
+      "reason": "Research simulator behavior or evidence-quality claims may have changed."
+    }
+  ]
+}
