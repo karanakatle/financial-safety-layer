@@ -1,0 +1,400 @@
+version: 1
+
+commands:
+  backend_pytest:
+    description: Run the backend regression suite.
+    command: "if [ -x .venv/bin/pytest ]; then .venv/bin/pytest; else python -m pytest; fi"
+  android_unit:
+    description: Run Android unit tests and Kotlin compile checks.
+    command: "cd ArthamantriAndroid && ./gradlew --no-daemon :app:testDebugUnitTest"
+  android_debug_build:
+    description: Build the Android debug APK.
+    command: "cd ArthamantriAndroid && ./gradlew --no-daemon :app:assembleDebug"
+  android_release_build:
+    description: Build signed release APK. Requires API_BASE_URL to be set.
+    command: "test -n \"$API_BASE_URL\" && cd ArthamantriAndroid && ./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=\"$API_BASE_URL\""
+  local_backend_health:
+    description: Check local backend health on the emulator/debug backend port.
+    command: "curl -fsS http://localhost:8765/api/health"
+  privacy_policy_check:
+    description: Check the hosted privacy policy URL is reachable.
+    command: "curl -fsS https://karanakatle.github.io/finsaathi-legal/privacy-policy.html >/dev/null"
+  git_status:
+    description: Check repo cleanliness and untracked release secrets.
+    command: "git status --short"
+
+areas:
+  backend_safety_policy:
+    description: Backend risk classification, safety guidance, advice boundaries, and AI guardrails.
+    trigger_tests:
+      - DEV-001
+      - DEV-015
+      - INT-004
+      - INT-005
+      - INT-006
+      - SIT-H-005
+      - SIT-H-006
+      - UAT-004
+      - UAT-005
+    automated_reruns:
+      - DEV-001
+      - DEV-015
+      - INT-004
+      - INT-005
+      - INT-006
+    manual_reruns:
+      - SIT-H-005
+      - SIT-H-006
+      - UAT-004
+      - UAT-005
+    conditional_reruns:
+      - UAT-004 if alert explanation or user-facing risk wording changed
+      - UAT-005 if alert action labels or next-step copy changed
+    jira_links:
+      - causes regression risk for backend safety policy
+      - verified by DEV-001
+      - verified by INT-005
+    run_commands:
+      - backend_pytest
+
+  backend_privacy_storage:
+    description: Backend redaction, exact-balance banding, participant isolation, admin/review privacy, and storage safety.
+    trigger_tests:
+      - DEV-013
+      - DEV-014
+      - INT-007
+      - INT-008
+      - INT-009
+      - INT-010
+      - SIT-H-007
+      - SIT-H-008
+      - SIT-H-009
+      - SIT-H-010
+      - QA-001
+      - QA-002
+      - QA-003
+    automated_reruns:
+      - DEV-001
+      - DEV-013
+      - DEV-014
+      - INT-007
+      - INT-008
+      - INT-009
+      - INT-010
+    manual_reruns:
+      - SIT-H-007
+      - SIT-H-008
+      - SIT-H-009
+      - SIT-H-010
+      - QA-001
+      - QA-002
+      - QA-003
+    conditional_reruns:
+      - QA-002 if policy wording or legal/privacy scope changed
+      - PLAY-003 if Play data safety declarations are affected
+    jira_links:
+      - causes regression risk for backend privacy storage
+      - verified by DEV-013
+      - verified by INT-009
+    run_commands:
+      - backend_pytest
+
+  backend_contract_hosting:
+    description: Local/hosted backend health, API contracts, hosted URL, TLS, latency, and deployment config.
+    trigger_tests:
+      - INT-001
+      - INT-002
+      - INT-003
+      - INT-013
+      - INT-014
+      - SIT-H-001
+      - SIT-H-002
+      - SIT-H-003
+      - SIT-H-004
+      - SIT-H-011
+      - SIT-H-013
+      - SIT-H-014
+      - QA-004
+      - QA-005
+    automated_reruns:
+      - DEV-001
+      - INT-001
+      - INT-002
+      - INT-003
+      - INT-013
+      - INT-014
+    manual_reruns:
+      - SIT-H-001
+      - SIT-H-002
+      - SIT-H-003
+      - SIT-H-004
+      - SIT-H-011
+      - SIT-H-013
+      - SIT-H-014
+      - QA-004
+      - QA-005
+    conditional_reruns:
+      - SIT-H-012 if Android release API URL changed
+      - PLAY-001 if release artifact changed
+    jira_links:
+      - blocks hosted SIT until backend is available
+      - verified by INT-001
+    run_commands:
+      - backend_pytest
+      - local_backend_health
+
+  android_parser_detector:
+    description: Android SMS/notification parsing, financial risk detector, and Red/Yellow/Green alert classification.
+    trigger_tests:
+      - DEV-008
+      - DEV-009
+      - SIT-D-011
+      - SIT-D-012
+      - SIT-D-013
+      - SIT-D-014
+      - UAT-004
+    automated_reruns:
+      - DEV-002
+      - DEV-008
+      - DEV-009
+      - INT-004
+      - INT-005
+      - INT-006
+    manual_reruns:
+      - SIT-D-011
+      - SIT-D-012
+      - SIT-D-013
+      - SIT-D-014
+    conditional_reruns:
+      - UAT-004 if the warning explanation changed
+      - SIT-D-015 if alert actions changed
+    jira_links:
+      - causes regression risk for Android parser and detector
+      - verified by DEV-008
+      - verified by DEV-009
+      - verified by INT-005
+    run_commands:
+      - android_unit
+      - backend_pytest
+
+  android_permissions_monitoring:
+    description: Android onboarding, permission state, monitoring start/stop, overlay routing, notification fallback, background, and boot behavior.
+    trigger_tests:
+      - DEV-002
+      - DEV-010
+      - DEV-011
+      - DEV-012
+      - INT-011
+      - INT-012
+      - SIT-D-003
+      - SIT-D-004
+      - SIT-D-005
+      - SIT-D-006
+      - SIT-D-007
+      - SIT-D-008
+      - SIT-D-009
+      - SIT-D-010
+      - SIT-D-016
+      - SIT-D-017
+      - SIT-D-018
+      - PLAY-007
+      - UAT-001
+      - UAT-003
+      - UAT-009
+    automated_reruns:
+      - DEV-002
+      - DEV-010
+      - DEV-011
+      - DEV-012
+      - INT-011
+      - INT-012
+    manual_reruns:
+      - SIT-D-003
+      - SIT-D-004
+      - SIT-D-005
+      - SIT-D-006
+      - SIT-D-007
+      - SIT-D-008
+      - SIT-D-009
+      - SIT-D-010
+      - SIT-D-016
+      - SIT-D-017
+      - SIT-D-018
+      - PLAY-007
+      - UAT-001
+      - UAT-003
+      - UAT-009
+    conditional_reruns:
+      - PLAY-007 if Play-delivered permission behavior is affected
+      - UAT-009 if stop/disable copy or placement changed
+    jira_links:
+      - causes regression risk for Android permission and monitoring flow
+      - verified by DEV-010
+      - verified by INT-012
+    run_commands:
+      - android_unit
+
+  android_alert_actions:
+    description: Alert action buttons, support escalation, proceed/decline/pause handling, feedback, and user action comprehension.
+    trigger_tests:
+      - SIT-D-015
+      - UAT-005
+      - UAT-010
+      - INT-007
+    automated_reruns:
+      - DEV-002
+      - DEV-011
+      - DEV-012
+      - INT-007
+    manual_reruns:
+      - SIT-D-015
+      - UAT-005
+      - UAT-010
+    conditional_reruns:
+      - UAT-006 if trust/support escalation copy changed
+    jira_links:
+      - causes regression risk for alert action handling
+      - verified by DEV-011
+      - verified by INT-007
+    run_commands:
+      - android_unit
+      - backend_pytest
+
+  android_release_build:
+    description: Android build, signing, application identity, BuildConfig URLs, release artifacts, and installed package/version.
+    trigger_tests:
+      - DEV-003
+      - DEV-004
+      - DEV-005
+      - DEV-006
+      - DEV-007
+      - SIT-H-012
+      - SIT-D-001
+      - SIT-D-002
+      - PLAY-001
+      - PLAY-004
+      - PLAY-005
+      - PLAY-006
+      - PLAY-008
+      - QA-006
+      - QA-007
+      - QA-008
+      - QA-010
+      - QA-011
+    automated_reruns:
+      - DEV-003
+      - DEV-004
+      - DEV-005
+      - DEV-006
+      - DEV-007
+    manual_reruns:
+      - SIT-H-012
+      - SIT-D-001
+      - SIT-D-002
+      - PLAY-001
+      - PLAY-004
+      - PLAY-005
+      - PLAY-006
+      - PLAY-008
+      - QA-006
+      - QA-007
+      - QA-008
+      - QA-010
+      - QA-011
+    conditional_reruns:
+      - PLAY-004 if migration/update state or application ID changed
+      - SIT-D-001 and SIT-D-002 if APK signing or label changed
+    jira_links:
+      - causes regression risk for Android release build
+      - verified by DEV-004
+      - verified by DEV-006
+    run_commands:
+      - android_debug_build
+      - privacy_policy_check
+      - git_status
+
+  play_privacy_compliance:
+    description: Play listing, privacy policy, App Content declarations, SMS permission justification, and external review gates.
+    trigger_tests:
+      - PLAY-002
+      - PLAY-003
+      - QA-001
+      - QA-002
+      - QA-003
+      - QA-009
+      - QA-010
+      - QA-011
+    automated_reruns:
+      - DEV-006
+      - DEV-007
+      - INT-013
+      - INT-014
+    manual_reruns:
+      - PLAY-002
+      - PLAY-003
+      - QA-001
+      - QA-002
+      - QA-003
+      - QA-009
+      - QA-010
+      - QA-011
+    conditional_reruns:
+      - QA-002 if legal/privacy reviewer requests wording or permission changes
+      - PLAY-003 if any data safety declaration changes
+    jira_links:
+      - blocks public release until legal/privacy review is done
+      - verified by DEV-006
+      - verified by INT-013
+    run_commands:
+      - privacy_policy_check
+      - git_status
+
+  user_trust_copy:
+    description: User-facing onboarding, privacy warning, alert copy, language comfort, trust, notification fatigue, and comprehension.
+    trigger_tests:
+      - UAT-001
+      - UAT-002
+      - UAT-003
+      - UAT-006
+      - UAT-007
+      - UAT-008
+      - SIT-D-003
+      - SIT-D-004
+    automated_reruns:
+      - DEV-002
+      - DEV-010
+      - INT-002
+    manual_reruns:
+      - SIT-D-003
+      - SIT-D-004
+      - UAT-001
+      - UAT-002
+      - UAT-003
+      - UAT-006
+      - UAT-007
+      - UAT-008
+    conditional_reruns:
+      - UAT-007 if alert frequency, notification, overlay, or nudge behavior changed
+      - UAT-008 if Hindi/local-language copy changed
+    jira_links:
+      - causes regression risk for user trust and comprehension
+      - verified by DEV-010
+      - verified by UAT-001
+    run_commands:
+      - android_unit
+
+  research_simulator:
+    description: Research simulator and non-release research fixtures.
+    trigger_tests:
+      - DEV-016
+    automated_reruns:
+      - DEV-016
+    manual_reruns:
+      - QA-008
+    conditional_reruns:
+      - UAT-010 if simulator assumptions are used in product claims
+    jira_links:
+      - relates to research evidence quality
+      - verified by DEV-016
+    run_commands:
+      - backend_pytest
