@@ -28,7 +28,7 @@ Use this as the first-pass Play Console Data Safety draft. Final answers must be
   - No name, email, phone number, Aadhaar, PAN, OTP, UPI PIN, bank password, card details, or exact bank balance is required by the app.
   - Incidental personal data may be processed if it appears inside SMS, notifications, sender IDs, payee labels, UPI handles, raw URLs, or payment-request text.
 - Financial info:
-  - Parsed spend/payment signals, approximate amounts, payment-request context, selected essential goals, optional money range/current balance, and safety-check outcomes.
+  - Parsed spend/payment signals, approximate amounts, payment-request context, selected essential goals, optional rough money range/current-balance band, and safety-check outcomes.
 - Messages:
   - Incoming SMS may be locally scanned when SMS access is granted.
   - SMS sender IDs, parsed categories, confidence, amount, timestamp, OTP/link/UPI flags, and URL/domain signals may be processed.

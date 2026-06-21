@@ -13,7 +13,7 @@ def _client_with_temp_db(tmp_path, monkeypatch) -> TestClient:
     return TestClient(module.app)
 
 
-def test_current_balance_endpoint_stores_self_reported_contract(tmp_path, monkeypatch):
+def test_current_balance_endpoint_coarsens_self_reported_balance(tmp_path, monkeypatch):
     client = _client_with_temp_db(tmp_path, monkeypatch)
 
     response = client.post(
@@ -29,10 +29,70 @@ def test_current_balance_endpoint_stores_self_reported_contract(tmp_path, monkey
     assert response.status_code == 200
     payload = response.json()
     assert payload["ok"] is True
-    assert payload["current_balance"]["amount"] == 1800.0
+    assert payload["current_balance"]["amount"] == 1000.0
+    assert payload["current_balance"]["balance_band_id"] == "1000_2999"
+    assert payload["current_balance"]["balance_band"]["label"] == "Rs 1,000-2,999"
+    assert payload["current_balance"]["amount_precision"] == "coarse_band"
+    assert payload["current_balance"]["amount_is_exact"] is False
+    assert payload["current_balance"]["storage_policy"] == "exact_balance_not_stored"
     assert payload["current_balance"]["source"] == "self_reported"
     assert payload["current_balance"]["captured_at"] == "2026-04-04T08:15:00"
+    assert "1800" not in str(payload)
     assert "verified" in payload["supported_sources"]
+
+
+def test_current_balance_endpoint_accepts_band_without_exact_amount(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    response = client.post(
+        "/api/literacy/current-balance",
+        json={
+            "participant_id": "bs_balance_band_p1",
+            "balance_band_id": "3000_6999",
+            "source": "self_reported",
+            "timestamp": "2026-04-04T08:15:00",
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["current_balance"]["amount"] == 3000.0
+    assert payload["current_balance"]["balance_band_id"] == "3000_6999"
+    assert payload["current_balance"]["amount_is_exact"] is False
+
+
+def test_current_balance_history_does_not_expose_exact_legacy_amount(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+    participant_id = "bs_balance_history_p1"
+
+    first = client.post(
+        "/api/literacy/current-balance",
+        json={
+            "participant_id": participant_id,
+            "amount": 1800,
+            "source": "self_reported",
+            "timestamp": "2026-04-04T08:15:00",
+        },
+    )
+    second = client.post(
+        "/api/literacy/current-balance",
+        json={
+            "participant_id": participant_id,
+            "amount": 6400,
+            "source": "self_reported",
+            "timestamp": "2026-04-04T11:15:00",
+        },
+    )
+    current = client.get("/api/literacy/current-balance", params={"participant_id": participant_id})
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert current.status_code == 200
+    payload_text = str(current.json())
+    assert "1800" not in payload_text
+    assert "6400" not in payload_text
+    assert current.json()["current_balance"]["balance_band_id"] == "3000_6999"
+    assert current.json()["history"][0]["balance_band_id"] == "1000_2999"
 
 
 def test_eod_savings_preview_stays_silent_without_balance_baseline(tmp_path, monkeypatch):

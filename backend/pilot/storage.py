@@ -4,7 +4,8 @@ import json
 import sqlite3
 from pathlib import Path
 
-from backend.pilot.redaction import redact_sensitive_text
+from backend.literacy.balance_savings import coarsen_balance_amount, coarsen_balance_band
+from backend.pilot.redaction import redact_sensitive_text, safe_review_surface_record
 
 
 class PilotStorage:
@@ -262,6 +263,11 @@ class PilotStorage:
                 CREATE TABLE IF NOT EXISTS current_balance (
                     participant_id TEXT PRIMARY KEY,
                     amount REAL NOT NULL,
+                    balance_band_id TEXT,
+                    amount_lower_bound REAL,
+                    amount_upper_bound REAL,
+                    amount_precision TEXT NOT NULL DEFAULT 'coarse_band',
+                    exact_amount_stored INTEGER NOT NULL DEFAULT 0,
                     source TEXT NOT NULL,
                     captured_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
@@ -271,6 +277,11 @@ class PilotStorage:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     participant_id TEXT NOT NULL,
                     amount REAL NOT NULL,
+                    balance_band_id TEXT,
+                    amount_lower_bound REAL,
+                    amount_upper_bound REAL,
+                    amount_precision TEXT NOT NULL DEFAULT 'coarse_band',
+                    exact_amount_stored INTEGER NOT NULL DEFAULT 0,
                     source TEXT NOT NULL,
                     captured_at TEXT NOT NULL,
                     replaced_at TEXT NOT NULL
@@ -412,6 +423,16 @@ class PilotStorage:
             self._ensure_column(conn, "essential_goal_profile", "affordability_bucket_id TEXT")
             self._ensure_column(conn, "essential_goal_profile", "ranking_metadata_json TEXT NOT NULL DEFAULT '{}'")
             self._ensure_column(conn, "essential_goal_profile", "config_version TEXT NOT NULL DEFAULT ''")
+            self._ensure_column(conn, "current_balance", "balance_band_id TEXT")
+            self._ensure_column(conn, "current_balance", "amount_lower_bound REAL")
+            self._ensure_column(conn, "current_balance", "amount_upper_bound REAL")
+            self._ensure_column(conn, "current_balance", "amount_precision TEXT NOT NULL DEFAULT 'coarse_band'")
+            self._ensure_column(conn, "current_balance", "exact_amount_stored INTEGER NOT NULL DEFAULT 0")
+            self._ensure_column(conn, "current_balance_history", "balance_band_id TEXT")
+            self._ensure_column(conn, "current_balance_history", "amount_lower_bound REAL")
+            self._ensure_column(conn, "current_balance_history", "amount_upper_bound REAL")
+            self._ensure_column(conn, "current_balance_history", "amount_precision TEXT NOT NULL DEFAULT 'coarse_band'")
+            self._ensure_column(conn, "current_balance_history", "exact_amount_stored INTEGER NOT NULL DEFAULT 0")
             conn.execute(
                 "CREATE UNIQUE INDEX IF NOT EXISTS idx_app_logs_event_id ON app_logs(event_id) WHERE event_id IS NOT NULL"
             )
@@ -1941,6 +1962,8 @@ class PilotStorage:
         domain_class: str | None = None,
         metadata: dict | None = None,
     ) -> bool:
+        safe_message = redact_sensitive_text(message, max_length=240)
+        safe_metadata = safe_review_surface_record(metadata or {})
         with self._connect() as conn:
             cursor = conn.execute(
                 """
@@ -1957,7 +1980,7 @@ class PilotStorage:
                     event_id,
                     participant_id,
                     level,
-                    message,
+                    safe_message,
                     event_type,
                     source_app,
                     target_app,
@@ -1976,7 +1999,7 @@ class PilotStorage:
                     url_host,
                     resolved_domain,
                     domain_class,
-                    self._json_text(metadata),
+                    self._json_text(safe_metadata),
                     language,
                     timestamp,
                 ),
@@ -2410,7 +2433,8 @@ class PilotStorage:
         with self._connect() as conn:
             row = conn.execute(
                 """
-                SELECT participant_id, amount, source, captured_at, updated_at
+                SELECT participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                       amount_precision, exact_amount_stored, source, captured_at, updated_at
                 FROM current_balance
                 WHERE participant_id=?
                 """,
@@ -2422,7 +2446,8 @@ class PilotStorage:
         with self._connect() as conn:
             rows = conn.execute(
                 """
-                SELECT participant_id, amount, source, captured_at, replaced_at
+                SELECT participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                       amount_precision, exact_amount_stored, source, captured_at, replaced_at
                 FROM current_balance_history
                 WHERE participant_id=?
                 ORDER BY replaced_at DESC, id DESC
@@ -2440,27 +2465,37 @@ class PilotStorage:
         source: str,
         captured_at: str,
         updated_at: str,
+        balance_band_id: str | None = None,
     ) -> None:
+        coarse_balance = coarsen_balance_band(balance_band_id) or coarsen_balance_amount(amount)
         with self._connect() as conn:
             existing = conn.execute(
                 """
-                SELECT amount, source, captured_at
+                SELECT amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                       amount_precision, exact_amount_stored, source, captured_at
                 FROM current_balance
                 WHERE participant_id=?
                 """,
                 (participant_id,),
             ).fetchone()
             if existing is not None:
+                existing_coarse = coarsen_balance_band(existing["balance_band_id"]) or coarsen_balance_amount(existing["amount"])
                 conn.execute(
                     """
                     INSERT INTO current_balance_history (
-                        participant_id, amount, source, captured_at, replaced_at
+                        participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                        amount_precision, exact_amount_stored, source, captured_at, replaced_at
                     )
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         participant_id,
-                        float(existing["amount"]),
+                        existing_coarse["amount"],
+                        existing_coarse["balance_band_id"],
+                        existing_coarse["amount_lower_bound"],
+                        existing_coarse["amount_upper_bound"],
+                        "coarse_band",
+                        0,
                         str(existing["source"]),
                         str(existing["captured_at"]),
                         updated_at,
@@ -2469,17 +2504,34 @@ class PilotStorage:
             conn.execute(
                 """
                 INSERT INTO current_balance (
-                    participant_id, amount, source, captured_at, updated_at
+                    participant_id, amount, balance_band_id, amount_lower_bound, amount_upper_bound,
+                    amount_precision, exact_amount_stored, source, captured_at, updated_at
                 )
-                VALUES (?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(participant_id)
                 DO UPDATE SET
                     amount=excluded.amount,
+                    balance_band_id=excluded.balance_band_id,
+                    amount_lower_bound=excluded.amount_lower_bound,
+                    amount_upper_bound=excluded.amount_upper_bound,
+                    amount_precision=excluded.amount_precision,
+                    exact_amount_stored=excluded.exact_amount_stored,
                     source=excluded.source,
                     captured_at=excluded.captured_at,
                     updated_at=excluded.updated_at
                 """,
-                (participant_id, amount, source, captured_at, updated_at),
+                (
+                    participant_id,
+                    coarse_balance["amount"],
+                    coarse_balance["balance_band_id"],
+                    coarse_balance["amount_lower_bound"],
+                    coarse_balance["amount_upper_bound"],
+                    "coarse_band",
+                    0,
+                    source,
+                    captured_at,
+                    updated_at,
+                ),
             )
 
     def count_recent_dismissals(self, participant_id: str, since_timestamp: str) -> int:

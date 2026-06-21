@@ -1,4 +1,4 @@
-from backend.pilot.redaction import safe_review_export_record
+from backend.pilot.redaction import safe_review_export_record, safe_review_surface_record
 from backend.pilot.storage import PilotStorage
 
 
@@ -149,7 +149,10 @@ def test_current_balance_upsert_replaces_latest_and_retains_history(tmp_path):
     )
     first = storage.get_current_balance("p1")
     assert first is not None
-    assert first["amount"] == 1200.0
+    assert first["amount"] == 1000.0
+    assert first["balance_band_id"] == "1000_2999"
+    assert first["amount_precision"] == "coarse_band"
+    assert first["exact_amount_stored"] == 0
     assert first["source"] == "self_reported"
 
     storage.upsert_current_balance(
@@ -163,10 +166,14 @@ def test_current_balance_upsert_replaces_latest_and_retains_history(tmp_path):
     latest = storage.get_current_balance("p1")
     history = storage.list_current_balance_history("p1", limit=10)
     assert latest is not None
-    assert latest["amount"] == 1500.0
+    assert latest["amount"] == 1000.0
+    assert latest["balance_band_id"] == "1000_2999"
+    assert latest["exact_amount_stored"] == 0
     assert latest["captured_at"] == "2026-03-08T10:30:00"
     assert len(history) == 1
-    assert history[0]["amount"] == 1200.0
+    assert history[0]["amount"] == 1000.0
+    assert history[0]["balance_band_id"] == "1000_2999"
+    assert history[0]["exact_amount_stored"] == 0
     assert history[0]["source"] == "self_reported"
 
 
@@ -344,6 +351,40 @@ def test_review_export_redacts_raw_trace_text_and_sensitive_metadata():
     assert exported["entity_context"]["upi_id"] == "[redacted]"
     assert exported["entity_context"]["risk_bucket"] == "upfront_fee_risk"
     assert exported["note"] == "[redacted_text]"
+
+
+def test_review_surface_redacts_raw_text_but_preserves_useful_review_fields():
+    surfaced = safe_review_surface_record(
+        {
+            "sample_id": "review-live-1",
+            "event_trace": [
+                {
+                    "event_type": "link_click",
+                    "raw_text": "Pay Rs. 499 and enter OTP 123456 at bad.site",
+                    "message": "User saw OTP 123456 after clicking https://bad.site",
+                    "account_number": "123456789012",
+                }
+            ],
+            "entity_context": {
+                "entity_key": "bad.site",
+                "raw_url": "https://bad.site/login?otp=123456",
+                "risk_bucket": "upfront_fee_risk",
+            },
+            "note": "participant said PAN ABCDE1234F and OTP 123456 were requested",
+        }
+    )
+
+    assert surfaced["sample_id"] == "review-live-1"
+    assert surfaced["event_trace"][0]["event_type"] == "link_click"
+    assert surfaced["event_trace"][0]["raw_text"] == "[redacted_text]"
+    assert "[redacted]" in surfaced["event_trace"][0]["message"]
+    assert "[redacted_url]" in surfaced["event_trace"][0]["message"]
+    assert surfaced["event_trace"][0]["account_number"] == "[redacted]"
+    assert surfaced["entity_context"]["entity_key"] == "bad.site"
+    assert surfaced["entity_context"]["raw_url"] == "[redacted]"
+    assert surfaced["entity_context"]["risk_bucket"] == "upfront_fee_risk"
+    assert "[redacted_pan]" in surfaced["note"]
+    assert "[redacted]" in surfaced["note"]
 
 
 def test_detector_calibration_summary_counts_false_positive_and_false_negative_candidates(tmp_path):

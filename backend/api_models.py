@@ -115,7 +115,8 @@ class LiteracyPolicyUpsertIn(BaseModel):
 
 class CurrentBalanceUpsertIn(BaseModel):
     participant_id: str = "global_user"
-    amount: float = Field(ge=0)
+    amount: Optional[FiniteFloat] = Field(default=None, ge=0)
+    balance_band_id: Optional[str] = None
     source: Literal["self_reported"] = "self_reported"
     language: str = "en"
     timestamp: Optional[str] = None

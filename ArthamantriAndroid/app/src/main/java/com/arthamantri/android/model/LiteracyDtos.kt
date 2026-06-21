@@ -271,7 +271,8 @@ data class EssentialGoalProfileResponse(
 
 data class CurrentBalanceRequest(
     val participant_id: String,
-    val amount: Double,
+    val amount: Double? = null,
+    val balance_band_id: String? = null,
     val source: String = "self_reported",
     val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
     val timestamp: String? = null,
@@ -279,6 +280,11 @@ data class CurrentBalanceRequest(
 
 data class CurrentBalanceRecordDto(
     val amount: Double? = null,
+    val balance_band_id: String? = null,
+    val amount_precision: String? = null,
+    val amount_is_exact: Boolean? = null,
+    val exact_amount_stored: Boolean? = null,
+    val storage_policy: String? = null,
     val source: String? = null,
     val captured_at: String? = null,
     val updated_at: String? = null,

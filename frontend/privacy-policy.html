@@ -29,9 +29,9 @@
       <p>
         FinSaathi gives safety warnings only. It does not give loans, sell investments,
         replace your bank, or ask for OTP, UPI PIN, Aadhaar, PAN, bank password, or card
-        details. FinSaathi does not require an exact bank balance, and it does not fetch
-        balances from your bank. If you choose, you may enter an approximate or current
-        money amount for better guidance.
+        details. FinSaathi does not require or store an exact bank balance, and it does
+        not fetch balances from your bank. If balance context is needed, FinSaathi uses
+        a rough balance range only for safer guidance.
       </p>
     </div>
 
@@ -43,7 +43,7 @@
         <li><strong>Usage access data:</strong> foreground app events are used to detect supported UPI/payment apps and selected link-context apps such as WhatsApp when needed to time risk warnings.</li>
         <li><strong>Overlay alert data:</strong> alert title, message, risk level, and user action are processed when a safety warning is shown on screen, including high-risk, cashflow, setup, or fallback alerts.</li>
         <li><strong>Link and payment context:</strong> URL/domain signals, UPI deep-link signals, payee labels/handles, request type, and approximate amounts may be processed when available.</li>
-        <li><strong>Profile and setup data:</strong> language, consent status, selected essential goals, optional money range/current balance, and permission state.</li>
+        <li><strong>Profile and setup data:</strong> language, consent status, selected essential goals, optional rough money range/current-balance band, and permission state.</li>
         <li><strong>Feedback and diagnostics:</strong> usefulness feedback, app logs, event IDs, participant/device identifier, and delivery diagnostics.</li>
       </ul>
     </div>
@@ -93,7 +93,7 @@
       <h2>6. What We Do Not Collect or Ask For</h2>
       <ul>
         <li>We do not ask for OTP, UPI PIN, Aadhaar, PAN, bank password, or card details.</li>
-        <li>We do not fetch bank balances directly from your bank, and exact bank balance is not required.</li>
+        <li>We do not fetch bank balances directly from your bank. Exact bank balance is not required or stored; only rough balance ranges are used.</li>
         <li>We do not sell loans, investments, insurance, or financial products.</li>
         <li>We do not sell personal data.</li>
       </ul>

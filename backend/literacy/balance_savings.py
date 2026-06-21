@@ -15,6 +15,16 @@ SUPPORTED_BALANCE_SOURCES = (
     "estimated",
     "verified",
 )
+CURRENT_BALANCE_STORAGE_POLICY = "exact_balance_not_stored"
+BALANCE_BANDS = (
+    (0.0, 500.0, "0_499", "Below Rs 500"),
+    (500.0, 1000.0, "500_999", "Rs 500-999"),
+    (1000.0, 3000.0, "1000_2999", "Rs 1,000-2,999"),
+    (3000.0, 7000.0, "3000_6999", "Rs 3,000-6,999"),
+    (7000.0, 15000.0, "7000_14999", "Rs 7,000-14,999"),
+    (15000.0, 30000.0, "15000_29999", "Rs 15,000-29,999"),
+    (30000.0, None, "30000_plus", "Rs 30,000+"),
+)
 SAVINGS_BUCKETS = (
     (100.0, 0.0, "below_100"),
     (300.0, 20.0, "100_299"),
@@ -111,6 +121,68 @@ ESSENTIAL_CATEGORY_KEYWORDS = {
 }
 
 
+def coarsen_balance_amount(amount: float | int | str | None) -> dict:
+    try:
+        numeric_amount = float(amount if amount is not None else 0.0)
+    except (TypeError, ValueError):
+        numeric_amount = 0.0
+    if not isfinite(numeric_amount) or numeric_amount < 0:
+        numeric_amount = 0.0
+
+    for lower_bound, upper_bound, band_id, label in BALANCE_BANDS:
+        if upper_bound is None or numeric_amount < upper_bound:
+            return {
+                "amount": round(lower_bound, 2),
+                "balance_band_id": band_id,
+                "amount_lower_bound": round(lower_bound, 2),
+                "amount_upper_bound": round(upper_bound, 2) if upper_bound is not None else None,
+                "display_label": label,
+                "amount_precision": "coarse_band",
+                "amount_is_exact": False,
+                "exact_amount_stored": False,
+                "storage_policy": CURRENT_BALANCE_STORAGE_POLICY,
+            }
+    lower_bound, upper_bound, band_id, label = BALANCE_BANDS[-1]
+    return {
+        "amount": round(lower_bound, 2),
+        "balance_band_id": band_id,
+        "amount_lower_bound": round(lower_bound, 2),
+        "amount_upper_bound": round(upper_bound, 2) if upper_bound is not None else None,
+        "display_label": label,
+        "amount_precision": "coarse_band",
+        "amount_is_exact": False,
+        "exact_amount_stored": False,
+        "storage_policy": CURRENT_BALANCE_STORAGE_POLICY,
+    }
+
+
+def coarsen_balance_band(balance_band_id: str | None) -> dict | None:
+    normalized = str(balance_band_id or "").strip().lower()
+    for lower_bound, upper_bound, band_id, label in BALANCE_BANDS:
+        if normalized == band_id:
+            return {
+                "amount": round(lower_bound, 2),
+                "balance_band_id": band_id,
+                "amount_lower_bound": round(lower_bound, 2),
+                "amount_upper_bound": round(upper_bound, 2) if upper_bound is not None else None,
+                "display_label": label,
+                "amount_precision": "coarse_band",
+                "amount_is_exact": False,
+                "exact_amount_stored": False,
+                "storage_policy": CURRENT_BALANCE_STORAGE_POLICY,
+            }
+    return None
+
+
+def current_balance_history_contract(records: list[dict]) -> list[dict]:
+    contracted_records = []
+    for record in records:
+        contracted = current_balance_contract(record)
+        if contracted is not None:
+            contracted_records.append(contracted)
+    return contracted_records
+
+
 def _coerce_datetime(value: str | None) -> datetime:
     if value:
         normalized = str(value).strip().replace("Z", "+00:00")
@@ -128,15 +200,41 @@ def _day_start(at: datetime) -> datetime:
 def current_balance_contract(record: dict | None) -> dict | None:
     if not record:
         return None
+    stored_band_id = str(record.get("balance_band_id") or "").strip()
+    coarse = coarsen_balance_band(stored_band_id) or coarsen_balance_amount(record.get("amount"))
+    lower_bound = record.get("amount_lower_bound")
+    upper_bound = record.get("amount_upper_bound")
+    if lower_bound is not None:
+        try:
+            coarse["amount_lower_bound"] = round(float(lower_bound), 2)
+            coarse["amount"] = round(float(lower_bound), 2)
+        except (TypeError, ValueError):
+            pass
+    if upper_bound is not None:
+        try:
+            coarse["amount_upper_bound"] = round(float(upper_bound), 2)
+        except (TypeError, ValueError):
+            pass
     return {
-        "amount": round(float(record.get("amount") or 0.0), 2),
+        "amount": coarse["amount"],
+        "balance_band_id": coarse["balance_band_id"],
+        "balance_band": {
+            "id": coarse["balance_band_id"],
+            "label": coarse["display_label"],
+            "lower_bound": coarse["amount_lower_bound"],
+            "upper_bound": coarse["amount_upper_bound"],
+        },
+        "amount_precision": "coarse_band",
+        "amount_is_exact": False,
+        "exact_amount_stored": False,
+        "storage_policy": CURRENT_BALANCE_STORAGE_POLICY,
         "source": str(record.get("source") or BALANCE_SOURCE_SELF_REPORTED),
         "captured_at": str(record.get("captured_at") or ""),
-        "updated_at": str(record.get("updated_at") or ""),
+        "updated_at": str(record.get("updated_at") or record.get("replaced_at") or ""),
         "source_semantics": {
-            "self_reported": "user_entered_ground_truth_for_that_moment",
-            "estimated": "system_estimated_from_observed_signals",
-            "verified": "future_regulated_or_partner_verified_balance",
+            "self_reported": "user_selected_or_entered_rough_balance_band",
+            "estimated": "system_estimated_as_rough_balance_band_from_observed_signals",
+            "verified": "future_regulated_or_partner_verified_balance_band",
         },
     }
 
@@ -246,6 +344,8 @@ def estimate_end_of_day_balance(
         "contract_version": BALANCE_SAVINGS_CONTRACT_VERSION,
         "as_of_timestamp": as_of.isoformat(),
         "opening_balance_for_day": round(opening_balance_for_day, 2),
+        "opening_balance_precision": baseline.get("amount_precision", "coarse_band"),
+        "opening_balance_band": baseline.get("balance_band"),
         "estimated_closing_balance": round(estimated_closing_balance, 2),
         "observed_credits_today": round(credits_today, 2),
         "observed_debits_today": round(debits_today, 2),

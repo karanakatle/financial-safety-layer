@@ -19,6 +19,7 @@ RAW_TEXT_KEYS = {
 
 SENSITIVE_VALUE_KEYS = {
     "raw_url",
+    "url",
     "otp",
     "upi_pin",
     "pin",
@@ -35,12 +36,25 @@ SENSITIVE_VALUE_KEYS = {
     "bank_password",
     "phone",
     "phone_number",
+    "handle",
     "mobile",
     "mobile_number",
     "ifsc",
+    "payee_handle",
     "password",
+    "upi_handle",
     "upi_id",
     "vpa",
+}
+
+REVIEW_SURFACE_FULL_TEXT_KEYS = {
+    "body",
+    "content",
+    "raw_message",
+    "raw_text",
+    "sms_text",
+    "notification_text",
+    "text",
 }
 
 
@@ -82,6 +96,10 @@ def safe_review_export_record(record: dict[str, Any]) -> dict[str, Any]:
     return _safe_export_value(record)
 
 
+def safe_review_surface_record(record: dict[str, Any]) -> dict[str, Any]:
+    return _safe_review_surface_value(record)
+
+
 def _safe_export_value(value: Any, *, key: str | None = None) -> Any:
     normalized_key = (key or "").strip().lower()
     if isinstance(value, dict):
@@ -97,4 +115,22 @@ def _safe_export_value(value: Any, *, key: str | None = None) -> Any:
         return "[redacted_text]"
     if normalized_key in SENSITIVE_VALUE_KEYS:
         return "[redacted]"
+    return redact_sensitive_text(value, max_length=240)
+
+
+def _safe_review_surface_value(value: Any, *, key: str | None = None) -> Any:
+    normalized_key = (key or "").strip().lower()
+    if isinstance(value, dict):
+        return {
+            item_key: _safe_review_surface_value(item_value, key=item_key)
+            for item_key, item_value in value.items()
+        }
+    if isinstance(value, list):
+        return [_safe_review_surface_value(item) for item in value]
+    if not isinstance(value, str):
+        return value
+    if normalized_key in SENSITIVE_VALUE_KEYS:
+        return "[redacted]"
+    if normalized_key in REVIEW_SURFACE_FULL_TEXT_KEYS:
+        return "[redacted_text]"
     return redact_sensitive_text(value, max_length=240)

@@ -4,7 +4,7 @@ from pathlib import Path
 from threading import Lock
 
 load_dotenv()
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from datetime import datetime
@@ -62,7 +62,10 @@ from backend.literacy.expense_personalization import build_expense_personalizati
 from backend.literacy.balance_savings import (
     build_balance_savings_response,
     build_borrowing_pressure_check,
+    coarsen_balance_amount,
+    coarsen_balance_band,
     current_balance_contract,
+    current_balance_history_contract,
 )
 from backend.literacy.domain_intelligence import enrich_domain_context
 from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
@@ -81,7 +84,7 @@ from backend.pilot.telemetry import (
     record_cashflow_fallback,
     record_payment_warning_generated,
 )
-from backend.pilot.redaction import redact_sensitive_text
+from backend.pilot.redaction import redact_sensitive_text, safe_review_surface_record
 from backend.config import load_literacy_policy
 from backend.nlp.pipeline import process_text
 from backend.interaction_manager import orchestrate_response
@@ -1195,7 +1198,7 @@ def literacy_current_balance_get(participant_id: str = "global_user") -> dict:
     return {
         "participant_id": participant_id,
         "current_balance": current_balance_contract(current_balance),
-        "history": pilot_storage.list_current_balance_history(participant_id, limit=10),
+        "history": current_balance_history_contract(pilot_storage.list_current_balance_history(participant_id, limit=10)),
         "supported_sources": ["self_reported", "estimated", "verified"],
     }
 
@@ -1205,9 +1208,15 @@ def literacy_current_balance_upsert(payload: CurrentBalanceUpsertIn) -> dict:
     participant_id = payload.participant_id.strip() or "global_user"
     captured_at = payload.timestamp or datetime.utcnow().isoformat()
     updated_at = datetime.utcnow().isoformat()
+    coarse_balance = coarsen_balance_band(payload.balance_band_id) if payload.balance_band_id else None
+    if coarse_balance is None and payload.amount is not None:
+        coarse_balance = coarsen_balance_amount(payload.amount)
+    if coarse_balance is None:
+        raise HTTPException(status_code=422, detail="amount or balance_band_id is required")
     pilot_storage.upsert_current_balance(
         participant_id=participant_id,
-        amount=float(payload.amount),
+        amount=float(coarse_balance["amount"]),
+        balance_band_id=coarse_balance["balance_band_id"],
         source=payload.source,
         captured_at=captured_at,
         updated_at=updated_at,
@@ -1219,8 +1228,8 @@ def literacy_current_balance_upsert(payload: CurrentBalanceUpsertIn) -> dict:
         signal_type="balance",
         signal_confidence="self_reported",
         category="current_balance",
-        amount=float(payload.amount),
-        note="self_reported_current_balance",
+        amount=float(coarse_balance["amount"]),
+        note=f"self_reported_current_balance_band:{coarse_balance['balance_band_id']}",
         timestamp=updated_at,
     )
     current_balance = pilot_storage.get_current_balance(participant_id)
@@ -1228,7 +1237,7 @@ def literacy_current_balance_upsert(payload: CurrentBalanceUpsertIn) -> dict:
         "ok": True,
         "participant_id": participant_id,
         "current_balance": current_balance_contract(current_balance),
-        "history": pilot_storage.list_current_balance_history(participant_id, limit=10),
+        "history": current_balance_history_contract(pilot_storage.list_current_balance_history(participant_id, limit=10)),
         "supported_sources": ["self_reported", "estimated", "verified"],
     }
 
@@ -1362,7 +1371,9 @@ def literacy_debug_trace(request: Request, participant_id: str = "global_user", 
         },
         "essential_goal_profile": effective_goal_profile(profile),
         "current_balance": current_balance_contract(current_balance),
-        "current_balance_history": pilot_storage.list_current_balance_history(participant_id, limit=safe_limit),
+        "current_balance_history": current_balance_history_contract(
+            pilot_storage.list_current_balance_history(participant_id, limit=safe_limit)
+        ),
         "essential_goal_envelope": essential_goal_envelope(
             profile,
             float((policy or {}).get("daily_safe_limit") or LITERACY_POLICY.daily_safe_limit),
@@ -1381,24 +1392,38 @@ def literacy_debug_trace(request: Request, participant_id: str = "global_user", 
             as_of_timestamp=trace_timestamp,
         ),
         "experiment_assignment": assignment,
-        "recent_literacy_events": pilot_storage.recent_literacy_events(participant_id, safe_limit),
-        "recent_financial_context": recent_financial_context(
-            participant_id=participant_id,
-            pilot_storage=pilot_storage,
-            limit=safe_limit,
+        "recent_literacy_events": [
+            safe_review_surface_record(record)
+            for record in pilot_storage.recent_literacy_events(participant_id, safe_limit)
+        ],
+        "recent_financial_context": safe_review_surface_record(
+            recent_financial_context(
+                participant_id=participant_id,
+                pilot_storage=pilot_storage,
+                limit=safe_limit,
+            )
         ),
         "recent_alert_features": pilot_storage.recent_alert_features(participant_id, safe_limit),
-        "recent_alert_feedback": pilot_storage.recent_alert_feedback(participant_id, safe_limit),
+        "recent_alert_feedback": [
+            safe_review_surface_record(record)
+            for record in pilot_storage.recent_alert_feedback(participant_id, safe_limit)
+        ],
         "recent_goal_feedback": pilot_storage.recent_goal_feedback(participant_id, safe_limit),
-        "recent_unified_telemetry": pilot_storage.recent_unified_telemetry(
-            participant_id=participant_id,
-            limit=safe_limit,
-        ),
-        "recent_sequence_traces": build_recent_sequence_groups(
-            pilot_storage=pilot_storage,
-            participant_id=participant_id,
-            limit=safe_limit,
-        ),
+        "recent_unified_telemetry": [
+            safe_review_surface_record(record)
+            for record in pilot_storage.recent_unified_telemetry(
+                participant_id=participant_id,
+                limit=safe_limit,
+            )
+        ],
+        "recent_sequence_traces": [
+            safe_review_surface_record(record)
+            for record in build_recent_sequence_groups(
+                pilot_storage=pilot_storage,
+                participant_id=participant_id,
+                limit=safe_limit,
+            )
+        ],
         "telemetry_comparison": pilot_storage.unified_telemetry_comparison(
             participant_id=participant_id,
             limit=safe_limit * 4,

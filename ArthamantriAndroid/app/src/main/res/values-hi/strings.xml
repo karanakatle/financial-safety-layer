@@ -93,17 +93,17 @@
     <string name="dialog_purpose_subtitle">FinSaathi कोई कदम उठाने से पहले जोखिम वाले पैसे संदेशों पर सुरक्षा चेतावनी देता है।</string>
     <string name="dialog_purpose_bullet_1">यह वित्तीय SMS और सूचनाएं, साथ में चुने हुए भुगतान-ऐप या लिंक क्षण, धोखाधड़ी, दबाव या असुरक्षित खाते के संकेतों के लिए जांचता है।</string>
     <string name="dialog_purpose_bullet_2">यह केवल सरल सुरक्षा चेतावनी देता है। यह लोन नहीं देता, निवेश नहीं बेचता और आपके बैंक की जगह नहीं लेता।</string>
-    <string name="dialog_purpose_bullet_3">यह कभी OTP, UPI PIN, Aadhaar, PAN, बैंक पासवर्ड या कार्ड जानकारी नहीं मांगता। exact bank balance केवल तब वैकल्पिक है जब आप खुद दर्ज करें।</string>
+    <string name="dialog_purpose_bullet_3">यह कभी OTP, UPI PIN, Aadhaar, PAN, बैंक पासवर्ड, कार्ड जानकारी या exact bank balance नहीं मांगता। यदि बैलेंस चाहिए तो केवल rough range उपयोग करें।</string>
     <string name="purpose_continue">जारी रखें</string>
     <string name="purpose_not_now">अभी नहीं</string>
 
     <string name="dialog_consent_title">FinSaathi सहमति</string>
     <string name="dialog_consent_subtitle">SMS, सूचना, उपयोग और ओवरले-आधारित सुरक्षा निगरानी चालू करने से पहले इन बातों को पढ़ लें।</string>
     <string name="dialog_consent_message">• FinSaathi सुरक्षा जोखिमों के लिए वित्तीय SMS, सूचनाएं, चुने हुए भुगतान-ऐप/लिंक क्षण और अलर्ट actions जांचता है।
-• FinSaathi OTP, UPI PIN, Aadhaar, PAN, बैंक पासवर्ड या कार्ड जानकारी नहीं मांगता। exact bank balance केवल तब वैकल्पिक है जब आप खुद दर्ज करें।
+• FinSaathi OTP, UPI PIN, Aadhaar, PAN, बैंक पासवर्ड, कार्ड जानकारी या exact bank balance नहीं मांगता। यदि बैलेंस चाहिए तो केवल rough range उपयोग करें।
 • आगे बढ़कर आप सुरक्षा, भरोसेमंदी और research validation के लिए गोपनीयता-सुरक्षित फोन निगरानी और सीमित telemetry/feedback की सहमति देते हैं।</string>
     <string name="dialog_consent_bullet_1">FinSaathi जोखिम वाले पैसे संदेश, भुगतान दबाव और असुरक्षित खाते से जुड़े अनुरोध पहचानने के लिए वित्तीय SMS, सूचनाएं, चुने हुए भुगतान-ऐप/लिंक क्षण और अलर्ट actions जांचता है।</string>
-    <string name="dialog_consent_bullet_2">FinSaathi OTP, UPI PIN, Aadhaar, PAN, बैंक पासवर्ड या कार्ड जानकारी नहीं मांगता। exact bank balance केवल तब वैकल्पिक है जब आप खुद दर्ज करें।</string>
+    <string name="dialog_consent_bullet_2">FinSaathi OTP, UPI PIN, Aadhaar, PAN, बैंक पासवर्ड, कार्ड जानकारी या exact bank balance नहीं मांगता। यदि बैलेंस चाहिए तो केवल rough range उपयोग करें।</string>
     <string name="dialog_consent_bullet_3">आगे बढ़कर आप सुरक्षा, भरोसेमंदी और research validation के लिए गोपनीयता-सुरक्षित निगरानी और सीमित telemetry/feedback की सहमति देते हैं। FinSaathi निवेश सलाह नहीं है।</string>
     <string name="consent_accept">मैं सहमत हूं</string>
     <string name="consent_not_now">अभी नहीं</string>

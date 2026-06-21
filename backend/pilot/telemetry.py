@@ -7,6 +7,8 @@ Future modules should extend records through additive metadata and trace ids
 rather than collapsing family-specific decisioning into one opaque path.
 """
 
+from backend.pilot.redaction import redact_sensitive_text
+
 
 def record_payment_warning_generated(
     *,
@@ -19,6 +21,8 @@ def record_payment_warning_generated(
     alert_family = str(inspection.get("alert_family") or "payment")
     telemetry_family = "account_access_warning" if alert_family == "account_access" else "payment_warning"
     event_name = "account_access_inspection" if alert_family == "account_access" else "upi_request_inspection"
+    raw_text = getattr(payload, "raw_text", None)
+    redacted_text = redact_sensitive_text(raw_text, max_length=220) if raw_text else None
     pilot_storage.add_unified_telemetry(
         participant_id=participant_id,
         telemetry_family=telemetry_family,
@@ -52,7 +56,7 @@ def record_payment_warning_generated(
             "sequence_trace": list(inspection.get("sequence_trace") or []),
         },
         extensions={
-            "raw_text": getattr(payload, "raw_text", None),
+            "redacted_text": redacted_text,
             "language": getattr(payload, "language", None),
             "link_clicked": getattr(payload, "link_clicked", None),
         },

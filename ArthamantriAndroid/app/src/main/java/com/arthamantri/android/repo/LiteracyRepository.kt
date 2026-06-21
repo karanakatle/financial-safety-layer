@@ -392,11 +392,24 @@ object LiteracyRepository {
         return ApiClient.literacyApi(context).upsertCurrentBalance(
             CurrentBalanceRequest(
                 participant_id = participantId,
-                amount = amount,
+                balance_band_id = balanceBandIdFor(amount),
                 language = language,
                 timestamp = timestamp,
             )
         )
+    }
+
+    private fun balanceBandIdFor(amount: Double): String {
+        val safeAmount = amount.takeIf { !it.isNaN() && !it.isInfinite() && it >= 0.0 } ?: 0.0
+        return when {
+            safeAmount < 500.0 -> "0_499"
+            safeAmount < 1000.0 -> "500_999"
+            safeAmount < 3000.0 -> "1000_2999"
+            safeAmount < 7000.0 -> "3000_6999"
+            safeAmount < 15000.0 -> "7000_14999"
+            safeAmount < 30000.0 -> "15000_29999"
+            else -> "30000_plus"
+        }
     }
 
     suspend fun fetchEndOfDaySavingsPreview(

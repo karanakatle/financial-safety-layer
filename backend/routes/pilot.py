@@ -33,7 +33,11 @@ from backend.literacy.entity_reputation import (
 from backend.literacy.sequence_correlation import build_recent_sequence_groups
 from backend.literacy.messages import literacy_message
 from backend.pilot.telemetry import record_client_app_log_telemetry
-from backend.pilot.redaction import redact_sensitive_text, safe_review_export_record
+from backend.pilot.redaction import (
+    redact_sensitive_text,
+    safe_review_export_record,
+    safe_review_surface_record,
+)
 
 
 def build_pilot_router(
@@ -43,6 +47,12 @@ def build_pilot_router(
     require_admin: Callable[[Request], None],
 ) -> APIRouter:
     router = APIRouter()
+
+    def _safe_review_records(records: list[dict]) -> list[dict]:
+        return [safe_review_surface_record(record) for record in records]
+
+    def _safe_review_record(record: dict | None) -> dict | None:
+        return safe_review_surface_record(record) if record else record
 
     def _resolve_review_material(
         *,
@@ -325,14 +335,18 @@ def build_pilot_router(
                 participant_id=participant_id,
                 limit=safe_limit * 4,
             ),
-            "recent_unified_telemetry": pilot_storage.recent_unified_telemetry(
-                participant_id=participant_id,
-                limit=safe_limit,
+            "recent_unified_telemetry": _safe_review_records(
+                pilot_storage.recent_unified_telemetry(
+                    participant_id=participant_id,
+                    limit=safe_limit,
+                )
             ),
-            "recent_sequence_traces": build_recent_sequence_groups(
-                pilot_storage=pilot_storage,
-                participant_id=participant_id,
-                limit=safe_limit,
+            "recent_sequence_traces": _safe_review_records(
+                build_recent_sequence_groups(
+                    pilot_storage=pilot_storage,
+                    participant_id=participant_id,
+                    limit=safe_limit,
+                )
             ),
         }
 
@@ -346,13 +360,17 @@ def build_pilot_router(
     ) -> dict:
         require_admin(request)
         safe_limit = max(1, min(limit, 200))
+        analytics = pilot_storage.analytics(
+            recent_limit=safe_limit,
+            participant_id=participant_id,
+            event_type=event_type,
+            correlation_id=correlation_id,
+        )
+        analytics["recent_feedback"] = _safe_review_records(analytics.get("recent_feedback") or [])
+        analytics["recent_app_logs"] = _safe_review_records(analytics.get("recent_app_logs") or [])
+        analytics["recent_context_events"] = _safe_review_records(analytics.get("recent_context_events") or [])
         return {
-            **pilot_storage.analytics(
-                recent_limit=safe_limit,
-                participant_id=participant_id,
-                event_type=event_type,
-                correlation_id=correlation_id,
-            ),
+            **analytics,
             "participant_id": participant_id,
             "event_type": event_type,
             "correlation_id": correlation_id,
@@ -366,9 +384,11 @@ def build_pilot_router(
                 participant_id=participant_id,
                 limit=safe_limit * 4,
             ),
-            "recent_unified_telemetry": pilot_storage.recent_unified_telemetry(
-                participant_id=participant_id,
-                limit=safe_limit,
+            "recent_unified_telemetry": _safe_review_records(
+                pilot_storage.recent_unified_telemetry(
+                    participant_id=participant_id,
+                    limit=safe_limit,
+                )
             ),
         }
 
@@ -390,12 +410,14 @@ def build_pilot_router(
                 participant_id=participant_id,
                 limit=safe_limit * 4,
             ),
-            "recent_unified_telemetry": pilot_storage.recent_unified_telemetry(
-                participant_id=participant_id,
-                limit=safe_limit,
+            "recent_unified_telemetry": _safe_review_records(
+                pilot_storage.recent_unified_telemetry(
+                    participant_id=participant_id,
+                    limit=safe_limit,
+                )
             ),
             "recent_literacy_events": (
-                pilot_storage.recent_literacy_events(participant_id, safe_limit)
+                _safe_review_records(pilot_storage.recent_literacy_events(participant_id, safe_limit))
                 if participant_id
                 else []
             ),
@@ -405,21 +427,25 @@ def build_pilot_router(
                 else []
             ),
             "recent_alert_feedback": (
-                pilot_storage.recent_alert_feedback(participant_id, safe_limit)
+                _safe_review_records(pilot_storage.recent_alert_feedback(participant_id, safe_limit))
                 if participant_id
                 else []
             ),
-            "recent_context_events": pilot_storage.recent_app_logs(
-                participant_id=participant_id,
-                limit=safe_limit,
-                event_type=event_type,
-                correlation_id=correlation_id,
-                context_only=True,
+            "recent_context_events": _safe_review_records(
+                pilot_storage.recent_app_logs(
+                    participant_id=participant_id,
+                    limit=safe_limit,
+                    event_type=event_type,
+                    correlation_id=correlation_id,
+                    context_only=True,
+                )
             ),
-            "recent_sequence_traces": build_recent_sequence_groups(
-                pilot_storage=pilot_storage,
-                participant_id=participant_id,
-                limit=safe_limit,
+            "recent_sequence_traces": _safe_review_records(
+                build_recent_sequence_groups(
+                    pilot_storage=pilot_storage,
+                    participant_id=participant_id,
+                    limit=safe_limit,
+                )
             ),
             "context_event_breakdown": pilot_storage.context_event_breakdown(participant_id=participant_id),
             "recent_entities": pilot_storage.recent_entities(limit=safe_limit),
@@ -428,10 +454,12 @@ def build_pilot_router(
             "entity_reputation_breakdown": pilot_storage.entity_reputation_breakdown(),
             "recent_entity_cohort_reputations": pilot_storage.recent_entity_cohort_reputations(limit=safe_limit),
             "entity_cohort_reputation_breakdown": pilot_storage.entity_cohort_reputation_breakdown(),
-            "recent_review_samples": pilot_storage.recent_review_samples(
-                participant_id=participant_id,
-                correlation_id=correlation_id,
-                limit=safe_limit,
+            "recent_review_samples": _safe_review_records(
+                pilot_storage.recent_review_samples(
+                    participant_id=participant_id,
+                    correlation_id=correlation_id,
+                    limit=safe_limit,
+                )
             ),
             "review_sample_breakdown": pilot_storage.review_sample_breakdown(),
         }
@@ -501,7 +529,7 @@ def build_pilot_router(
                 ),
                 None,
             )
-        return {"ok": True, "sample": matching}
+        return {"ok": True, "sample": _safe_review_record(matching)}
 
     @router.get("/api/pilot/review-samples")
     def pilot_review_samples(
@@ -533,7 +561,7 @@ def build_pilot_router(
             "review_status": review_status,
             "label": label,
             "count": len(records),
-            "review_samples": records,
+            "review_samples": _safe_review_records(records),
             "breakdown": pilot_storage.review_sample_breakdown(),
         }
 
@@ -793,7 +821,7 @@ def build_pilot_router(
             "classification": classification,
             "domain_class": domain_class,
             "count": len(records),
-            "events": records,
+            "events": _safe_review_records(records),
             "breakdown": pilot_storage.context_event_breakdown(participant_id=participant_id),
         }
 

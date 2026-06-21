@@ -36,7 +36,7 @@ def test_privacy_policy_covers_sensitive_permissions_and_boundaries():
         "pan",
         "bank password",
         "card details",
-        "exact bank balance is not required",
+        "exact bank balance is not required or stored",
         "we do not sell personal data",
         "https",
         "request deletion",
@@ -54,7 +54,6 @@ def test_play_console_checklist_matches_manifest_permissions():
     manifest_permissions = set(re.findall(r'<uses-permission[^>]+android:name="([^"]+)"', manifest))
     sensitive_permission_docs = {
         "android.permission.RECEIVE_SMS": ["receive_sms", "incoming sms"],
-        "android.permission.READ_SMS": ["read_sms", "incoming sms"],
         "android.permission.POST_NOTIFICATIONS": ["post_notifications", "fallback"],
         "android.permission.PACKAGE_USAGE_STATS": ["usage access", "selected link-context"],
         "android.permission.SYSTEM_ALERT_WINDOW": ["system_alert_window", "overlay"],
@@ -83,6 +82,7 @@ def test_play_console_checklist_matches_manifest_permissions():
         assert permission in manifest_permissions
         for term in expected_terms:
             assert term in checklist_lower
+    assert "android.permission.READ_SMS" not in manifest_permissions
 
     assert "android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" in manifest
     assert "notification listener service" in checklist_lower

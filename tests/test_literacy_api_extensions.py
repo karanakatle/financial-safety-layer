@@ -491,7 +491,8 @@ def test_sms_ingest_deduplicates_cross_source_duplicate_within_time_window(tmp_p
         if event["event_type"] == "sms_ingest_event"
     ]
     assert len(ingest_events) == 1
-    assert ingest_events[0]["note"] == "SMS from +919999999999"
+    assert ingest_events[0]["note"] != "SMS from +919999999999"
+    assert "[redacted" in ingest_events[0]["note"]
 
 
 def test_cashflow_guidance_localizes_goal_aware_copy_in_hindi(tmp_path, monkeypatch):
@@ -1093,6 +1094,7 @@ def test_context_events_store_domain_fields_and_backend_classification(tmp_path,
     assert event["url_host"] == "secure-login.paytm-help.top"
     assert event["resolved_domain"] == "paytm-help.top"
     assert event["domain_class"] == "suspicious"
+    assert event["metadata"]["raw_url"] == "[redacted]"
 
 
 def test_entity_registry_seeds_official_domain_from_context_event(tmp_path, monkeypatch):
@@ -1686,6 +1688,7 @@ def test_review_samples_can_be_labeled_and_exported_with_gold_filters(tmp_path, 
         },
     )
     assert bootstrap.status_code == 200
+    assert bootstrap.json()["sample"]["event_trace"][0]["text"] == "[redacted_text]"
 
     uncertain = client.post(
         "/api/pilot/review-samples",
@@ -1712,6 +1715,11 @@ def test_review_samples_can_be_labeled_and_exported_with_gold_filters(tmp_path, 
     review_samples_json = review_samples.json()
     assert review_samples_json["count"] >= 2
     assert any(item["sample_id"] == "review-live-1" for item in review_samples_json["review_samples"])
+    assert all(
+        item.get("event_trace", [{}])[0].get("text") != "public scam example"
+        for item in review_samples_json["review_samples"]
+        if item.get("event_trace")
+    )
     assert review_samples_json["breakdown"]["by_source_tier"]
 
     review = client.get(
