@@ -23,7 +23,7 @@ It is designed for **low-confidence digital finance users** and acts as a **real
 
 Instead of requiring direct bank integration, the app uses **phone-native signals** such as:
 
-- SMS messages
+- SMS messages 
 - payment app notifications
 - foreground payment app activity
 
