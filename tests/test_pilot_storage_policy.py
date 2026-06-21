@@ -1,3 +1,4 @@
+from backend.pilot.redaction import safe_review_export_record
 from backend.pilot.storage import PilotStorage
 
 
@@ -268,3 +269,283 @@ def test_goal_memory_and_feedback_storage(tmp_path):
     assert len(feedback) == 1
     assert feedback[0]["selected_goal"] == "fuel"
     assert feedback[0]["is_essential"] is True
+
+
+def test_detector_alert_feedback_export_contains_safe_review_fields_only(tmp_path):
+    db = tmp_path / "pilot_detector_export.db"
+    storage = PilotStorage(str(db))
+
+    storage.add_unified_telemetry(
+        event_id="feedback-event-1",
+        participant_id="p1",
+        telemetry_family="financial_risk",
+        record_type="usefulness",
+        event_name="alert_feedback",
+        alert_id="risk-alert-1",
+        source_route="/api/literacy/alert-feedback",
+        source="participant_feedback",
+        timestamp="2026-06-20T10:00:00",
+        category="upfront_fee_risk",
+        risk_level="red",
+        reason="pay_before_benefit",
+        action="not_useful",
+        channel="overlay",
+        summary_text="Raw OTP 123456 and PAN ABCDE1234F must never leave here.",
+        extensions={
+            "source_type": "sms",
+            "raw_text": "Pay Rs. 499 and share UPI PIN 9988",
+        },
+    )
+
+    exported = storage.export_detector_alert_feedback(limit=10)
+
+    assert exported == [
+        {
+            "alert_id": "risk-alert-1",
+            "category": "upfront_fee_risk",
+            "source_type": "sms",
+            "risk_level": "red",
+            "feedback": "not_useful",
+            "reason_code": "pay_before_benefit",
+            "timestamp": "2026-06-20T10:00:00",
+        }
+    ]
+    assert "raw_text" not in exported[0]
+    assert "summary_text" not in exported[0]
+
+
+def test_review_export_redacts_raw_trace_text_and_sensitive_metadata():
+    exported = safe_review_export_record(
+        {
+            "event_trace": [
+                {
+                    "message": "User said phone repair is needed for contractor calls.",
+                    "account_number": "123456789012",
+                }
+            ],
+            "sequence_trace": [
+                {
+                    "raw_text": "Pay Rs. 499 and enter OTP 123456 at bad.site",
+                    "source_app": "sms",
+                }
+            ],
+            "entity_context": {
+                "upi_id": "person@upi",
+                "risk_bucket": "upfront_fee_risk",
+            },
+            "note": "participant said they shared OTP 123456",
+        }
+    )
+
+    assert exported["event_trace"][0]["message"] == "[redacted_text]"
+    assert exported["event_trace"][0]["account_number"] == "[redacted]"
+    assert exported["sequence_trace"][0]["raw_text"] == "[redacted_text]"
+    assert exported["sequence_trace"][0]["source_app"] == "sms"
+    assert exported["entity_context"]["upi_id"] == "[redacted]"
+    assert exported["entity_context"]["risk_bucket"] == "upfront_fee_risk"
+    assert exported["note"] == "[redacted_text]"
+
+
+def test_detector_calibration_summary_counts_false_positive_and_false_negative_candidates(tmp_path):
+    db = tmp_path / "pilot_detector_calibration.db"
+    storage = PilotStorage(str(db))
+
+    storage.add_unified_telemetry(
+        event_id="feedback-fp-1",
+        participant_id="p1",
+        telemetry_family="financial_risk",
+        record_type="usefulness",
+        event_name="alert_feedback",
+        alert_id="risk-alert-fp-1",
+        source_route="/api/literacy/alert-feedback",
+        source="participant_feedback",
+        timestamp="2026-06-20T10:00:00",
+        category="upfront_fee_risk",
+        risk_level="red",
+        reason="pay_before_benefit",
+        action="not_useful",
+        channel="overlay",
+        extensions={"source_type": "sms"},
+    )
+    storage.add_unified_telemetry(
+        event_id="feedback-useful-1",
+        participant_id="p1",
+        telemetry_family="financial_risk",
+        record_type="usefulness",
+        event_name="alert_feedback",
+        alert_id="risk-alert-useful-1",
+        source_route="/api/literacy/alert-feedback",
+        source="participant_feedback",
+        timestamp="2026-06-20T10:05:00",
+        category="kyc_account_block_pressure",
+        risk_level="red",
+        reason="kyc_or_account_pressure",
+        action="useful",
+        channel="overlay",
+        extensions={"source_type": "notification"},
+    )
+    storage.add_unified_telemetry(
+        event_id="feedback-poisoned-1",
+        participant_id="p1",
+        telemetry_family="financial_risk",
+        record_type="usefulness",
+        event_name="alert_feedback",
+        alert_id="risk-alert-9876543210",
+        source_route="/api/literacy/alert-feedback",
+        source="participant_feedback",
+        timestamp="2026-06-20T10:07:00",
+        category="otp 123456",
+        risk_level="red",
+        reason="phone 9876543210",
+        action="not_useful",
+        channel="overlay",
+        extensions={"source_type": "sms"},
+    )
+    for index in range(3):
+        storage.upsert_review_sample(
+            sample_id=f"benign-before-missed-{index}",
+            participant_id="p2",
+            correlation_id=f"benign-corr-{index}",
+            source_tier="live_reviewed_ground_truth",
+            source_origin="participant_trace",
+            label="ignore_benign",
+            review_status="approved_ground_truth",
+            reviewer_id="analyst_a",
+            reviewed_at=f"2026-06-20T10:2{index}:00",
+            event_trace=[],
+            sequence_trace=[],
+            entity_context={},
+            alert_family="financial_risk",
+            heuristic_classification="benign_or_routine",
+            language="hi",
+            cohort="daily_cashflow_worker",
+            note="safe benign sample",
+            updated_at=f"2026-06-20T10:2{index}:00",
+        )
+    storage.upsert_review_sample(
+        sample_id="missed-scam-1",
+        participant_id="p2",
+        correlation_id="missed-corr-1",
+        source_tier="live_reviewed_ground_truth",
+        source_origin="participant_trace",
+        label="account_access_risk",
+        review_status="approved_ground_truth",
+        reviewer_id="analyst_a",
+        reviewed_at="2026-06-20T10:10:00",
+        event_trace=[],
+        sequence_trace=[],
+        entity_context={},
+        alert_family="financial_risk",
+        heuristic_classification="benign_or_routine",
+        language="hi",
+        cohort="daily_cashflow_worker",
+        note="safe synthetic note only",
+        updated_at="2026-06-20T10:10:00",
+    )
+
+    assert storage._detector_false_negative_candidate_rows(limit=1)[0]["sample_id"] == "missed-scam-1"
+
+    summary = storage.detector_calibration_summary(limit=50, top_n=5)
+
+    assert summary["feedback_sample_size"] == 3
+    assert summary["review_categories"][0]["id"] == "false_positive_candidate"
+    assert summary["top_false_positives"] == [
+        {
+            "category": "upfront_fee_risk",
+            "source_type": "sms",
+            "risk_level": "red",
+            "reason_code": "pay_before_benefit",
+            "count": 1,
+            "latest_timestamp": "2026-06-20T10:00:00",
+            "feedback_actions": ["not_useful"],
+        },
+        {
+            "category": "unknown",
+            "source_type": "sms",
+            "risk_level": "red",
+            "reason_code": "unknown",
+            "count": 1,
+            "latest_timestamp": "2026-06-20T10:07:00",
+            "feedback_actions": ["not_useful"],
+        }
+    ]
+    assert summary["top_false_negatives"] == [
+        {
+            "label": "account_access_risk",
+            "heuristic_classification": "benign_or_routine",
+            "alert_family": "financial_risk",
+            "count": 1,
+            "latest_timestamp": "2026-06-20T10:10:00",
+            "sample_ids": ["missed-scam-1"],
+        }
+    ]
+
+
+def test_permission_trust_summary_counts_dropoffs_and_overlay_reactions(tmp_path):
+    db = tmp_path / "pilot_permission_trust.db"
+    storage = PilotStorage(str(db))
+
+    storage.add_app_log(
+        participant_id="p1",
+        level="info",
+        message="permission_step_overlay_prompted",
+        language="en",
+        timestamp="2026-06-20T09:00:00",
+    )
+    storage.add_app_log(
+        participant_id="p1",
+        level="warn",
+        message="permission_step_overlay_denied",
+        language="en",
+        timestamp="2026-06-20T09:03:00",
+    )
+    storage.add_app_log(
+        participant_id="p1",
+        level="info",
+        message="overlay_reaction_scary",
+        language="en",
+        timestamp="2026-06-20T09:05:00",
+    )
+    storage.add_app_log(
+        participant_id="p2",
+        level="info",
+        message="permission_step_sms_prompted",
+        language="hi",
+        timestamp="2026-06-20T10:00:00",
+    )
+    storage.add_app_log(
+        participant_id="p2",
+        level="info",
+        message="permission_step_sms_granted",
+        language="hi",
+        timestamp="2026-06-20T10:01:00",
+    )
+    storage.add_app_log(
+        participant_id="p3",
+        level="info",
+        message="permission_onboarding_deferred",
+        language="hi",
+        timestamp="2026-06-20T11:00:00",
+    )
+
+    summary = storage.permission_trust_summary()
+
+    assert summary["sample_size"] == 3
+    assert summary["by_step"]["overlay"]["prompted_count"] == 1
+    assert summary["by_step"]["overlay"]["denied_count"] == 1
+    assert summary["by_step"]["sms"]["granted_count"] == 1
+    assert summary["decision_support"]["intro_deferred_count"] == 1
+    assert summary["decision_support"]["intro_deferred_participant_count"] == 1
+    assert summary["decision_support"]["incomplete_after_prompt_count"] == 3
+    assert summary["drop_off_points"][0]["step"] == "overlay"
+    assert any(item["step"] == "permission_intro" for item in summary["drop_off_points"])
+    assert summary["overlay_reactions"] == [
+        {
+            "reaction": "scary",
+            "count": 1,
+            "participant_count": 1,
+            "latest_timestamp": "2026-06-20T09:05:00",
+        }
+    ]
+    assert summary["decision_support"]["minimum_sample_met"] is False
+    assert summary["decision_support"]["recommended_install_motion"] == "collect_more_data"

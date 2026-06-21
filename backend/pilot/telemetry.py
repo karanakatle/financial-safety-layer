@@ -178,13 +178,21 @@ def record_alert_feedback_telemetry(
     title: str,
     message: str,
     timestamp: str,
+    category: str | None = None,
+    risk_level: str | None = None,
+    source_type: str | None = None,
+    reason_code: str | None = None,
 ) -> None:
     existing = pilot_storage.latest_unified_telemetry_for_alert(alert_id=alert_id, participant_id=participant_id)
-    telemetry_family = str((existing or {}).get("telemetry_family") or "cashflow")
+    has_detector_metadata = any(
+        (value or "").strip()
+        for value in (category, risk_level, source_type, reason_code)
+    )
+    telemetry_family = str((existing or {}).get("telemetry_family") or ("financial_risk" if has_detector_metadata else "cashflow"))
     normalized_action = action.strip().lower()
     record_type = (
         "usefulness"
-        if telemetry_family == "cashflow" and normalized_action in {"useful", "not_useful"}
+        if normalized_action in {"useful", "not_useful"}
         else "action"
     )
     pilot_storage.add_unified_telemetry(
@@ -199,8 +207,9 @@ def record_alert_feedback_telemetry(
         timestamp=timestamp,
         action=normalized_action,
         channel=channel,
-        risk_level=(existing or {}).get("risk_level"),
-        reason=(existing or {}).get("reason"),
+        category=(category or (existing or {}).get("category") or None),
+        risk_level=(risk_level or (existing or {}).get("risk_level") or None),
+        reason=(reason_code or (existing or {}).get("reason") or None),
         stage=(existing or {}).get("stage"),
         summary_text=message or title or action,
         context={
@@ -212,6 +221,7 @@ def record_alert_feedback_telemetry(
         extensions={
             "linked_source_route": (existing or {}).get("source_route"),
             "linked_source": (existing or {}).get("source"),
+            "source_type": source_type,
         },
     )
 

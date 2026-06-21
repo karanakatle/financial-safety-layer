@@ -16,6 +16,7 @@ from backend.api_models import (
     PilotFeedbackIn,
     PilotGrievanceIn,
     PilotGrievanceStatusIn,
+    PilotHumanReviewQueueIn,
     PilotReviewSampleUpsertIn,
 )
 from backend.literacy.domain_intelligence import enrich_domain_context
@@ -32,6 +33,7 @@ from backend.literacy.entity_reputation import (
 from backend.literacy.sequence_correlation import build_recent_sequence_groups
 from backend.literacy.messages import literacy_message
 from backend.pilot.telemetry import record_client_app_log_telemetry
+from backend.pilot.redaction import redact_sensitive_text, safe_review_export_record
 
 
 def build_pilot_router(
@@ -167,6 +169,25 @@ def build_pilot_router(
             "cohort": resolved_cohort or None,
         }
 
+    human_review_queueable_categories = {"unknown_link_money_pressure"}
+    human_review_queueable_risks = {"red", "high", "critical"}
+    human_review_max_confidence = 0.70
+
+    def _has_active_pilot_consent(participant_id: str) -> bool:
+        consent = pilot_storage.get_consent(participant_id)
+        return bool(consent and consent.get("accepted"))
+
+    def _is_human_review_eligible(payload: PilotHumanReviewQueueIn) -> bool:
+        category = payload.category.strip().lower()
+        risk_level = payload.risk_level.strip().lower()
+        return (
+            payload.reviewable
+            and category in human_review_queueable_categories
+            and risk_level in human_review_queueable_risks
+            and payload.confidence_score is not None
+            and payload.confidence_score <= human_review_max_confidence
+        )
+
     @router.get("/api/health")
     def health() -> dict:
         return {"status": "ok"}
@@ -220,6 +241,74 @@ def build_pilot_router(
             timestamp=event_timestamp,
         )
         return {"ok": True, "feedback_count": pilot_storage.summary()["feedback_count"]}
+
+    @router.post("/api/pilot/human-review-queue")
+    def pilot_human_review_queue(payload: PilotHumanReviewQueueIn) -> dict:
+        generic_guidance = (
+            "FinSaathi is not fully sure. Pause, do not share OTP/UPI PIN/bank details, "
+            "and verify through an official source or trusted person."
+        )
+        if (
+            not payload.consent_to_share_redacted_content
+            or not _has_active_pilot_consent(payload.participant_id)
+            or not _is_human_review_eligible(payload)
+        ):
+            return {
+                "ok": True,
+                "queued": False,
+                "sample_id": None,
+                "generic_safety_guidance": generic_guidance,
+            }
+
+        event_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+        sample_id = f"human-review-{uuid4().hex}"
+        sanitized_note = redact_sensitive_text(payload.redacted_snippet or "", max_length=220)
+        if not sanitized_note:
+            return {
+                "ok": True,
+                "queued": False,
+                "sample_id": None,
+                "generic_safety_guidance": generic_guidance,
+            }
+        pilot_storage.upsert_review_sample(
+            sample_id=sample_id,
+            participant_id=payload.participant_id.strip() or None,
+            correlation_id=payload.alert_id.strip() or None,
+            source_tier="live_reviewed_ground_truth",
+            source_origin="consented_redacted_alert",
+            label=None,
+            review_status="queued",
+            reviewer_id=None,
+            reviewed_at=None,
+            event_trace=[
+                {
+                    "event_type": "human_review_requested",
+                    "alert_id": payload.alert_id.strip(),
+                    "category": payload.category.strip().lower(),
+                    "risk_level": payload.risk_level.strip().lower(),
+                    "confidence_score": payload.confidence_score,
+                    "reviewable": payload.reviewable,
+                    "source_type": payload.source_type.strip().lower(),
+                    "reason_code": payload.reason_code.strip().lower(),
+                    "redacted_snippet": sanitized_note,
+                    "consent_scope": "redacted_content_only",
+                }
+            ],
+            sequence_trace=[],
+            entity_context={},
+            alert_family="financial_risk",
+            heuristic_classification=payload.category.strip().lower(),
+            language=payload.language.strip().lower() or None,
+            cohort=None,
+            note=sanitized_note,
+            updated_at=event_timestamp,
+        )
+        return {
+            "ok": True,
+            "queued": True,
+            "sample_id": sample_id,
+            "generic_safety_guidance": generic_guidance,
+        }
 
     @router.get("/api/pilot/summary")
     def pilot_summary(
@@ -458,9 +547,26 @@ def build_pilot_router(
         require_admin(request)
         safe_limit = max(1, min(limit, 5000))
         export_version = f"review-export-{datetime.utcnow().strftime('%Y%m%dT%H%M%SZ')}"
+        if (mode or "").strip().lower() == "detector_alert_feedback":
+            records = [
+                {
+                    **row,
+                    "export_version": export_version,
+                }
+                for row in pilot_storage.export_detector_alert_feedback(limit=safe_limit)
+            ]
+            return {
+                "mode": mode,
+                "include_uncertain": include_uncertain,
+                "count": len(records),
+                "export_version": export_version,
+                "generated_at": datetime.utcnow().isoformat(),
+                "records": records,
+            }
+
         records = [
             {
-                **row,
+                **safe_review_export_record(row),
                 "export_version": export_version,
             }
             for row in pilot_storage.export_review_samples(
@@ -477,6 +583,25 @@ def build_pilot_router(
             "generated_at": datetime.utcnow().isoformat(),
             "records": records,
         }
+
+    @router.get("/api/pilot/detector-calibration-summary")
+    def pilot_detector_calibration_summary(
+        request: Request,
+        limit: int = 500,
+        top_n: int = 5,
+    ) -> dict:
+        require_admin(request)
+        safe_limit = max(1, min(limit, 5000))
+        safe_top_n = max(1, min(top_n, 20))
+        return pilot_storage.detector_calibration_summary(limit=safe_limit, top_n=safe_top_n)
+
+    @router.get("/api/pilot/permission-trust-summary")
+    def pilot_permission_trust_summary(
+        request: Request,
+        participant_id: Optional[str] = None,
+    ) -> dict:
+        require_admin(request)
+        return pilot_storage.permission_trust_summary(participant_id=participant_id)
 
     @router.get("/api/pilot/entities")
     def pilot_entities(

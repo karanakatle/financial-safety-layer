@@ -12,6 +12,7 @@ from uuid import uuid4
 from backend.utils.logger import logger
 
 from backend.api_models import (
+    BorrowingPressurePreviewIn,
     CurrentBalanceUpsertIn,
     EodSavingsPreviewIn,
     EssentialGoalProfileUpsertIn,
@@ -35,9 +36,11 @@ from backend.literacy import (
     infer_goal_context,
     goal_impact_text,
     localize_alert,
+    policy_details_for_participant,
     policy_for_participant,
     persist_literacy_monitor,
     personalized_guidance_copy,
+    public_money_setup_sensitivity,
     recent_financial_context,
     auto_recalibrate_policy,
     resolve_experiment_variant,
@@ -56,7 +59,11 @@ from backend.literacy.essential_goal_setup import (
     supported_goal_ids,
 )
 from backend.literacy.expense_personalization import build_expense_personalization
-from backend.literacy.balance_savings import build_balance_savings_response, current_balance_contract
+from backend.literacy.balance_savings import (
+    build_balance_savings_response,
+    build_borrowing_pressure_check,
+    current_balance_contract,
+)
 from backend.literacy.domain_intelligence import enrich_domain_context
 from backend.literacy.entity_reputation import apply_reputation_feedback, reputation_risk_level
 from backend.literacy.entity_trust import (
@@ -74,6 +81,7 @@ from backend.pilot.telemetry import (
     record_cashflow_fallback,
     record_payment_warning_generated,
 )
+from backend.pilot.redaction import redact_sensitive_text
 from backend.config import load_literacy_policy
 from backend.nlp.pipeline import process_text
 from backend.interaction_manager import orchestrate_response
@@ -354,7 +362,7 @@ def _clear_cached_agent(participant_id: str | None) -> None:
 
 cors_allowed_origins, cors_allow_credentials = _load_cors_settings()
 
-app = FastAPI(title="Arthamantri Prototype", version="0.1.0")
+app = FastAPI(title="FinSaathi", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allowed_origins,
@@ -1123,17 +1131,17 @@ def _signals_since_current_balance(participant_id: str, current_balance: dict | 
 
 @app.get("/api/literacy/policy")
 def literacy_policy_get(participant_id: str = "global_user") -> dict:
-    daily_safe_limit, warning_ratio = policy_for_participant(
+    details = policy_details_for_participant(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
         literacy_policy=LITERACY_POLICY,
     )
-    custom = pilot_storage.get_participant_policy(participant_id)
     return {
         "participant_id": participant_id,
-        "daily_safe_limit": daily_safe_limit,
-        "warning_ratio": warning_ratio,
-        "source": "custom" if custom else "default",
+        "daily_safe_limit": details["daily_safe_limit"],
+        "warning_ratio": details["warning_ratio"],
+        "source": details["source"],
+        "money_setup_sensitivity": public_money_setup_sensitivity(details["money_setup_sensitivity"]),
     }
 
 
@@ -1147,7 +1155,7 @@ def literacy_policy_upsert(payload: LiteracyPolicyUpsertIn) -> dict:
         is_auto=False,
         updated_at=datetime.utcnow().isoformat(),
     )
-    daily_safe_limit, warning_ratio = policy_for_participant(
+    details = policy_details_for_participant(
         participant_id=participant_id,
         pilot_storage=pilot_storage,
         literacy_policy=LITERACY_POLICY,
@@ -1155,9 +1163,10 @@ def literacy_policy_upsert(payload: LiteracyPolicyUpsertIn) -> dict:
     return {
         "ok": True,
         "participant_id": participant_id,
-        "daily_safe_limit": daily_safe_limit,
-        "warning_ratio": warning_ratio,
-        "source": "custom",
+        "daily_safe_limit": details["daily_safe_limit"],
+        "warning_ratio": details["warning_ratio"],
+        "source": details["source"],
+        "money_setup_sensitivity": public_money_setup_sensitivity(details["money_setup_sensitivity"]),
     }
 
 
@@ -1303,6 +1312,35 @@ def literacy_eod_savings_preview(payload: EodSavingsPreviewIn) -> dict:
     return response
 
 
+@app.post("/api/literacy/borrowing-pressure-preview")
+def literacy_borrowing_pressure_preview(payload: BorrowingPressurePreviewIn) -> dict:
+    participant_id = payload.participant_id.strip() or "global_user"
+    language = _normalized_language(payload.language)
+    as_of_timestamp = payload.timestamp or datetime.utcnow().isoformat()
+    pressure_check = build_borrowing_pressure_check(
+        repayment_amount=float(payload.repayment_amount),
+        repayment_period=payload.repayment_period,
+        rough_income_amount=payload.rough_income_amount,
+        income_period=payload.income_period,
+        essential_expense_amount=payload.essential_expense_amount,
+        essential_expense_period=payload.essential_expense_period,
+        essential_expenses=payload.essential_expenses,
+        language=language,
+    )
+    return {
+        "participant_id": participant_id,
+        "language": language,
+        "as_of_timestamp": as_of_timestamp,
+        "surface": "backend_preview",
+        "pressure_check": pressure_check,
+        "scope": {
+            "not_first_sms_notification_mvp": True,
+            "non_advisory": True,
+            "rough_inputs_only": True,
+        },
+    }
+
+
 @app.get("/api/literacy/debug-trace")
 def literacy_debug_trace(request: Request, participant_id: str = "global_user", limit: int = 20) -> dict:
     require_pilot_admin(request)
@@ -1423,6 +1461,8 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
     normalized_alert_id = payload.alert_id.strip()
     normalized_action = payload.action.strip().lower()
     normalized_channel = payload.channel.strip().lower() or "overlay"
+    safe_title = redact_sensitive_text(payload.title.strip(), max_length=120)
+    safe_message = redact_sensitive_text(payload.message.strip(), max_length=160)
     source_record = pilot_storage.latest_unified_telemetry_for_alert(
         alert_id=normalized_alert_id,
         participant_id=participant_id,
@@ -1433,8 +1473,8 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
         participant_id=participant_id,
         action=normalized_action,
         channel=normalized_channel,
-        title=payload.title.strip(),
-        message=payload.message.strip(),
+        title=safe_title,
+        message=safe_message,
         timestamp=event_timestamp,
     )
     if not inserted:
@@ -1452,9 +1492,13 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
         alert_id=normalized_alert_id,
         action=normalized_action,
         channel=normalized_channel,
-        title=payload.title.strip(),
-        message=payload.message.strip(),
+        title=safe_title,
+        message=safe_message,
         timestamp=event_timestamp,
+        category=(payload.category or "").strip().lower() or None,
+        risk_level=(payload.risk_level or "").strip().lower() or None,
+        source_type=(payload.source_type or "").strip().lower() or None,
+        reason_code=(payload.reason_code or "").strip().lower() or None,
     )
     pilot_storage.add_experiment_event(
         participant_id=participant_id,
@@ -1464,7 +1508,7 @@ def literacy_alert_feedback(payload: LiteracyAlertFeedbackIn) -> dict:
         payload={
             "alert_id": normalized_alert_id,
             "channel": normalized_channel,
-            "title": payload.title.strip(),
+            "title": safe_title,
             "event_id": payload.event_id,
         },
         timestamp=event_timestamp,

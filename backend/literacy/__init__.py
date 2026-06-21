@@ -30,12 +30,20 @@ from .messages import (
     DEFAULT_STAGE2_OVER_LIMIT_TEMPLATE,
     literacy_message,
 )
-from .policy import auto_recalibrate_policy, policy_for_participant, resolve_experiment_variant
+from .policy import (
+    ai_explanation_policy_contract,
+    auto_recalibrate_policy,
+    policy_details_for_participant,
+    policy_for_participant,
+    public_money_setup_sensitivity,
+    resolve_experiment_variant,
+)
 from .runtime import build_literacy_monitor, persist_literacy_monitor
 
 __all__ = [
     "apply_goal_feedback_learning",
     "alert_severity_from_context",
+    "ai_explanation_policy_contract",
     "auto_recalibrate_policy",
     "FinancialLiteracySafetyMonitor",
     "build_literacy_monitor",
@@ -60,9 +68,11 @@ __all__ = [
     "literacy_message",
     "merchant_key_from_note",
     "next_action_text",
+    "policy_details_for_participant",
     "policy_for_participant",
     "persist_literacy_monitor",
     "personalized_guidance_copy",
+    "public_money_setup_sensitivity",
     "primary_cashflow_message",
     "recent_financial_context",
     "resolve_experiment_variant",

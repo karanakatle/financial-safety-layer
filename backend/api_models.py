@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Literal, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, FiniteFloat
+
+BorrowingPeriod = Literal["daily", "weekly", "monthly"]
 
 
 class TransactionIn(BaseModel):
@@ -126,6 +128,19 @@ class EodSavingsPreviewIn(BaseModel):
     timestamp: Optional[str] = None
 
 
+class BorrowingPressurePreviewIn(BaseModel):
+    participant_id: str = "global_user"
+    language: str = "en"
+    repayment_amount: FiniteFloat = Field(gt=0)
+    repayment_period: BorrowingPeriod = "monthly"
+    rough_income_amount: Optional[FiniteFloat] = Field(default=None, ge=0)
+    income_period: BorrowingPeriod = "monthly"
+    essential_expense_amount: Optional[FiniteFloat] = Field(default=None, ge=0)
+    essential_expense_period: BorrowingPeriod = "monthly"
+    essential_expenses: list[str] = Field(default_factory=list)
+    timestamp: Optional[str] = None
+
+
 class LiteracyAlertFeedbackIn(BaseModel):
     event_id: Optional[str] = None
     alert_id: str
@@ -135,6 +150,10 @@ class LiteracyAlertFeedbackIn(BaseModel):
     title: str = ""
     message: str = ""
     timestamp: Optional[str] = None
+    category: Optional[str] = None
+    risk_level: Optional[str] = None
+    source_type: Optional[str] = None
+    reason_code: Optional[str] = None
 
 
 class PilotConsentIn(BaseModel):
@@ -148,6 +167,21 @@ class PilotFeedbackIn(BaseModel):
     participant_id: str
     rating: int = Field(ge=1, le=5)
     comment: str = ""
+    language: str = "en"
+    timestamp: Optional[str] = None
+
+
+class PilotHumanReviewQueueIn(BaseModel):
+    participant_id: str
+    alert_id: str
+    consent_to_share_redacted_content: bool = False
+    category: str
+    risk_level: Literal["green", "yellow", "red", "low", "medium", "high", "critical"]
+    confidence_score: Optional[FiniteFloat] = Field(default=None, ge=0, le=1)
+    reviewable: bool = True
+    source_type: str
+    reason_code: str
+    redacted_snippet: Optional[str] = None
     language: str = "en"
     timestamp: Optional[str] = None
 

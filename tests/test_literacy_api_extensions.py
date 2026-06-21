@@ -87,8 +87,191 @@ def test_pilot_meta_localizes_disclaimer(tmp_path, monkeypatch):
 
     assert english.status_code == 200
     assert hindi.status_code == 200
-    assert "research prototype" in english.json()["disclaimer"]
-    assert "शोध प्रोटोटाइप" in hindi.json()["disclaimer"]
+    assert "financial literacy and safety nudges" in english.json()["disclaimer"]
+    assert "not investment advice" in english.json()["disclaimer"]
+    assert "वित्तीय साक्षरता" in hindi.json()["disclaimer"]
+    assert "निवेश सलाह नहीं" in hindi.json()["disclaimer"]
+
+
+def test_human_review_queue_without_consent_returns_generic_guidance_only(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/pilot/human-review-queue",
+        json={
+            "participant_id": "review_no_consent",
+            "alert_id": "alert-1",
+            "consent_to_share_redacted_content": False,
+            "category": "unknown_link_money_pressure",
+            "risk_level": "red",
+            "confidence_score": 0.62,
+            "reviewable": True,
+            "source_type": "sms",
+            "reason_code": "link_with_money_pressure",
+            "redacted_snippet": "Claim refund at https://bad.example with OTP 123456",
+            "language": "en",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["queued"] is False
+    assert payload["sample_id"] is None
+    assert "Pause" in payload["generic_safety_guidance"]
+
+    samples = client.get(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        params={"participant_id": "review_no_consent"},
+    )
+    assert samples.status_code == 200
+    assert samples.json()["review_samples"] == []
+
+
+def test_human_review_queue_requires_stored_pilot_consent(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    res = client.post(
+        "/api/pilot/human-review-queue",
+        json={
+            "participant_id": "review_claimed_consent_without_stored_consent",
+            "alert_id": "alert-claimed",
+            "consent_to_share_redacted_content": True,
+            "category": "unknown_link_money_pressure",
+            "risk_level": "red",
+            "confidence_score": 0.62,
+            "reviewable": True,
+            "source_type": "sms",
+            "reason_code": "link_with_money_pressure",
+            "redacted_snippet": "Claim refund at https://bad.example with OTP 123456",
+            "language": "en",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["queued"] is False
+    assert payload["sample_id"] is None
+
+    samples = client.get(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        params={"participant_id": "review_claimed_consent_without_stored_consent"},
+    )
+    assert samples.status_code == 200
+    assert samples.json()["review_samples"] == []
+
+
+def test_human_review_queue_with_consent_stores_redacted_sample(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    consent = client.post(
+        "/api/pilot/consent",
+        json={
+            "participant_id": "review_consented",
+            "accepted": True,
+            "language": "en",
+        },
+    )
+    assert consent.status_code == 200
+
+    res = client.post(
+        "/api/pilot/human-review-queue",
+        json={
+            "participant_id": "review_consented",
+            "alert_id": "alert-2",
+            "consent_to_share_redacted_content": True,
+            "category": "unknown_link_money_pressure",
+            "risk_level": "red",
+            "confidence_score": 0.62,
+            "reviewable": True,
+            "source_type": "notification",
+            "reason_code": "link_with_money_pressure",
+            "redacted_snippet": (
+                "Claim refund at https://bad.example. 123456 is OTP. UPI PIN 12 34. "
+                "Aadhaar 1234-5678-9012. CVV 123. Avl Bal Rs. 1,234.56. PAN ABCDE1234F"
+            ),
+            "language": "en",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["queued"] is True
+    assert payload["sample_id"].startswith("human-review-")
+
+    samples = client.get(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        params={"participant_id": "review_consented"},
+    )
+    assert samples.status_code == 200
+    rows = samples.json()["review_samples"]
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["source_origin"] == "consented_redacted_alert"
+    assert row["review_status"] == "queued"
+    assert row["alert_family"] == "financial_risk"
+    assert row["heuristic_classification"] == "unknown_link_money_pressure"
+    assert "123456" not in row["note"]
+    assert "12 34" not in row["note"]
+    assert "1234-5678-9012" not in row["note"]
+    assert "CVV 123" not in row["note"]
+    assert "1,234.56" not in row["note"]
+    assert "ABCDE1234F" not in row["note"]
+    assert "https://bad.example" not in row["note"]
+    assert "[redacted_url]" in row["note"]
+    assert "[redacted_pan]" in row["note"]
+    assert "[redacted_aadhaar]" in row["note"]
+    assert "[redacted_balance]" in row["note"]
+
+
+def test_human_review_queue_rejects_ineligible_case_even_with_stored_consent(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    consent = client.post(
+        "/api/pilot/consent",
+        json={
+            "participant_id": "review_ineligible",
+            "accepted": True,
+            "language": "en",
+        },
+    )
+    assert consent.status_code == 200
+
+    res = client.post(
+        "/api/pilot/human-review-queue",
+        json={
+            "participant_id": "review_ineligible",
+            "alert_id": "alert-ineligible",
+            "consent_to_share_redacted_content": True,
+            "category": "upfront_fee_risk",
+            "risk_level": "red",
+            "confidence_score": 0.92,
+            "reviewable": True,
+            "source_type": "sms",
+            "reason_code": "pay_before_benefit",
+            "redacted_snippet": "Pay Rs 499 now",
+            "language": "en",
+        },
+    )
+
+    assert res.status_code == 200
+    payload = res.json()
+    assert payload["ok"] is True
+    assert payload["queued"] is False
+    assert payload["sample_id"] is None
+
+    samples = client.get(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        params={"participant_id": "review_ineligible"},
+    )
+    assert samples.status_code == 200
+    assert samples.json()["review_samples"] == []
 
 
 def test_sms_ingest_returns_explainability_fields(tmp_path, monkeypatch):
@@ -1570,6 +1753,156 @@ def test_review_samples_can_be_labeled_and_exported_with_gold_filters(tmp_path, 
     gold_with_uncertain_ids = {item["sample_id"] for item in gold_with_uncertain.json()["records"]}
     assert "review-live-1" in gold_with_uncertain_ids
     assert "review-live-uncertain" in gold_with_uncertain_ids
+
+
+def test_detector_alert_feedback_export_excludes_raw_sensitive_text(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    feedback = client.post(
+        "/api/literacy/alert-feedback",
+        json={
+            "event_id": "safe-export-feedback-1",
+            "alert_id": "safe-export-alert-1",
+            "participant_id": "safe_export_p1",
+            "action": "not_useful",
+            "channel": "overlay",
+            "title": "Risky message warning",
+            "message": "User pasted OTP 123456, UPI PIN 9988, Aadhaar 1234 5678 9012, PAN ABCDE1234F, card 4111111111111111",
+            "timestamp": "2026-06-20T11:00:00Z",
+            "category": "upfront_fee_risk",
+            "risk_level": "red",
+            "source_type": "sms",
+            "reason_code": "pay_before_benefit",
+        },
+    )
+    assert feedback.status_code == 200
+
+    exported = client.get(
+        "/api/pilot/review-exports",
+        headers=_admin_headers(),
+        params={"mode": "detector_alert_feedback"},
+    )
+
+    assert exported.status_code == 200
+    payload = exported.json()
+    assert payload["mode"] == "detector_alert_feedback"
+    assert payload["records"] == [
+        {
+            "alert_id": "safe-export-alert-1",
+            "category": "upfront_fee_risk",
+            "source_type": "sms",
+            "risk_level": "red",
+            "feedback": "not_useful",
+            "reason_code": "pay_before_benefit",
+            "timestamp": "2026-06-20T11:00:00Z",
+            "export_version": payload["export_version"],
+        }
+    ]
+
+    serialized = str(payload)
+    assert "123456" not in serialized
+    assert "9988" not in serialized
+    assert "1234 5678 9012" not in serialized
+    assert "ABCDE1234F" not in serialized
+    assert "4111111111111111" not in serialized
+    assert "User pasted" not in serialized
+
+
+def test_detector_calibration_summary_endpoint_counts_review_candidates(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    feedback = client.post(
+        "/api/literacy/alert-feedback",
+        json={
+            "event_id": "calibration-feedback-1",
+            "alert_id": "calibration-alert-1",
+            "participant_id": "calibration_p1",
+            "action": "not_useful",
+            "channel": "overlay",
+            "title": "Risky message warning",
+            "message": "category=guaranteed_return_scheme\nrisk_level=red\nsource_type=sms\nreason_code=unrealistic_return_promise",
+            "timestamp": "2026-06-20T12:00:00Z",
+            "category": "guaranteed_return_scheme",
+            "risk_level": "red",
+            "source_type": "sms",
+            "reason_code": "unrealistic_return_promise",
+        },
+    )
+    assert feedback.status_code == 200
+
+    missed = client.post(
+        "/api/pilot/review-samples",
+        headers=_admin_headers(),
+        json={
+            "sample_id": "calibration-missed-1",
+            "participant_id": "calibration_p2",
+            "correlation_id": "calibration-corr-1",
+            "source_tier": "live_reviewed_ground_truth",
+            "source_origin": "participant_trace",
+            "label": "account_access_risk",
+            "review_status": "approved_ground_truth",
+            "reviewer_id": "analyst_a",
+            "alert_family": "financial_risk",
+            "heuristic_classification": "benign_or_routine",
+            "language": "hi",
+            "cohort": "daily_cashflow_worker",
+            "event_trace": [],
+            "sequence_trace": [],
+            "entity_context": {},
+            "note": "safe synthetic calibration sample",
+        },
+    )
+    assert missed.status_code == 200
+
+    summary = client.get(
+        "/api/pilot/detector-calibration-summary",
+        headers=_admin_headers(),
+        params={"limit": 50, "top_n": 5},
+    )
+
+    assert summary.status_code == 200
+    payload = summary.json()
+    assert payload["top_false_positives"][0]["category"] == "guaranteed_return_scheme"
+    assert payload["top_false_positives"][0]["feedback_actions"] == ["not_useful"]
+    assert payload["top_false_negatives"][0]["sample_ids"] == ["calibration-missed-1"]
+    assert payload["weekly_review_steps"]
+
+
+def test_permission_trust_summary_endpoint_counts_permission_dropoffs(tmp_path, monkeypatch):
+    client = _client_with_temp_db(tmp_path, monkeypatch)
+
+    for message, level in [
+        ("permission_step_notifications_prompted", "info"),
+        ("permission_step_notifications_denied", "warn"),
+        ("permission_onboarding_deferred", "info"),
+        ("overlay_reaction_confusing", "info"),
+    ]:
+        res = client.post(
+            "/api/pilot/app-log",
+            json={
+                "participant_id": "permission_p1",
+                "level": level,
+                "message": message,
+                "language": "en",
+                "timestamp": "2026-06-20T13:00:00Z",
+            },
+        )
+        assert res.status_code == 200
+
+    unauthorized = client.get("/api/pilot/permission-trust-summary")
+    assert unauthorized.status_code == 401
+
+    summary = client.get(
+        "/api/pilot/permission-trust-summary",
+        headers=_admin_headers(),
+    )
+
+    assert summary.status_code == 200
+    payload = summary.json()
+    assert payload["by_step"]["notifications"]["denied_count"] == 1
+    assert payload["drop_off_points"][0]["step"] == "notifications"
+    assert payload["overlay_reactions"][0]["reaction"] == "confusing"
+    assert payload["decision_support"]["intro_deferred_count"] == 1
 
 
 def test_cors_origins_can_be_configured(tmp_path, monkeypatch):
