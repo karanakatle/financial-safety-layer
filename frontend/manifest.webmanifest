@@ -1,7 +1,7 @@
 {
-  "name": "Arthamantri",
-  "short_name": "Arthamantri",
-  "description": "Event-driven financial safety agent prototype",
+  "name": "FinSaathi",
+  "short_name": "FinSaathi",
+  "description": "Event-driven financial safety assistant",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",

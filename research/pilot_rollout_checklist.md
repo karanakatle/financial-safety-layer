@@ -1,4 +1,4 @@
-# Arthamantri Pilot Rollout Checklist
+# FinSaathi Pilot Rollout Checklist
 
 ## Purpose
 - Provide an operational checklist for a controlled research pilot rollout.
@@ -14,6 +14,25 @@ This checklist is for:
 This checklist is not for:
 - open public consumer launch
 - unaudited self-serve installs
+
+## 0. Compliance / Legal Gate Before External Pilot
+
+Before any external pilot, scaled pilot, or bank/NGO/BC-assisted field rollout:
+
+- complete `docs/compliance-review-gate.md`
+- record compliance/legal review owner and decision
+- confirm no alert, script, or store copy contains investment advice, loan recommendation, lender ranking, or product sales
+- confirm FinSaathi does not recommend a specific financial product
+- confirm high-risk/ambiguous cases escalate to official bank support, NGO facilitator, BC/business correspondent, or human review
+- confirm future AI explanation has hallucination/advice review before user exposure
+
+No-Go conditions:
+
+- privacy policy does not match SMS, notification, usage access, overlay, backend, or telemetry behavior
+- consent copy does not explain sensitive permissions clearly
+- alert copy gives regulated financial advice
+- any workflow asks for OTP, UPI PIN, Aadhaar, PAN, bank password, card details, or exact balance
+- partner onboarding lacks documented roles, grievance handling, and data-sharing boundaries
 
 ## 1. Backend Readiness
 Run these against the deployed backend before the first participant.
@@ -111,6 +130,25 @@ For each real participant:
 6. start monitoring
 7. open Facilitator Setup Pack and verify all steps show complete
 
+### Permission Trust Experiment
+For 5-10 pilot users, run `docs/PERMISSION_TRUST_PILOT_SCRIPT.md` while using `docs/FACILITATOR_ONBOARDING_CARD.md`.
+
+Capture:
+- permission granted/denied/skipped outcome for SMS, notification access, usage access, and overlay access
+- participant-stated denial reason where possible
+- overlay reaction as useful, irritating, scary, or confusing
+- whether facilitator help was none, light, or heavy
+- final install-motion recommendation: direct, assisted, or partner-led
+
+Check aggregate results:
+
+```bash
+curl -s "$BASE/api/pilot/permission-trust-summary" \
+  -H "x-pilot-admin-key: $PILOT_ADMIN_KEY"
+```
+
+Use `research/permission_trust_pilot_report_template.md` for the final decision write-up.
+
 ## 7. Participant Identity Verification
 For every participant:
 - record the stable `participant_id`
@@ -182,6 +220,25 @@ Check daily:
 5. duplicate/missing participant IDs
 6. alert burden anomalies
 
+### Detector Calibration Review Loop
+Run this once per week during the pilot, and after any serious participant complaint about a wrong or missed financial-risk alert:
+
+```bash
+curl -s "$BASE/api/pilot/detector-calibration-summary" \
+  -H "x-pilot-admin-key: $PILOT_ADMIN_KEY"
+```
+
+Review categories:
+- `false_positive_candidate`: the detector showed an alert, but the participant marked it `not_useful` or dismissed it. This does not automatically mean the detector was wrong; the team must confirm whether the alert was actually benign.
+- `false_negative_candidate`: an approved ground-truth sample has a risky label such as `payment_outflow_risk` or `account_access_risk`, but the detector heuristic was benign, generic, unknown, or blank.
+
+Regression sample process:
+1. For a confirmed missed scam/risk sample, add a consent-safe or synthetic equivalent to `FinancialRiskMessageFixtures.missedScamRegressionSamples` through the fixture list and expect a non-green result.
+2. For a confirmed benign Red alert, add a consent-safe or synthetic equivalent to `FinancialRiskMessageFixtures.benignSuppressionSamples` through the fixture list and expect a non-red result.
+3. Do not copy raw private SMS, notification text, OTPs, account details, phone numbers, PAN, Aadhaar, card numbers, or UPI PINs into fixtures, Git, docs, or exports.
+4. Update detector rules only after the fixture reproduces the miss or false alarm.
+5. Rerun the Android detector tests and backend calibration-summary tests before changing pilot thresholds.
+
 ## 11. Stop Conditions
 Pause new enrollment if any of these happen:
 1. participant state resets unexpectedly
@@ -224,6 +281,7 @@ Go only if:
 3. onboarding + permissions are working
 4. SMS + UPI-open loop is verified
 5. debug-trace and research export are verified
+6. compliance/legal review is complete for the external pilot scope
 
 ## Bottom Line
 The rollout should be treated as:

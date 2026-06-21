@@ -2,6 +2,8 @@
 
 Use this card when onboarding a participant with low digital confidence.
 
+For the permission trust experiment, use this card together with `docs/PERMISSION_TRUST_PILOT_SCRIPT.md`. The facilitator must record where the participant hesitates or stops, but must not collect OTPs, UPI PINs, bank passwords, card details, Aadhaar, PAN, account numbers, or raw private SMS/notification content.
+
 ## English
 Participant profile:
 - Name: ____________________
@@ -32,6 +34,14 @@ Follow-up after 3-5 days:
 - Did alerts feel useful? Yes / No
 - Were alerts too frequent? Yes / No
 - Any confusing message? ____________________
+
+Permission trust notes:
+- SMS permission: Granted / Denied / Skipped. Reason: ____________________
+- Notification access: Granted / Denied / Skipped. Reason: ____________________
+- Usage access: Granted / Denied / Skipped. Reason: ____________________
+- Overlay access: Granted / Denied / Skipped. Reason: ____________________
+- Overlay reaction: Useful / Irritating / Scary / Confusing
+- Recommended install motion: Direct / Assisted / Partner-led
 
 ---
 
@@ -65,3 +75,11 @@ Follow-up after 3-5 days:
 - अलर्ट उपयोगी लगे? हाँ / नहीं
 - अलर्ट बहुत अधिक आए? हाँ / नहीं
 - कौन सा संदेश समझने में कठिन था? ____________________
+
+अनुमति भरोसा नोट्स:
+- SMS अनुमति: चालू / मना / छोड़ा. कारण: ____________________
+- सूचना अनुमति: चालू / मना / छोड़ा. कारण: ____________________
+- उपयोग अनुमति: चालू / मना / छोड़ा. कारण: ____________________
+- ओवरले अनुमति: चालू / मना / छोड़ा. कारण: ____________________
+- ओवरले प्रतिक्रिया: उपयोगी / परेशान करने वाला / डरावना / उलझन वाला
+- बेहतर सेटअप तरीका: सीधे इंस्टॉल / सहायक के साथ / बैंक-BC-NGO-कम्युनिटी के साथ
