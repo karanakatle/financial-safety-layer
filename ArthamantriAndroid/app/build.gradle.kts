@@ -14,7 +14,7 @@ val apiBaseUrl = (project.findProperty("API_BASE_URL") as String?)
     ?: "https://arthamantri-api.onrender.com/"
 val privacyPolicyUrl = (project.findProperty("PRIVACY_POLICY_URL") as String?)
     ?: System.getenv("PRIVACY_POLICY_URL")
-    ?: "https://arthamantri-api.onrender.com/privacy-policy.html"
+    ?: "https://karanakatle.github.io/finsaathi-legal/privacy-policy.html"
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val hasKeystoreProperties = keystorePropertiesFile.exists()

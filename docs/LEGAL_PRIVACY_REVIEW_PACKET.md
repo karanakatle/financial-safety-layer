@@ -41,7 +41,7 @@ Current local review artifact:
 
 - Release-candidate APK: `ArthamantriAndroid/app/build/outputs/apk/release/app-release.apk`
 - Release configuration checkpoint: `docs/RELEASE_CONFIGURATION_CHECKPOINT.md`
-- Important limitation: this APK is signed and buildable, but the configured hosted privacy URL currently returns `HTTP 503`, so it is not production-launch-ready.
+- Important limitation: this APK is signed and buildable with the live GitHub Pages privacy URL, but the configured backend API still points to the unavailable Render service. Backend-dependent app features will fail until the backend is restored or replaced.
 
 Recommended reviewer walkthrough:
 
@@ -193,7 +193,8 @@ Do not expose broader agentic AI behavior to real users until a separate halluci
 
 | Issue | Current status | Reviewer concern |
 |---|---|---|
-| Hosted privacy policy URL | Configured URL currently returns `HTTP 503` from Render | Public/Play release must wait until a stable HTTPS URL is live |
+| Backend API hosting | App still points to `https://arthamantri-api.onrender.com/`, which may be unavailable while the Render service is suspended | Backend-dependent app features require restored Render service or replacement HTTPS backend host |
+| Hosted privacy policy URL | Resolved with `https://karanakatle.github.io/finsaathi-legal/privacy-policy.html` returning `HTTP 200` | Play Console listing should use the same URL |
 | External legal/privacy review | Pending | Required before external pilot, scaled pilot, partner rollout, or public release |
 | Physical-device smoke | Pending | Sensitive Android permissions and overlays need real-device validation |
 | Keystore backup | Owner action pending | Release key continuity risk if local keystore/passwords are lost |
