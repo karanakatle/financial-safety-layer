@@ -1,0 +1,171 @@
+name: Regression Pack
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_id:
+        description: "Failed test/story ID, for example SIT-D-011. Comma or space separated values are allowed."
+        required: true
+        type: string
+      run_auto:
+        description: "Run automated command pack"
+        required: true
+        default: true
+        type: boolean
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  regression-pack:
+    name: Regression impact check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect regression test IDs
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          MANUAL_TEST_ID: ${{ github.event.inputs.test_id || '' }}
+          PR_TITLE: ${{ github.event.pull_request.title || '' }}
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          event_name = os.environ.get("EVENT_NAME", "")
+          manual = os.environ.get("MANUAL_TEST_ID", "")
+          pr_text = f"{os.environ.get('PR_TITLE', '')}\n{os.environ.get('PR_BODY', '')}"
+
+          source = manual if event_name == "workflow_dispatch" else pr_text
+          pattern = re.compile(r"\b(?:DEV|INT|SIT-H|SIT-D|PLAY|UAT|QA)-\d{3}\b", re.IGNORECASE)
+          ids = []
+          for match in pattern.findall(source):
+              normalized = match.upper()
+              if normalized not in ids:
+                  ids.append(normalized)
+
+          output_path = Path(os.environ["GITHUB_OUTPUT"])
+          with output_path.open("a", encoding="utf-8") as output:
+              output.write(f"test_ids={','.join(ids)}\n")
+              output.write(f"has_ids={'true' if ids else 'false'}\n")
+
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write("# Regression Pack Detection\n\n")
+              if ids:
+                  summary.write("Detected regression IDs:\n")
+                  for item in ids:
+                      summary.write(f"- `{item}`\n")
+              else:
+                  summary.write(
+                      "No regression test/story ID was found. "
+                      "Add an ID such as `SIT-D-011` to the PR title/body, "
+                      "or run this workflow manually with a test ID.\n"
+                  )
+          PY
+
+      - name: Set up Python
+        if: steps.detect.outputs.has_ids == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install backend test dependencies
+        if: steps.detect.outputs.has_ids == 'true'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+
+      - name: Set up Java
+        if: steps.detect.outputs.has_ids == 'true'
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Set up Android SDK
+        if: steps.detect.outputs.has_ids == 'true'
+        uses: android-actions/setup-android@v3
+
+      - name: Set up Gradle
+        if: steps.detect.outputs.has_ids == 'true'
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Validate regression impact map
+        if: steps.detect.outputs.has_ids == 'true'
+        run: scripts/run_regression_pack.py --validate
+
+      - name: Generate regression summary
+        if: steps.detect.outputs.has_ids == 'true'
+        env:
+          TEST_IDS: ${{ steps.detect.outputs.test_ids }}
+        run: |
+          set -euo pipefail
+          IFS=',' read -ra IDS <<< "$TEST_IDS"
+          for TEST_ID in "${IDS[@]}"; do
+            scripts/run_regression_pack.py "$TEST_ID" --markdown >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: Start local backend for integration packs
+        if: steps.detect.outputs.has_ids == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_AUTO_INPUT: ${{ github.event.inputs.run_auto || 'true' }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_AUTO_INPUT" != "true" ]]; then
+            echo "Manual workflow requested summary only; skipping local backend startup."
+            exit 0
+          fi
+
+          python -m uvicorn backend.main:app --host 127.0.0.1 --port 8765 > /tmp/finsaathi-backend.log 2>&1 &
+          echo "FINSAATHI_BACKEND_PID=$!" >> "$GITHUB_ENV"
+          sleep 5
+          if curl -fsS http://localhost:8765/api/health >/dev/null; then
+            echo "Local backend is ready on port 8765."
+          else
+            echo "Local backend did not become ready yet. Command packs that require it may fail."
+            cat /tmp/finsaathi-backend.log || true
+          fi
+
+      - name: Run automated regression packs
+        if: steps.detect.outputs.has_ids == 'true'
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_AUTO_INPUT: ${{ github.event.inputs.run_auto || 'true' }}
+          TEST_IDS: ${{ steps.detect.outputs.test_ids }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_AUTO_INPUT" != "true" ]]; then
+            echo "Manual workflow requested summary only; skipping automated command pack."
+            exit 0
+          fi
+
+          IFS=',' read -ra IDS <<< "$TEST_IDS"
+          echo "## Automated Execution Result" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          for TEST_ID in "${IDS[@]}"; do
+            echo "::group::Automated regression pack for ${TEST_ID}"
+            scripts/run_regression_pack.py "$TEST_ID" --run-auto
+            echo "::endgroup::"
+            echo "- `${TEST_ID}` automated command pack completed." >> "$GITHUB_STEP_SUMMARY"
+          done
+
+      - name: No regression pack requested
+        if: steps.detect.outputs.has_ids != 'true'
+        run: |
+          echo "No regression pack ID found. Skipping targeted automated reruns."
