@@ -16,6 +16,8 @@
 | `e6c0f12a` | Release configuration checkpoint after signed release-candidate build |
 | `7ca89adb` | External legal/privacy review packet and decision log |
 | `2f522f65` | Device-smoke report showing automated gates passed and physical-device smoke blocked |
+| `f3f9b0ab` | Implementation checkpoint refresh after release-readiness review |
+| `35655550` | Android chunk-2 review fixes for least-privilege SMS permission, backup rules, receiver exposure, and notification-listener matching |
 
 ## Verification Gates
 
@@ -30,7 +32,7 @@
 
 ## Story Record Summary
 
-Stories 1.1 through 6.4 are marked `done` in the BMAD implementation artifacts. Story 7.1 created the cleanup branch and inventory. Story 7.2 grouped and committed the completed sprint work. Story 7.3 completed local signing and signed release-candidate builds but remains blocked on hosted privacy policy availability. Story 7.4 prepared the external legal/privacy review packet. Story 7.5 recorded automated smoke success and remains blocked on physical-device validation.
+Stories 1.1 through 6.4 are marked `done` in the BMAD implementation artifacts. Story 7.1 created the cleanup branch and inventory. Story 7.2 grouped and committed the completed sprint work. Story 7.3 completed local signing and signed release-candidate builds but remains blocked on hosted privacy policy availability. Story 7.4 prepared the external legal/privacy review packet. Story 7.5 recorded automated smoke success and remains blocked on physical-device validation. The Android chunk-2 review removed unused SMS inbox/history permission, wired backup exclusions, closed the internal savings nudge receiver, and tightened notification-listener permission matching.
 
 The source BMAD story records live outside this nested product Git repository at:
 
