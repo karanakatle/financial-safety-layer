@@ -3,6 +3,7 @@ package com.arthamantri.android
 import android.Manifest
 import android.app.AlertDialog
 import android.app.AppOpsManager
+import android.content.ComponentName
 import android.content.res.Configuration
 import android.content.Context
 import android.content.Intent
@@ -59,6 +60,7 @@ import com.arthamantri.android.model.EssentialGoalEnvelopeDto
 import com.arthamantri.android.model.EssentialGoalProfileDto
 import com.arthamantri.android.notify.AlertNotifier
 import com.arthamantri.android.notify.HumanReviewSupportMetadata
+import com.arthamantri.android.notify.TransactionNotificationListenerService
 import com.arthamantri.android.repo.LiteracyRepository
 import com.arthamantri.android.savings.SavingsNudgeScheduler
 import com.arthamantri.android.usage.AppUsageForegroundService
@@ -1258,9 +1260,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun hasSmsRuntimePermissions(): Boolean {
-        val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-        val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-        return smsReceive && smsRead
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun hasAppNotificationsEnabled(): Boolean {
@@ -1801,9 +1801,6 @@ class MainActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             needed.add(Manifest.permission.RECEIVE_SMS)
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            needed.add(Manifest.permission.READ_SMS)
-        }
 
         if (needed.isNotEmpty()) {
             ActivityCompat.requestPermissions(this, needed.toTypedArray(), AppConstants.RequestCodes.RUNTIME_PERMISSIONS)
@@ -1815,9 +1812,6 @@ class MainActivity : AppCompatActivity() {
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) != PackageManager.PERMISSION_GRANTED) {
             needed.add(Manifest.permission.RECEIVE_SMS)
-        }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            needed.add(Manifest.permission.READ_SMS)
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -2735,13 +2729,17 @@ class MainActivity : AppCompatActivity() {
 
     private fun hasNotificationListenerPermission(): Boolean {
         val enabled = Secure.getString(contentResolver, AppConstants.SecureSettings.ENABLED_NOTIFICATION_LISTENERS) ?: return false
-        return enabled.contains(packageName)
+        val expectedComponent = ComponentName(this, TransactionNotificationListenerService::class.java)
+        return enabled.split(':').any { flattened ->
+            ComponentName.unflattenFromString(flattened)?.let { component ->
+                component.packageName == expectedComponent.packageName &&
+                    component.className == expectedComponent.className
+            } == true
+        }
     }
 
     private fun hasSmsAccessEnabled(): Boolean {
-        val smsReceive = ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
-        val smsRead = ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) == PackageManager.PERMISSION_GRANTED
-        return smsReceive && smsRead
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.RECEIVE_SMS) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun setStatus(text: String) {
@@ -3008,7 +3006,7 @@ class MainActivity : AppCompatActivity() {
                 val guidedFlowActive = getSharedPreferences(AppConstants.Prefs.PILOT_PREFS, Context.MODE_PRIVATE)
                     .getBoolean(AppConstants.Prefs.KEY_GUIDED_PERMISSION_FLOW_ACTIVE, false)
                 val stateAfterReturn = permissionOnboardingState()
-                if (permissions.any { it == Manifest.permission.RECEIVE_SMS || it == Manifest.permission.READ_SMS }) {
+                if (permissions.any { it == Manifest.permission.RECEIVE_SMS }) {
                     logPermissionReturn(PermissionStep.SMS, stateAfterReturn)
                 }
                 if (allGranted &&

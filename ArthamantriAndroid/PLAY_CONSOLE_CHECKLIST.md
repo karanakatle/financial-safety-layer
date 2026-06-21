@@ -61,7 +61,7 @@ Use this as the first-pass Play Console Data Safety draft. Final answers must be
 
 Ensure in-app explanation + policy text covers why each is needed:
 
-- `RECEIVE_SMS` / `READ_SMS`: detect bank debit SMS for overspend/fraud signals.
+- `RECEIVE_SMS`: receive and scan newly incoming SMS for overspend/fraud signals.
 - Notification listener service: detect UPI/payment notifications for risk alerts.
 - Usage access: detect opening of UPI/payment apps and selected link-context apps so warnings can be timed.
 - Overlay (`SYSTEM_ALERT_WINDOW`): show stop-and-verify warnings over the screen for important payment, cashflow, setup, fallback, or account-access moments.
