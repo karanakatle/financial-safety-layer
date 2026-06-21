@@ -193,7 +193,7 @@ Do not expose broader agentic AI behavior to real users until a separate halluci
 
 | Issue | Current status | Reviewer concern |
 |---|---|---|
-| Backend API hosting | App still points to `https://arthamantri-api.onrender.com/`, which may be unavailable while the Render service is suspended | Backend-dependent app features require restored Render service or replacement HTTPS backend host |
+| Backend API hosting | Android release builds must now provide an explicit stable backend URL with `-PAPI_BASE_URL=...`; the old Render URL is no longer a silent fallback | Backend-dependent app features require restored Render service or replacement HTTPS backend host before production release |
 | Hosted privacy policy URL | Resolved with `https://karanakatle.github.io/finsaathi-legal/privacy-policy.html` returning `HTTP 200` | Play Console listing should use the same URL |
 | External legal/privacy review | Pending | Required before external pilot, scaled pilot, partner rollout, or public release |
 | Physical-device smoke | Pending | Sensitive Android permissions and overlays need real-device validation |

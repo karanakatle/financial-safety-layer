@@ -6,7 +6,7 @@ Use this when creating a real release build for testers/users.
 
 - Release application ID: `com.finsaathi.android`
 - Debug application ID: `com.finsaathi.android.dev`
-- Internal Kotlin namespace currently remains `com.arthamantri.android`
+- Android source namespace: `com.finsaathi.android`
 
 Do not change `applicationId` after the first public Play Store release. See `PACKAGE_MIGRATION_PLAN.md`.
 
@@ -97,15 +97,15 @@ cd ArthamantriAndroid
 Debug install flow:
 
 ```bash
-adb uninstall com.arthamantri.android
-adb uninstall com.arthamantri.android.dev
 adb uninstall com.finsaathi.android
 adb uninstall com.finsaathi.android.dev
 cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
-./gradlew :app:assembleDebug -PAPI_BASE_URL=https://arthamantri-api.onrender.com/
+./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell pm list packages | grep finsaathi
 ```
+
+Debug builds default to `http://10.0.2.2:8765/` for emulator-to-local-backend testing. Pass `-PAPI_BASE_URL=...` only when you want a debug build to target another backend.
 
 Expected package:
 - `package:com.finsaathi.android.dev`

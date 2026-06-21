@@ -10,7 +10,7 @@ This project uses centralized constants to avoid scattered hardcoded values.
   - Rule: any user-facing text must be in string resources, not Kotlin literals.
 
 - Non-UI app constants:
-  - `app/src/main/java/com/arthamantri/android/core/AppConstants.kt`
+  - `app/src/main/java/com/finsaathi/android/core/AppConstants.kt`
   - Use for:
     - preference keys
     - request codes

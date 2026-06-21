@@ -2,7 +2,5 @@
 <full-backup-content>
     <exclude domain="sharedpref" path="finsaathi_prefs.xml" />
     <exclude domain="sharedpref" path="finsaathi_android_prefs.xml" />
-    <!-- Legacy debug/internal names are kept excluded for anyone testing pre-release builds. -->
     <exclude domain="sharedpref" path="pilot_prefs.xml" />
-    <exclude domain="sharedpref" path="arthamantri_android_prefs.xml" />
 </full-backup-content>
