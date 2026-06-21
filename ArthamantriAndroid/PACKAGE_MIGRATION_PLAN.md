@@ -1,6 +1,6 @@
 # FinSaathi Package / Data Migration Plan
 
-Last updated: 2026-06-20
+Last updated: 2026-06-21
 
 ## Decision
 
@@ -8,14 +8,10 @@ FinSaathi should use the final public Android application ID before the first Pl
 
 - Release application ID: `com.finsaathi.android`
 - Debug application ID: `com.finsaathi.android.dev`
+- Android source namespace: `com.finsaathi.android`
 - App name: `FinSaathi`
 
-The inherited Kotlin source namespace remains temporarily:
-
-- Internal source namespace: `com.arthamantri.android`
-- Internal source path: `app/src/main/java/com/arthamantri/android`
-
-This is deliberate. The public package identity is what matters for Play Store release continuity. A broad Kotlin namespace/source-path rename can be handled later as an internal refactor, but it should not block the first production package identity.
+The inherited Kotlin source namespace has now been migrated to FinSaathi before public release. The public package identity and source namespace are aligned.
 
 ## Current Identifiers
 
@@ -23,7 +19,7 @@ This is deliberate. The public package identity is what matters for Play Store r
 |---|---|---|
 | Gradle `applicationId` | `com.finsaathi.android` | Final public package ID |
 | Debug app ID | `com.finsaathi.android.dev` | Separate dev install |
-| Gradle `namespace` | `com.arthamantri.android` | Temporarily retained internal namespace |
+| Gradle `namespace` | `com.finsaathi.android` | Final source namespace |
 | App prefs | `finsaathi_prefs` | Final pre-release app prefs |
 | Config prefs | `finsaathi_android_prefs` | Final pre-release config prefs |
 | Safety notification channel | `finsaathi_safety_alerts` | Final pre-release channel ID |
@@ -40,30 +36,30 @@ Because FinSaathi has not yet been publicly released, the package ID should be f
 
 For pre-release/debug testers:
 
-- Existing `com.arthamantri.android.dev` installs should be uninstalled before installing `com.finsaathi.android.dev`.
-- Existing local prefs may reset because this is a pre-release identity correction.
-- Legacy pref backup exclusions are retained to avoid restoring old debug/internal state.
+- Existing local prefs may reset when moving from old pre-release builds because this was a pre-release identity correction.
+- Backup/data-extraction exclusions cover the current FinSaathi prefs and the old generic `pilot_prefs` file. Old-brand config-pref exclusions were removed because the current app no longer uses the inherited preference file name.
 
 For public release:
 
 - No public-user data migration is required if the first Play listing uses `com.finsaathi.android`.
 - After public release, do not change `applicationId`.
 
-## If Internal Namespace Is Renamed Later
+## Completed Source Namespace Migration
 
-If the Kotlin source namespace is later renamed to `com.finsaathi.android`, do it as a separate refactor:
+Completed in Story 7.6 before public release:
 
-1. Move source/test folders from `com/arthamantri/android` to `com/finsaathi/android`.
-2. Rewrite Kotlin package declarations and imports.
-3. Update ProGuard rules and documentation references.
-4. Keep `applicationId = "com.finsaathi.android"` unchanged.
-5. Run unit tests, debug build, release build, and device smoke tests.
+1. Source/test folders moved to `com/finsaathi/android`.
+2. Kotlin package declarations and imports use `com.finsaathi.android`.
+3. Gradle namespace uses `com.finsaathi.android`.
+4. ProGuard rules and active developer documentation were updated.
+5. `applicationId = "com.finsaathi.android"` remains unchanged.
+6. Unit tests, debug build, release build, and emulator launcher verification passed.
 
 ## Release Notes Guidance
 
 For internal testers:
 
-> FinSaathi now uses its final Android package identity. Please uninstall older Arthamantri/FinSaathi dev builds before installing this build.
+> FinSaathi now uses its final Android package identity and source namespace. Please uninstall older pre-release dev builds before installing this build.
 
 For Play release:
 

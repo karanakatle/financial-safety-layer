@@ -21,7 +21,7 @@
 | Backend tests | `.venv/bin/python -m pytest` | `149 passed` |
 | Android unit tests | `./gradlew --no-daemon :app:testDebugUnitTest` | `BUILD SUCCESSFUL` |
 | Android debug build | `./gradlew --no-daemon :app:assembleDebug` | `BUILD SUCCESSFUL` |
-| Android release build | `./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html` | `BUILD SUCCESSFUL` |
+| Android release build | `./gradlew --no-daemon :app:assembleRelease -PAPI_BASE_URL=https://api.yourdomain.com/ -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html` | `BUILD SUCCESSFUL` |
 
 ## Release Candidate Artifact
 
@@ -29,7 +29,7 @@
 - Release signing: local ignored `keystore.properties` and `finsaathi-release.keystore`
 - Release privacy URL configured in BuildConfig: `https://karanakatle.github.io/finsaathi-legal/privacy-policy.html`
 - Privacy URL verification: GitHub Pages returned `HTTP 200`.
-- Known release blocker: backend API still points to `https://arthamantri-api.onrender.com/`. If that Render service remains unavailable, backend-dependent app features will fail until the backend is restored or replaced.
+- Known release blocker: a stable HTTPS backend URL must be restored or selected, then supplied explicitly with `-PAPI_BASE_URL=...` for release builds.
 
 ## Physical Smoke Checklist Not Yet Executed
 

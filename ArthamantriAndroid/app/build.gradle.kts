@@ -9,31 +9,43 @@ plugins {
     id("org.jetbrains.kotlin.android")
 }
 
-val apiBaseUrl = (project.findProperty("API_BASE_URL") as String?)
-    ?: System.getenv("API_BASE_URL")
-    ?: "https://arthamantri-api.onrender.com/"
-val privacyPolicyUrl = (project.findProperty("PRIVACY_POLICY_URL") as String?)
-    ?: System.getenv("PRIVACY_POLICY_URL")
-    ?: "https://karanakatle.github.io/finsaathi-legal/privacy-policy.html"
 val keystoreProperties = Properties()
 val keystorePropertiesFile = rootProject.file("keystore.properties")
 val hasKeystoreProperties = keystorePropertiesFile.exists()
 val releaseTaskRequested = gradle.startParameter.taskNames.any { taskName ->
     val requestedTask = taskName.substringAfterLast(":")
-    requestedTask == "assembleRelease" ||
-        requestedTask == "bundleRelease" ||
-        requestedTask == "installRelease" ||
-        (requestedTask.startsWith("assemble") && requestedTask.endsWith("Release")) ||
-        (requestedTask.startsWith("bundle") && requestedTask.endsWith("Release"))
+    requestedTask.contains("Release")
 }
+val configuredApiBaseUrl = ((project.findProperty("API_BASE_URL") as String?)
+    ?: System.getenv("API_BASE_URL"))
+    ?.trim()
+    ?.takeIf { it.isNotBlank() }
+val defaultDebugApiBaseUrl = "http://10.0.2.2:8765/"
+val apiBaseUrl = configuredApiBaseUrl
+    ?: if (releaseTaskRequested) {
+        error(
+            "Release builds require an explicit API_BASE_URL. " +
+                "Pass -PAPI_BASE_URL=https://api.yourdomain.com/ or set API_BASE_URL."
+        )
+    } else {
+        defaultDebugApiBaseUrl
+    }
+require(apiBaseUrl.startsWith("http://") || apiBaseUrl.startsWith("https://")) {
+    "API_BASE_URL must start with http:// or https://"
+}
+require(apiBaseUrl.endsWith("/")) {
+    "API_BASE_URL must end with / for Retrofit base URL compatibility."
+}
+val privacyPolicyUrl = ((project.findProperty("PRIVACY_POLICY_URL") as String?)
+    ?: System.getenv("PRIVACY_POLICY_URL")
+    ?: "https://karanakatle.github.io/finsaathi-legal/privacy-policy.html")
+    .trim()
 if (hasKeystoreProperties) {
     keystorePropertiesFile.inputStream().use { keystoreProperties.load(it) }
 }
 
 android {
-    // Public Play/package identity is FinSaathi. Source namespace remains the inherited
-    // internal package until the broad Kotlin package rename is handled separately.
-    namespace = "com.arthamantri.android"
+    namespace = "com.finsaathi.android"
     compileSdk = 35
 
     buildFeatures {

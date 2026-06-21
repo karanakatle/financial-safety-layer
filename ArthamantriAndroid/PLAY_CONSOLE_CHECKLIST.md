@@ -6,9 +6,9 @@ Use this before uploading `app-release.aab`.
 
 - Final Play Store application ID: `com.finsaathi.android`.
 - Debug/development application ID: `com.finsaathi.android.dev`.
-- Internal Kotlin namespace may still be `com.arthamantri.android`; this is not the Play Store app identity.
+- Android source namespace: `com.finsaathi.android`.
 - Do not change `applicationId` after first public Play release.
-- Review `PACKAGE_MIGRATION_PLAN.md` before creating the Play listing.
+- Review `PACKAGE_MIGRATION_PLAN.md` before creating the Play listing; the source namespace migration is complete.
 
 ## 1) App Content
 

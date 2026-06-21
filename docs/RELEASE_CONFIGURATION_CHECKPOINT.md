@@ -23,7 +23,7 @@
 ANDROID_HOME=/Users/karanakatle/Library/Android/sdk \
 GRADLE_USER_HOME=/tmp/gradle-home \
 ./gradlew --no-daemon :app:assembleRelease \
-  -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+  -PAPI_BASE_URL=https://api.yourdomain.com/ \
   -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 ```
 
@@ -35,13 +35,15 @@ The privacy policy has been moved from Render to GitHub Pages:
 
 This URL was verified over HTTPS with `HTTP 200`.
 
-## Current Backend Blocker
+## Current Backend Requirement
 
-The backend API URL still points to `https://arthamantri-api.onrender.com/`. If that Render service remains unavailable, app features that require the backend will still fail until the backend is restored or the app is rebuilt with a new `API_BASE_URL`.
+Android release builds no longer fall back to the old Render backend. A release build must pass an explicit stable backend URL with `-PAPI_BASE_URL=...` or `API_BASE_URL`.
+
+Until a stable HTTPS backend is restored or selected, backend-dependent app features should be treated as not production-ready.
 
 ## Required Follow-Up
 
 - Confirm Play Console App content uses the GitHub Pages privacy URL.
-- Restore the backend Render service or choose a replacement backend host before production launch.
+- Restore the backend Render service or choose a replacement backend host before production launch, then rebuild release artifacts with that explicit `API_BASE_URL`.
 - Back up `finsaathi-release.keystore` and the keystore passwords outside the repository.
 - Do not commit `keystore.properties`, keystore files, or signing passwords.

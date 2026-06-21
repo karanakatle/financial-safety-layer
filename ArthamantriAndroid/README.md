@@ -231,14 +231,14 @@ Use three profiles:
 ### A) Debug install
 
 ```bash
-adb uninstall com.arthamantri.android
-adb uninstall com.arthamantri.android.dev
 adb uninstall com.finsaathi.android
 adb uninstall com.finsaathi.android.dev
 cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
-./gradlew :app:assembleDebug -PAPI_BASE_URL=https://arthamantri-api.onrender.com/
+./gradlew :app:assembleDebug
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
+
+Debug builds default to `http://10.0.2.2:8765/`, which lets an Android emulator call a backend running on the host machine at `127.0.0.1:8765`. To use a different backend for debug, pass `-PAPI_BASE_URL=https://api.yourdomain.com/`.
 
 Verify installed package:
 
@@ -253,7 +253,7 @@ Expected:
 Open debug app:
 
 ```bash
-adb shell am start -n com.finsaathi.android.dev/com.arthamantri.android.MainActivity
+adb shell am start -n com.finsaathi.android.dev/com.finsaathi.android.MainActivity
 ```
 
 ### B) Build release artifacts
@@ -261,13 +261,15 @@ adb shell am start -n com.finsaathi.android.dev/com.arthamantri.android.MainActi
 ```bash
 cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
 ./gradlew :app:assembleRelease \
-  -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+  -PAPI_BASE_URL=https://api.yourdomain.com/ \
   -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 
 ./gradlew :app:bundleRelease \
-  -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
+  -PAPI_BASE_URL=https://api.yourdomain.com/ \
   -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 ```
+
+Release builds fail fast if `API_BASE_URL` is not supplied.
 
 Outputs:
 
@@ -278,7 +280,7 @@ Outputs:
 
 ## Project Structure
 
-* `app/src/main/java/com/arthamantri/android/MainActivity.kt`
+* `app/src/main/java/com/finsaathi/android/MainActivity.kt`
 * `.../sms/BankSmsReceiver.kt`
 * `.../sms/SmsParser.kt`
 * `.../usage/AppUsageForegroundService.kt`

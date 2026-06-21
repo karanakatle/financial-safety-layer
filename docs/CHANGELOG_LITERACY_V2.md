@@ -30,10 +30,10 @@
 - No formal bank/UPI-company integration required for this flow.
 - Files:
   - `backend/main.py`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/model/LiteracyDtos.kt`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/notify/AlertNotifier.kt`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/notify/OverlayAlertWindow.kt`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/notify/AlertDisplayActivity.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/model/LiteracyDtos.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/AlertNotifier.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/OverlayAlertWindow.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/notify/AlertDisplayActivity.kt`
 
 ### 4) Contextual alert intensity + scoring + persistence
 - Added contextual scoring pipeline.
@@ -84,9 +84,9 @@
 - Files:
   - `backend/main.py`
   - `backend/pilot/storage.py`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/repo/LiteracyRepository.kt`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/sms/BankSmsReceiver.kt`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/model/LiteracyDtos.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/repo/LiteracyRepository.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/sms/BankSmsReceiver.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/model/LiteracyDtos.kt`
 
 ## Validation
 - Python tests: `10 passed`.
@@ -179,8 +179,8 @@
 - Added printable field card for assisted onboarding:
   - `docs/FACILITATOR_ONBOARDING_CARD.md`
 - Files:
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/MainActivity.kt`
-  - `ArthamantriAndroid/app/src/main/java/com/arthamantri/android/core/AppConstants.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/MainActivity.kt`
+  - `ArthamantriAndroid/app/src/main/java/com/finsaathi/android/core/AppConstants.kt`
   - `ArthamantriAndroid/app/src/main/res/layout/activity_main.xml`
   - `ArthamantriAndroid/app/src/main/res/layout/dialog_money_setup.xml`
   - `ArthamantriAndroid/app/src/main/res/layout/dialog_facilitator_pack.xml`

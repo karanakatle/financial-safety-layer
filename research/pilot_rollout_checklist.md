@@ -38,7 +38,7 @@ No-Go conditions:
 Run these against the deployed backend before the first participant.
 
 ```bash
-BASE="https://arthamantri-api.onrender.com"
+BASE="https://api.yourdomain.com"
 curl -s "$BASE/api/health"
 curl -s "$BASE/api/literacy/storage-health"
 curl -s "$BASE/api/literacy/status?participant_id=test_user"
@@ -91,14 +91,14 @@ cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
 ```bash
 ./gradlew :app:assembleRelease \
   -PAPI_BASE_URL=$BASE \
-  -PPRIVACY_POLICY_URL=$BASE/privacy-policy.html
+  -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 ```
 
 ### Pilot AAB
 ```bash
 ./gradlew :app:bundleRelease \
   -PAPI_BASE_URL=$BASE \
-  -PPRIVACY_POLICY_URL=$BASE/privacy-policy.html
+  -PPRIVACY_POLICY_URL=https://karanakatle.github.io/finsaathi-legal/privacy-policy.html
 ```
 
 ## 5. Internal Dry Runs
