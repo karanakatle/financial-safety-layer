@@ -31,8 +31,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Detect regression test IDs
+      - name: Detect explicit regression test IDs
         id: detect
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -77,32 +79,99 @@ jobs:
                   )
           PY
 
+      - name: Run Regression Impact Agent
+        id: impact_agent
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_TITLE: ${{ github.event.pull_request.title || '' }}
+          PR_BODY: ${{ github.event.pull_request.body || '' }}
+        run: |
+          set -euo pipefail
+          scripts/suggest_regression_pack.py \
+            --base "$BASE_SHA" \
+            --head "$HEAD_SHA" \
+            --pr-text "$PR_TITLE"$'\n'"$PR_BODY" \
+            --summary-markdown "$GITHUB_STEP_SUMMARY" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Resolve regression IDs
+        id: resolve
+        env:
+          EXPLICIT_IDS: ${{ steps.detect.outputs.test_ids }}
+          AGENT_IDS: ${{ steps.impact_agent.outputs.suggested_ids || '' }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          def split_ids(value: str) -> list[str]:
+              ids = []
+              for chunk in value.replace(",", " ").split():
+                  item = chunk.strip().upper()
+                  if item and item not in ids:
+                      ids.append(item)
+              return ids
+
+          explicit_ids = split_ids(os.environ.get("EXPLICIT_IDS", ""))
+          agent_ids = split_ids(os.environ.get("AGENT_IDS", ""))
+
+          resolved = []
+          for item in explicit_ids + agent_ids:
+              if item not in resolved:
+                  resolved.append(item)
+
+          output_path = Path(os.environ["GITHUB_OUTPUT"])
+          with output_path.open("a", encoding="utf-8") as output:
+              output.write(f"test_ids={','.join(resolved)}\n")
+              output.write(f"has_ids={'true' if resolved else 'false'}\n")
+
+          summary_path = Path(os.environ["GITHUB_STEP_SUMMARY"])
+          with summary_path.open("a", encoding="utf-8") as summary:
+              summary.write("\n# Regression Pack Resolution\n\n")
+              if resolved:
+                  summary.write("Regression IDs selected for this workflow:\n")
+                  for item in resolved:
+                      source = []
+                      if item in explicit_ids:
+                          source.append("human")
+                      if item in agent_ids:
+                          source.append("agent")
+                      summary.write(f"- `{item}` ({', '.join(source)})\n")
+              else:
+                  summary.write(
+                      "No regression IDs were selected. "
+                      "Add a test ID manually or update the impact-agent rules if this change should trigger regression.\n"
+                  )
+          PY
+
       - name: Set up Python
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
 
       - name: Install backend test dependencies
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
 
       - name: Set up Java
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: "temurin"
           java-version: "17"
 
       - name: Set up Android SDK
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         uses: android-actions/setup-android@v3
 
       - name: Configure Android SDK path
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         run: |
           set -euo pipefail
           SDK_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-}}"
@@ -114,15 +183,15 @@ jobs:
           echo "Configured ArthamantriAndroid/local.properties with sdk.dir=$SDK_DIR"
 
       - name: Set up Gradle
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         uses: gradle/actions/setup-gradle@v4
 
       - name: Validate regression impact map
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         run: scripts/run_regression_pack.py --validate
 
       - name: Start local backend for integration packs
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
           RUN_AUTO_INPUT: ${{ github.event.inputs.run_auto || 'true' }}
@@ -144,11 +213,11 @@ jobs:
           fi
 
       - name: Run automated regression packs
-        if: steps.detect.outputs.has_ids == 'true'
+        if: steps.resolve.outputs.has_ids == 'true'
         env:
           EVENT_NAME: ${{ github.event_name }}
           RUN_AUTO_INPUT: ${{ github.event.inputs.run_auto || 'true' }}
-          TEST_IDS: ${{ steps.detect.outputs.test_ids }}
+          TEST_IDS: ${{ steps.resolve.outputs.test_ids }}
         run: |
           set -euo pipefail
           if [[ "$EVENT_NAME" == "workflow_dispatch" && "$RUN_AUTO_INPUT" != "true" ]]; then
@@ -164,6 +233,6 @@ jobs:
           done
 
       - name: No regression pack requested
-        if: steps.detect.outputs.has_ids != 'true'
+        if: steps.resolve.outputs.has_ids != 'true'
         run: |
           echo "No regression pack ID found. Skipping targeted automated reruns."
