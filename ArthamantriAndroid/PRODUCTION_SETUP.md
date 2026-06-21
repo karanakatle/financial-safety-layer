@@ -1,14 +1,22 @@
-# Production Setup (Play Store / Pilot)
+# Production Setup (Play Store / Production)
 
 Use this when creating a real release build for testers/users.
+
+## 0) Package identity
+
+- Release application ID: `com.finsaathi.android`
+- Debug application ID: `com.finsaathi.android.dev`
+- Internal Kotlin namespace currently remains `com.arthamantri.android`
+
+Do not change `applicationId` after the first public Play Store release. See `PACKAGE_MIGRATION_PLAN.md`.
 
 ## 1) Configure backend and privacy URLs
 
 You can pass URLs using Gradle properties or environment variables.
 
-- `API_BASE_URL`  
+- `API_BASE_URL`
   Example: `https://api.yourdomain.com/`
-- `PRIVACY_POLICY_URL`  
+- `PRIVACY_POLICY_URL`
   Example: `https://yourdomain.com/privacy-policy`
 
 ### Option A: one-time command
@@ -34,6 +42,22 @@ cd ArthamantriAndroid
 - API HTTP logs are enabled only in debug builds.
 - Release builds disable OkHttp logging.
 - Drawer menu includes a Privacy Policy item that opens the configured URL.
+- Privacy policy and Play Console Data Safety wording must match the exact production permissions:
+  - SMS access for risky money-message checks.
+  - Notification listener access for payment/financial prompt checks.
+  - Usage access for UPI/payment app-open timing.
+  - Overlay access for high-risk stop-and-verify warnings.
+  - Notifications, foreground service, and boot receiver for monitoring and alert delivery.
+
+## 2.1) Play Console privacy readiness
+
+Before uploading a release:
+
+- Host `frontend/privacy-policy.html` at a public HTTPS URL.
+- Pass the hosted policy URL through `PRIVACY_POLICY_URL`.
+- Recheck `PLAY_CONSOLE_CHECKLIST.md` against the production manifest.
+- Do not claim raw message text never leaves the device. Current payment/risk inspection can send selected raw notification or payment-request text to the backend when needed for classification.
+- Keep store listing copy aligned with onboarding: FinSaathi gives safety warnings and does not give loans, sell investments, replace banks, or ask for OTP, UPI PIN, Aadhaar, PAN, bank passwords, card details, or exact balance.
 
 ## 3) Configure release signing
 
@@ -49,7 +73,7 @@ Required keys in `keystore.properties`:
 - `keyAlias`
 - `keyPassword`
 
-If `keystore.properties` is missing, release build falls back to debug signing (not for production upload).
+If `keystore.properties` is missing, release builds fail instead of falling back to debug signing.
 
 ## 4) Build release AAB
 
@@ -66,7 +90,7 @@ cd ArthamantriAndroid
 
 ## 6) Recommended dev vs release usage
 
-- During development, run only `debug` variant (`com.arthamantri.android.dev`).
+- During development, run only `debug` variant (`com.finsaathi.android.dev`).
 - Keep release app uninstalled from emulator/device to avoid confusion.
 - Build `release APK`/`release AAB` only when you need sideload or Play upload.
 
@@ -75,11 +99,13 @@ Debug install flow:
 ```bash
 adb uninstall com.arthamantri.android
 adb uninstall com.arthamantri.android.dev
-cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
+adb uninstall com.finsaathi.android
+adb uninstall com.finsaathi.android.dev
+cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
 ./gradlew :app:assembleDebug -PAPI_BASE_URL=https://arthamantri-api.onrender.com/
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell pm list packages | grep arthamantri
+adb shell pm list packages | grep finsaathi
 ```
 
 Expected package:
-- `package:com.arthamantri.android.dev`
+- `package:com.finsaathi.android.dev`

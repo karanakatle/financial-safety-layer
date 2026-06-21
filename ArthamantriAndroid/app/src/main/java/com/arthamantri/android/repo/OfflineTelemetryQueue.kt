@@ -20,16 +20,64 @@ object OfflineTelemetryQueue {
         enqueue(
             context = context,
             kind = AppConstants.Domain.OFFLINE_QUEUE_KIND_ALERT_FEEDBACK,
-            payload = JSONObject().apply {
-                put("event_id", request.event_id)
-                put("alert_id", request.alert_id)
-                put("participant_id", request.participant_id)
-                put("action", request.action)
-                put("channel", request.channel)
-                put("title", request.title)
-                put("message", request.message)
-                put("timestamp", request.timestamp)
-            },
+            payload = alertFeedbackPayloadFor(request),
+        )
+    }
+
+    internal fun alertFeedbackPayloadFor(request: LiteracyAlertFeedbackRequest): JSONObject {
+        return JSONObject(alertFeedbackPayloadMapFor(request))
+    }
+
+    internal fun alertFeedbackPayloadMapFor(request: LiteracyAlertFeedbackRequest): Map<String, String> {
+        return buildMap {
+            putOptional("event_id", request.event_id)
+            put("alert_id", request.alert_id)
+            put("participant_id", request.participant_id)
+            put("action", request.action)
+            put("channel", request.channel)
+            put("title", request.title)
+            put("message", request.message)
+            putOptional("timestamp", request.timestamp)
+            putOptional("category", request.category)
+            putOptional("risk_level", request.risk_level)
+            putOptional("source_type", request.source_type)
+            putOptional("reason_code", request.reason_code)
+        }
+    }
+
+    internal fun alertFeedbackRequestFromPayload(payload: JSONObject): LiteracyAlertFeedbackRequest {
+        return alertFeedbackRequestFromMap(
+            mapOf(
+                "event_id" to payload.optString("event_id"),
+                "alert_id" to payload.optString("alert_id"),
+                "participant_id" to payload.optString("participant_id"),
+                "action" to payload.optString("action"),
+                "channel" to payload.optString("channel"),
+                "title" to payload.optString("title"),
+                "message" to payload.optString("message"),
+                "timestamp" to payload.optString("timestamp"),
+                "category" to payload.optString("category"),
+                "risk_level" to payload.optString("risk_level"),
+                "source_type" to payload.optString("source_type"),
+                "reason_code" to payload.optString("reason_code"),
+            )
+        )
+    }
+
+    internal fun alertFeedbackRequestFromMap(payload: Map<String, String>): LiteracyAlertFeedbackRequest {
+        return LiteracyAlertFeedbackRequest(
+            event_id = payload["event_id"].takeIf { !it.isNullOrBlank() },
+            alert_id = payload["alert_id"].orEmpty(),
+            participant_id = payload["participant_id"].orEmpty(),
+            action = payload["action"].orEmpty(),
+            channel = payload["channel"].orEmpty(),
+            title = payload["title"].orEmpty(),
+            message = payload["message"].orEmpty(),
+            timestamp = payload["timestamp"].takeIf { !it.isNullOrBlank() },
+            category = payload["category"].takeIf { !it.isNullOrBlank() },
+            risk_level = payload["risk_level"].takeIf { !it.isNullOrBlank() },
+            source_type = payload["source_type"].takeIf { !it.isNullOrBlank() },
+            reason_code = payload["reason_code"].takeIf { !it.isNullOrBlank() },
         )
     }
 
@@ -88,18 +136,7 @@ object OfflineTelemetryQueue {
             val delivered = runCatching {
                 when (kind) {
                     AppConstants.Domain.OFFLINE_QUEUE_KIND_ALERT_FEEDBACK -> {
-                        api.alertFeedback(
-                            LiteracyAlertFeedbackRequest(
-                                event_id = payload.optString("event_id").takeIf { it.isNotBlank() },
-                                alert_id = payload.optString("alert_id"),
-                                participant_id = payload.optString("participant_id"),
-                                action = payload.optString("action"),
-                                channel = payload.optString("channel"),
-                                title = payload.optString("title"),
-                                message = payload.optString("message"),
-                                timestamp = payload.optString("timestamp").takeIf { it.isNotBlank() },
-                            )
-                        ).ok
+                        api.alertFeedback(alertFeedbackRequestFromPayload(payload)).ok
                     }
 
                     AppConstants.Domain.OFFLINE_QUEUE_KIND_APP_LOG -> {
@@ -220,5 +257,17 @@ object OfflineTelemetryQueue {
             .edit()
             .putString(AppConstants.Prefs.KEY_OFFLINE_TELEMETRY_QUEUE, array.toString())
             .apply()
+    }
+
+    private fun JSONObject.putOptional(key: String, value: String?) {
+        if (!value.isNullOrBlank()) {
+            put(key, value)
+        }
+    }
+
+    private fun MutableMap<String, String>.putOptional(key: String, value: String?) {
+        if (!value.isNullOrBlank()) {
+            put(key, value)
+        }
     }
 }

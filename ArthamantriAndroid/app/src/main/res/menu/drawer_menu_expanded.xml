@@ -3,29 +3,35 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
         android:id="@+id/nav_manage_access"
-        android:visible="false"
+        android:visible="true"
         app:actionLayout="@layout/nav_manage_access_toggle"
         android:icon="@android:drawable/ic_menu_manage"
         android:orderInCategory="1"
         app:showAsAction="always"
         android:title="@string/menu_manage_access_expanded" />
     <item
-        android:id="@+id/nav_access_notifications"
-        android:visible="false"
-        android:icon="@drawable/ic_indented_notification"
+        android:id="@+id/nav_access_sms"
+        android:visible="true"
+        android:icon="@drawable/ic_indented_sms"
         android:orderInCategory="2"
+        android:title="@string/menu_access_sms" />
+    <item
+        android:id="@+id/nav_access_notifications"
+        android:visible="true"
+        android:icon="@drawable/ic_indented_notification"
+        android:orderInCategory="3"
         android:title="@string/menu_access_notifications" />
     <item
         android:id="@+id/nav_access_usage"
-        android:visible="false"
+        android:visible="true"
         android:icon="@drawable/ic_indented_usage"
-        android:orderInCategory="3"
+        android:orderInCategory="4"
         android:title="@string/menu_access_usage" />
     <item
         android:id="@+id/nav_access_overlay"
-        android:visible="false"
+        android:visible="true"
         android:icon="@drawable/ic_indented_overlay"
-        android:orderInCategory="4"
+        android:orderInCategory="5"
         android:title="@string/menu_access_overlay" />
     <item
         android:id="@+id/nav_feedback"

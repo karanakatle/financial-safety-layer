@@ -206,6 +206,28 @@ data class PilotAppLogResponse(
     val ok: Boolean = false,
 )
 
+data class PilotHumanReviewRequest(
+    val participant_id: String,
+    val alert_id: String,
+    val consent_to_share_redacted_content: Boolean,
+    val category: String,
+    val risk_level: String,
+    val confidence_score: Double? = null,
+    val reviewable: Boolean = true,
+    val source_type: String,
+    val reason_code: String,
+    val redacted_snippet: String? = null,
+    val language: String = AppConstants.Locale.DEFAULT_LANGUAGE,
+    val timestamp: String? = null,
+)
+
+data class PilotHumanReviewResponse(
+    val ok: Boolean = false,
+    val queued: Boolean = false,
+    val sample_id: String? = null,
+    val generic_safety_guidance: String = "",
+)
+
 data class LiteracyAlertFeedbackRequest(
     val event_id: String? = null,
     val alert_id: String,
@@ -215,6 +237,10 @@ data class LiteracyAlertFeedbackRequest(
     val title: String,
     val message: String,
     val timestamp: String? = null,
+    val category: String? = null,
+    val risk_level: String? = null,
+    val source_type: String? = null,
+    val reason_code: String? = null,
 )
 
 data class LiteracyAlertFeedbackResponse(

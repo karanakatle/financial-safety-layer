@@ -7,6 +7,8 @@ import com.arthamantri.android.model.PilotAppLogRequest
 import com.arthamantri.android.model.PilotAppLogResponse
 import com.arthamantri.android.model.PilotFeedbackRequest
 import com.arthamantri.android.model.PilotFeedbackResponse
+import com.arthamantri.android.model.PilotHumanReviewRequest
+import com.arthamantri.android.model.PilotHumanReviewResponse
 import com.arthamantri.android.model.PilotMetaResponse
 import com.arthamantri.android.model.LiteracyAlertFeedbackRequest
 import com.arthamantri.android.model.LiteracyAlertFeedbackResponse
@@ -53,6 +55,9 @@ interface LiteracyApi {
 
     @POST("api/pilot/app-log")
     suspend fun pilotAppLog(@Body body: PilotAppLogRequest): PilotAppLogResponse
+
+    @POST("api/pilot/human-review-queue")
+    suspend fun pilotHumanReview(@Body body: PilotHumanReviewRequest): PilotHumanReviewResponse
 
     @POST("api/literacy/alert-feedback")
     suspend fun alertFeedback(@Body body: LiteracyAlertFeedbackRequest): LiteracyAlertFeedbackResponse

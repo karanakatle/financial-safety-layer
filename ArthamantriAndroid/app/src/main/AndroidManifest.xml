@@ -68,7 +68,7 @@
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.arthamantri.android.action.RUN_SAVINGS_NUDGE" />
+                <action android:name="com.finsaathi.android.action.RUN_SAVINGS_NUDGE" />
             </intent-filter>
         </receiver>
 

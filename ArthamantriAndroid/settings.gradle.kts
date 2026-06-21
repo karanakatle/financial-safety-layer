@@ -17,5 +17,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ArthamantriAndroid"
+rootProject.name = "FinSaathiAndroid"
 include(":app")

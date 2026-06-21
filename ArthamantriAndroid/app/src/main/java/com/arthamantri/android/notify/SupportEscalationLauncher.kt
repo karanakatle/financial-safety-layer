@@ -21,6 +21,7 @@ object SupportEscalationLauncher {
         focusedActionLabels: List<String>,
         proceedConfirmationLabel: String,
         useFocusedPaymentActions: Boolean,
+        humanReviewMetadata: HumanReviewSupportMetadata? = null,
     ): Boolean {
         val supportIntent = Intent(context, MainActivity::class.java).apply {
             putExtra(AppConstants.IntentExtras.ALERT_OPEN_SUPPORT_PATH, true)
@@ -42,6 +43,15 @@ object SupportEscalationLauncher {
                 proceedConfirmationLabel,
             )
             putExtra(AppConstants.IntentExtras.ALERT_USE_FOCUSED_PAYMENT_ACTIONS, useFocusedPaymentActions)
+            putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_REDACTED_SNIPPET, humanReviewMetadata?.redactedSnippet)
+            putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_CATEGORY, humanReviewMetadata?.category)
+            putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_RISK_LEVEL, humanReviewMetadata?.riskLevel)
+            humanReviewMetadata?.confidenceScore?.let {
+                putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_CONFIDENCE_SCORE, it)
+            }
+            putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_REVIEWABLE, humanReviewMetadata?.reviewable ?: false)
+            putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_SOURCE_TYPE, humanReviewMetadata?.sourceType)
+            putExtra(AppConstants.IntentExtras.HUMAN_REVIEW_REASON_CODE, humanReviewMetadata?.reasonCode)
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
             if (context !is Activity) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

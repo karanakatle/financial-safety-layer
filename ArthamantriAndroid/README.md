@@ -3,21 +3,21 @@
 ![Backend](https://img.shields.io/badge/Backend-FastAPI-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-Event--Driven-orange)
 ![AI](https://img.shields.io/badge/AI-Agentic--Workflow-purple)
-![Status](https://img.shields.io/badge/Status-Research--Prototype-yellow)
+![Status](https://img.shields.io/badge/Status-Production--Build-yellow)
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 ![Domain](https://img.shields.io/badge/Domain-Fintech-red)
 ![Focus](https://img.shields.io/badge/Focus-Financial--Inclusion-brightgreen)
 ![UX](https://img.shields.io/badge/UX-Explainable--AI-blueviolet)
 
-# 📱 ArthamantriAndroid
+# 📱 FinSaathi Android
 
-> Native Android client for a research-driven financial safety platform that detects risky payment moments from phone-native signals and shows explainable warnings in real time.
+> Native Android client for FinSaathi, a financial safety platform that detects risky payment moments from phone-native signals and shows explainable warnings in real time.
 
 ---
 
 ## 🚀 Overview
 
-`ArthamantriAndroid` is the Android companion app for the backend in `Python-OOS-Project`.
+`FinSaathi Android` is the Android client for the FinSaathi backend.
 
 It is designed for **low-confidence digital finance users** and acts as a **real-time financial safety layer** on the device.
 
@@ -31,7 +31,7 @@ These signals are converted into:
 
 - explainable payment warnings
 - cashflow safety guidance
-- user feedback and telemetry for pilot research
+- user feedback and telemetry for safety diagnostics
 
 ---
 
@@ -114,10 +114,10 @@ Cashflow alerts remain separate and can collect:
 * queues app logs / feedback locally
 * idempotent replay using stable `event_id`
 
-### 🤝 Pilot Readiness
+### 🤝 Release Readiness
 
-* first-run research consent
-* pilot feedback submission
+* first-run consent
+* user feedback submission
 * Facilitator Setup Pack for assisted onboarding
 
 ---
@@ -233,7 +233,9 @@ Use three profiles:
 ```bash
 adb uninstall com.arthamantri.android
 adb uninstall com.arthamantri.android.dev
-cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
+adb uninstall com.finsaathi.android
+adb uninstall com.finsaathi.android.dev
+cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
 ./gradlew :app:assembleDebug -PAPI_BASE_URL=https://arthamantri-api.onrender.com/
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
@@ -241,23 +243,23 @@ adb install -r app/build/outputs/apk/debug/app-debug.apk
 Verify installed package:
 
 ```bash
-adb shell pm list packages | grep arthamantri
+adb shell pm list packages | grep finsaathi
 ```
 
 Expected:
 
-* `package:com.arthamantri.android.dev`
+* `package:com.finsaathi.android.dev`
 
 Open debug app:
 
 ```bash
-adb shell am start -n com.arthamantri.android.dev/com.arthamantri.android.MainActivity
+adb shell am start -n com.finsaathi.android.dev/com.arthamantri.android.MainActivity
 ```
 
 ### B) Build release artifacts
 
 ```bash
-cd /Users/karanakatle/Personal/Python-OOS-Project/ArthamantriAndroid
+cd /Users/karanakatle/Personal/BMAD/Finsaathi/ArthamantriAndroid
 ./gradlew :app:assembleRelease \
   -PAPI_BASE_URL=https://arthamantri-api.onrender.com/ \
   -PPRIVACY_POLICY_URL=https://arthamantri-api.onrender.com/privacy-policy.html
