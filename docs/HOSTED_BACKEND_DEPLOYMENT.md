@@ -81,13 +81,24 @@ PILOT_ADMIN_KEY=<same-value-as-PILOT_ADMIN_API_KEY> \
 scripts/hosted_backend_smoke.sh
 ```
 
+`PILOT_ADMIN_KEY` is mandatory. The smoke script fails if storage health cannot be checked, because Hosted SIT/UAT should not start on an unverified ephemeral database.
+
 Required pass criteria:
 
 - `/api/health` returns `{"status":"ok"}`
 - `/api/pilot/meta` returns pilot metadata
 - `/api/literacy/status` returns valid JSON
-- `/api/literacy/sms-ingest` accepts a risky SMS sample and returns safe guidance
+- `/api/literacy/sms-ingest` accepts a contract-valid expense SMS sample and returns at least one alert with `risk_level`, `severity`, `why_this_alert`, and `next_best_action`
 - `/api/literacy/storage-health` returns `db_path` pointing to durable storage, not the repo-local default
+
+For non-Render hosts, override the durable storage prefix if needed:
+
+```bash
+EXPECTED_DB_PATH_PREFIX=/data \
+BASE_URL=https://your-hosted-backend.example.com \
+PILOT_ADMIN_KEY=<same-value-as-PILOT_ADMIN_API_KEY> \
+scripts/hosted_backend_smoke.sh
+```
 
 ## Android Build After Backend Is Live
 
