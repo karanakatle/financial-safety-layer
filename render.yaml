@@ -1,15 +1,23 @@
 services:
   - type: web
-    name: arthamantri-api
+    name: finsaathi-api
     env: python
-    plan: free
+    plan: starter
     autoDeploy: true
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
-    healthCheckPath: /api/literacy/status
+    healthCheckPath: /api/health
+    disk:
+      name: finsaathi-pilot-data
+      mountPath: /var/data
+      sizeGB: 1
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
+      - key: PILOT_DB_PATH
+        value: /var/data/pilot_research.db
+      - key: PILOT_ADMIN_API_KEY
+        sync: false
       # Optional: set this in Render dashboard if using OpenAI voice provider.
       - key: OPENAI_API_KEY
         sync: false
