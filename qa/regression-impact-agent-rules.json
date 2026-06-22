@@ -38,6 +38,8 @@
         "backend/main.py",
         "backend/routes/**",
         "render.yaml",
+        "scripts/hosted_backend_smoke.sh",
+        "docs/HOSTED_BACKEND_DEPLOYMENT.md",
         "requirements.txt",
         "tests/conftest.py"
       ],
